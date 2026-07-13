@@ -28,13 +28,51 @@ async function request(path, options = {}) {
     return response.json();
 }
 
+async function downloadFile(path, options = {}) {
+  const url = `${config.wahaUrl}${path}`;
+
+  const headers = {
+    'Content-Type': options.headers?.['Content-Type'] ?? 'application/json',
+    'accept': '*/*',
+    ...options.headers
+  };
+
+  if (config.apiKey) headers['X-Api-Key'] = config.apiKey;
+
+  console.log(`[WAHA] ${options.method || 'GET'} ${url}`);
+
+  const response = await fetch(url, { ...options, headers });
+
+  if (!response.ok) {
+    let errorDetail = '';
+    try {
+      errorDetail = JSON.stringify(await response.json());
+    } catch (_) {
+      errorDetail = await response.text().catch(() => '');
+    }
+    throw new Error(`WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`);
+  }
+
+  const blob = await response.blob();
+
+  let filename = 'download';
+  const cd = response.headers.get('content-disposition');
+  if (cd) {
+    const m = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
+    filename = decodeURIComponent(m?.[1] || m?.[2] || filename);
+  }
+
+  return { blob, filename };
+}
+
+
 export const waha = {
     async getVersion() {
         return request('/api/version');
     },
 
     async getChats() {
-        const data = await request(`/api/${config.session}/chats`);
+        const data = await request(`/api/${config.session}/chats?sortBy=conversationTimestamp`);
         return data.map(chat => {
             let chatId = chat.id;
             if (chatId && typeof chatId === "object") {
@@ -51,7 +89,7 @@ export const waha = {
     },
 
     async getChatMessages(chatId) {
-        return request(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40`);
+        return request(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=true&limit=40`);
     },
 
     async getChatPicture(chatId) {
@@ -63,6 +101,11 @@ export const waha = {
             method: 'POST',
             body: JSON.stringify({ chatId, session: config.session })
         });
+    },
+
+    async downloadMedia(file) {
+        const { blob, filename } = await downloadFile(`/api/files/${config.session}/${file}`);
+        return { blob, filename };
     },
 
     async getMyInfo() {

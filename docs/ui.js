@@ -1,5 +1,6 @@
 import { formatTime } from "./utils.js";
 import { waha } from "./waha.js";
+import { config } from "./config.js";
 
 // DOM Selector Cache
 export const elements = {
@@ -17,11 +18,10 @@ export const elements = {
     messageForm: document.getElementById('message-form'),
     messageInput: document.getElementById('message-input'),
     // backToSidebarBtn: document.getElementById('back-to-sidebar'),
-    backToSidebarBtn: document.getElementById('active-chat-container'),
+    backToSidebarBtn: document.querySelector('.chat-header'),
     sidebar: document.querySelector('.sidebar'),
     settingsModal: document.getElementById('settings-modal'),
     settingsIconBtn: document.querySelector('.header-actions button[title="Settings"]'),
-    closeSettingsBtn: document.getElementById('close-settings'),
     cancelSettingsBtn: document.getElementById('cancel-settings'),
     saveSettingsBtn: document.getElementById('save-settings'),
     inputWahaUrl: document.getElementById('settings-waha-url'),
@@ -33,8 +33,8 @@ export const elements = {
 
 export const ui = {
     /**
-     * Show or hide Settings connection modal
-     */
+    * Show or hide Settings connection modal
+    */
     toggleModal(show) {
         if (show) {
             elements.settingsModal.classList.remove('hidden');
@@ -42,10 +42,10 @@ export const ui = {
             elements.settingsModal.classList.add('hidden');
         }
     },
-
+    
     /**
-     * Switch view state when a contact chat is opened or closed
-     */
+    * Switch view state when a contact chat is opened or closed
+    */
     toggleChatState(hasActive) {
         if (hasActive) {
             elements.noChatState.classList.add('hidden');
@@ -55,17 +55,17 @@ export const ui = {
             elements.activeChatContainer.classList.add('hidden');
         }
     },
-
+    
     /**
-     * Scroll message list automatically to bottom
-     */
+    * Scroll message list automatically to bottom
+    */
     scrollToBottom() {
         elements.messagesContainer.scrollTop = elements.messagesContainer.scrollHeight;
     },
-
+    
     /**
-     * Update connection status badge in sidebar footer
-     */
+    * Update connection status badge in sidebar footer
+    */
     updateConnectionStatus(isConnected, text) {
         elements.backendStatusText.textContent = text;
         if (isConnected) {
@@ -76,28 +76,28 @@ export const ui = {
             elements.apiStatusIndicator.style.animation = 'none';
         }
     },
-
+    
     /**
-     * Render sidebar contact chats list
-     */
+    * Render sidebar contact chats list
+    */
     renderChatList(chats, activeChat, onChatSelect) {
         elements.chatList.innerHTML = '';
-
+        
         if (chats.length === 0) {
             elements.chatList.innerHTML = `<li class="loading-chats">No chats found</li>`;
             return;
         }
-
-        chats.forEach(async (chat) =>   {
+        
+        chats.forEach(async (chat) => {
             const li = document.createElement('li');
             li.className = `chat-item ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
             li.dataset.id = chat.id;
             const picture = await waha.getChatPicture(chat.id);
-
+            
             const initials = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
             const hasUnread = chat.unreadCount && chat.unreadCount > 0;
             const timeStr = formatTime(chat.timestamp || new Date());
-
+            
             li.innerHTML = `
                 <div class="avatar"><img src="${picture.url}"></div>
                 <div class="chat-item-info">
@@ -111,90 +111,134 @@ export const ui = {
                     </div>
                 </div>
             `;
-
+            
             li.addEventListener('click', () => onChatSelect(chat));
             elements.chatList.appendChild(li);
         });
     },
-
+    
     /**
-     * Render chat message log inside chat view container
-     */
-    renderMessages(messages, activeChatName) {
+    * Render chat message log inside chat view container
+    */
+    async renderMessages(messages, activeChatName, userID) {
         elements.messagesContainer.innerHTML = '';
         
         if (messages.length === 0) {
             elements.messagesContainer.innerHTML = '<div class="loading-chats">No messages. Say hello!</div>';
             return;
         }
-
-        messages.forEach(msg => {
-            const isOutgoing = msg.fromMe || msg.sender === 'me';
-            const groupDiv = document.createElement('div');
-            groupDiv.className = `message-group ${isOutgoing ? 'outgoing' : 'incoming'}`;
-            groupDiv.id = msg.id;
-            
-            const senderName = isOutgoing ? 'Me' : (msg.from || activeChatName);
-            const timeStr = formatTime(msg.timestamp || new Date());
-            
-            let statusCheck = '';
-            if (isOutgoing) {
-                if (msg.status === 'read') {
-                    statusCheck = '<i data-lucide="check-check" style="color: var(--online-color); width:14px; height:14px;"></i>';
-                } else if (msg.status === 'delivered') {
-                    statusCheck = '<i data-lucide="check-check" style="width:14px; height:14px;"></i>';
-                } else {
-                    statusCheck = '<i data-lucide="check" style="width:14px; height:14px;"></i>';
-                }
-            }
-
-            groupDiv.innerHTML = `
-            <div class="message-indicator"></div>
-            <div class="message-bubble">
-                    ${!isOutgoing ? `<span class="message-sender">${senderName}</span>` : ''}
-                    ${msg.body || msg.text || "<i>Empty message, maybe something shows up on your phone...</i>"}
-                    <div class="message-meta">
-                        <span>${timeStr}</span>
-                        ${statusCheck}
-                    </div>
-                </div>
-            `;
-
-            elements.messagesContainer.appendChild(groupDiv);
-        });
-
+        
+        for (const msg of messages) {
+            this.appendSingleMessage(msg, activeChatName, userID);
+        }
+        
         lucide.createIcons();
         this.scrollToBottom();
     },
-
+    
     /**
-     * Append a single message (used for optimistic updates immediately upon sending)
-     */
-    appendSingleMessage(msg, activeChatName) {
-        if (elements.messagesContainer.querySelector('.loading-chats')) {
-            elements.messagesContainer.innerHTML = '';
-        }
-
+    * Append a single message (used for optimistic updates immediately upon sending)
+    */
+    appendSingleMessage(msg, activeChatName, userID) {
+        console.log(msg);
         const isOutgoing = msg.fromMe || msg.sender === 'me';
+        
         const groupDiv = document.createElement('div');
         groupDiv.className = `message-group ${isOutgoing ? 'outgoing' : 'incoming'}`;
         groupDiv.id = msg.id;
+        groupDiv.dataset.from = msg.participant || msg.from;
         
-        const senderName = isOutgoing ? 'Me' : activeChatName;
+        const senderName = isOutgoing ? userID : (msg._data.notifyName || activeChatName);
         const timeStr = formatTime(msg.timestamp || new Date());
         
-        groupDiv.innerHTML = `
-            ${!isOutgoing ? `<span class="message-sender">${senderName}</span>` : ''}
-            <div class="message-bubble">
-                ${msg.body || msg.text}
-                <div class="message-meta">
-                    <span>${timeStr}</span>
-                    <i data-lucide="clock" style="width:12px; height:12px; opacity:0.6;"></i>
-                </div>
-            </div>
-        `;
-
+        let statusCheck = '';
+        if (isOutgoing) {
+            if (msg.status === 'read') {
+                statusCheck = '<i data-lucide="check-check" style="color: var(--online-color); width:14px; height:14px;"></i>';
+            } else if (msg.status === 'delivered') {
+                statusCheck = '<i data-lucide="check-check" style="width:14px; height:14px;"></i>';
+            } else {
+                statusCheck = '<i data-lucide="check" style="width:14px; height:14px;"></i>';
+            }
+        }
+        
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        
+        if (!isOutgoing) {
+            const senderEl = document.createElement('span');
+            senderEl.className = 'message-sender';
+            senderEl.textContent = senderName;
+            bubble.appendChild(senderEl);
+        }
+        
+        const contentEl = document.createElement('div');
+        contentEl.classList.add('message-content');
+        const textEl = document.createElement('div');
+        textEl.innerHTML = msg.body || msg.text || "";
+        contentEl.appendChild(textEl);
+        bubble.appendChild(contentEl);
+        
+        if (msg.media?.url) {
+            const a = document.createElement('a');
+            a.innerText = `Request media (${msg.media.filename})`;
+            
+            a.addEventListener('click', async (e) => {
+                const url = new URL(msg.media.url);
+                const reqID = url.pathname.split('/').filter(Boolean).pop();
+                
+                const { blob, filename } = await waha.downloadMedia(reqID);
+                
+                const objectUrl = URL.createObjectURL(blob);
+                e.target.href = objectUrl;
+                
+                if (blob.type.startsWith('image/')) {
+                    a.textContent = "";
+                    const img = document.createElement('img');
+                    img.classList.add('message-image-attachement');
+                    img.src = objectUrl;
+                    a.appendChild(img);
+                } else {
+                    e.target.textContent = filename || `Download ${msg.media.filename}`;
+                }
+                
+            })
+            
+            contentEl.appendChild(a);
+        }
+        
+        const meta = document.createElement('div');
+        meta.className = 'message-meta';
+        meta.innerHTML = `<span>${timeStr}</span>${statusCheck}`;
+        
+        bubble.appendChild(meta);
+        let uid = "";
+        
+        function getPrevMessageElem() {
+            return elements.messagesContainer.lastElementChild; // <‑‑ key change
+        }
+        
+        const prevMsgEl = getPrevMessageElem();
+        
+        if (isOutgoing) {
+            if (prevMsgEl && prevMsgEl.classList.contains('outgoing')) {
+            } else {
+                groupDiv.appendChild(document.createElement('div')).className = 'message-indicator';
+            }
+        } else if (msg.participant) {
+            uid = msg.participant;
+            if (!prevMsgEl || uid !== prevMsgEl.dataset.from) {
+                groupDiv.appendChild(document.createElement('div')).className = 'message-indicator';
+            }
+        } else {
+            uid = msg.from;
+            if (!prevMsgEl || uid !== prevMsgEl.dataset.from) {
+                groupDiv.appendChild(document.createElement('div')).className = 'message-indicator';
+            }
+        }
+        
+        groupDiv.appendChild(bubble);
+        
         elements.messagesContainer.appendChild(groupDiv);
-        lucide.createIcons();
     }
 };

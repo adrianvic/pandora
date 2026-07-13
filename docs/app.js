@@ -6,9 +6,11 @@ import { compensateMessageOrdering, formatTime } from "./utils.js";
 
 let chatsState = [];
 let activeChatState = null;
+let userInfo;
 
 // Initialize app when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    userInfo = await waha.getMyInfo();
     setupEventListeners();
     fetchChats();
     checkWahaStatus();
@@ -16,6 +18,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupEventListeners() {
+    document.addEventListener('keydown', (e) => {
+        e.preventDefault();
+
+        if (e.code == "Escape") {
+            ui.toggleChatState();
+        }
+    });
+
     elements.refreshChatsBtn.addEventListener('click', () => {
         elements.refreshChatsBtn.classList.add('spinning');
         fetchChats().finally(() => {
@@ -44,7 +54,6 @@ function setupEventListeners() {
     });
 
     elements.settingsIconBtn.addEventListener('click', openSettings);
-    elements.closeSettingsBtn.addEventListener('click', () => ui.toggleModal(false));
     elements.cancelSettingsBtn.addEventListener('click', () => ui.toggleModal(false));
     elements.saveSettingsBtn.addEventListener('click', saveSettings);
 }
@@ -85,7 +94,7 @@ function handleIncomingMessage(msg) {
         const msgId = normalizeChatId(msg.id) || msg.id;
         const exists = document.getElementById(msgId);
         if (!exists) {
-            ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name);
+            ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name, userInfo.id);
             ui.scrollToBottom();
         }
     }
@@ -106,28 +115,28 @@ function handleIncomingMessage(msg) {
             return tB - tA;
         });
 
-        ui.renderChatList(chatsState, activeChatState, selectChat);
+        // ui.renderChatList(chatsState, activeChatState, selectChat);
     } else {
-        fetchChats();
+        // fetchChats();
     }
 }
 
 async function fetchChats() {
-    const userInfo = await waha.getMyInfo();
-    elements.loggedUserName.textContent = userInfo.pushName;
-    // elements.userIcon.innerText = userInfo.pushName[0];
-    elements.chatsLoader.classList.remove('hidden');
     try {
+        elements.loggedUserName.textContent = userInfo.pushName;
+        // elements.userIcon.innerText = userInfo.pushName[0];
+        elements.chatsLoader.classList.remove('hidden');
         chatsState = await waha.getChats();
         ui.renderChatList(chatsState, activeChatState, selectChat);
     } catch (error) {
         console.error('Failed to load chats:', error);
         elements.chatList.innerHTML = `
-            <li class="loading-chats" style="color: #f87171; text-align: center; padding: 20px;">
+            <li class="loading-chats" style="color: var(--text-primary); text-align: center; padding: 20px;">
                 <p>Connection to WAHA failed.</p>
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">
+                <p style="font-size: 0.75rem; color: var(--text-primary); margin-top: 8px;">
                     Ensure WAHA server is running and CORS is enabled, or click Settings to configure.
                 </p>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">${error.message}</p>
             </li>
         `;
     } finally {
@@ -140,7 +149,7 @@ async function selectChat(chat) {
     
     chat.unreadCount = 0;
 
-    ui.renderChatList(chatsState, activeChatState, selectChat);
+    // ui.renderChatList(chatsState, activeChatState, selectChat);
 
     ui.toggleChatState(true);
     elements.activeChatName.textContent = chat.name.toUpperCase();
@@ -155,7 +164,7 @@ async function selectChat(chat) {
     try {
         const rawMessages = await waha.getChatMessages(chat.id);
         const processedMessages = compensateMessageOrdering(rawMessages);
-        ui.renderMessages(processedMessages, chat.name);
+        ui.renderMessages(processedMessages, chat.name, userInfo.id);
     } catch (error) {
         console.error('Failed to load messages:', error);
         elements.messagesContainer.innerHTML = '<div class="loading-chats">Error loading messages</div>';
@@ -177,7 +186,7 @@ async function sendMessage() {
         status: 'sending'
     };
 
-    ui.appendSingleMessage(tempMsg, activeChatState.name);
+    ui.appendSingleMessage(tempMsg, activeChatState.name, userInfo.id);
     ui.scrollToBottom();
 
     try {
@@ -223,7 +232,7 @@ async function sendMessage() {
             const tB = new Date(b.timestamp).getTime();
             return tB - tA;
         });
-        ui.renderChatList(chatsState, activeChatState, selectChat);
+        // ui.renderChatList(chatsState, activeChatState, selectChat);
     } catch (error) {
         console.error('Failed to send message:', error);
         const tempBubble = document.getElementById(tempMsg.id);

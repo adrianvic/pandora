@@ -8,9 +8,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="loading.css">
+    <link rel="stylesheet" href="metroicons.css">
     <script src="https://unpkg.com/lucide@latest" defer></script>
 </head>
 <body>
+    <script defer>
+        document.addEventListener("DOMContentLoaded", () => {
+          setTimeout(() => {
+            document.querySelectorAll(".dots").forEach(el => {
+              el.classList.add("animate");
+            });
+          }, 1000);
+        });
+    </script>
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -23,7 +34,7 @@
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="text-btn" title="New Chat">new chat</button>
+                    <!-- <button class="text-btn" title="New Chat">new chat</button> -->
                     <button class="text-btn" id="refresh-chats-btn" title="Refresh Chats">refresh</button>
                     <button class="text-btn" title="Settings">settings</button>
                 </div>
@@ -37,8 +48,13 @@
 
             <div class="chat-list-container">
                 <div class="loading-chats" id="chats-loader">
-                    <div class="spinner"></div>
-                    <span>Loading chats...</span>
+                    <div class='dots'>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
                 </div>
                 <ul class="chat-list" id="chat-list">
                     <!-- Chats will be dynamically injected here -->
@@ -58,11 +74,9 @@
             <!-- No Chat Selected State -->
             <div class="no-chat-state" id="no-chat-state">
                 <div class="empty-state-content">
-                    <div class="empty-state-icon">
-                        <i data-lucide="message-square"></i>
+                    <div class="empty-state-icon mif-qa mif-3x">
                     </div>
-                    <h2>Welcome to Pandora Chat</h2>
-                    <p>Select a contact from the sidebar to view the conversation or start a new chat. Your chats are synced directly with the WAHA API backend.</p>
+                    <p>Select a contact from the sidebar to view the conversation or start a new chat.</p>
                 </div>
             </div>
 
@@ -74,7 +88,7 @@
                         <div class="avatar active-avatar" id="active-chat-avatar">C</div>
                         <div>
                             <h3 id="active-chat-name">Contact Name</h3>
-                            <span class="contact-status" id="active-chat-status">Active now</span>
+                            <span class="contact-status" id="active-chat-status"></span>
                         </div>
                     </div>
                     <div class="chat-actions">
@@ -93,13 +107,12 @@
                 <!-- Input Panel -->
                 <footer class="chat-input-panel">
                     <div class="input-actions-left">
-                        <button class="icon-btn" title="Attach file"><i data-lucide="paperclip"></i></button>
+                        <button class="icon-btn send-btn mif-attachment mif-3x" title="Attach file"></button>
                         <!-- <button class="icon-btn" title="Add emoji"><i data-lucide="smile"></i></button> -->
                     </div>
                     <form class="input-form" id="message-form">
                         <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                        <button type="submit" class="send-btn" id="send-button">
-                            <i data-lucide="send"></i>
+                        <button type="submit" class="send-btn mif-paper-plane mif-3x" id="send-button">
                         </button>
                     </form>
                 </footer>
@@ -112,7 +125,6 @@
         <div class="modal-content">
             <header class="modal-header">
                 <h2>SETTINGS</h2>
-                <button class="icon-btn close-modal-btn" id="close-settings"><i data-lucide="x"></i></button>
             </header>
             <div class="modal-body">
                 <div class="form-group">
@@ -127,7 +139,7 @@
                     <label for="settings-api-key">API Key (X-API-KEY)</label>
                     <input type="password" id="settings-api-key" placeholder="Enter API Key">
                 </div>
-                <p class="settings-warning">⚠️ Note: Requests are sent directly from your browser to the WAHA server. Make sure CORS is enabled on your WAHA instance.</p>
+                <p class="settings-warning">Note: Requests are sent directly from your browser to the WAHA server. Make sure CORS is enabled on your WAHA instance.</p>
             </div>
             <footer class="modal-footer">
                 <button class="btn secondary-btn" id="cancel-settings">Cancel</button>
