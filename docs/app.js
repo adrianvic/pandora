@@ -115,7 +115,7 @@ function handleIncomingMessage(msg) {
 async function fetchChats() {
     const userInfo = await waha.getMyInfo();
     elements.loggedUserName.textContent = userInfo.pushName;
-    elements.userIcon.innerText = userInfo.pushName[0];
+    // elements.userIcon.innerText = userInfo.pushName[0];
     elements.chatsLoader.classList.remove('hidden');
     try {
         chatsState = await waha.getChats();
@@ -143,7 +143,7 @@ async function selectChat(chat) {
     ui.renderChatList(chatsState, activeChatState, selectChat);
 
     ui.toggleChatState(true);
-    elements.activeChatName.textContent = chat.name;
+    elements.activeChatName.textContent = chat.name.toUpperCase();
     elements.activeChatAvatar.textContent = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
 
     elements.messagesContainer.innerHTML = '<div class="loading-chats"><div class="spinner"></div><span>Loading messages...</span></div>';

@@ -54,6 +54,10 @@ export const waha = {
         return request(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40`);
     },
 
+    async getChatPicture(chatId) {
+        return request(`/api/${config.session}/chats/${chatId}/picture`);
+    },
+
     async readChat(chatId) {
         return request('/api/sendSeen', {
             method: 'POST',

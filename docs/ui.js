@@ -1,10 +1,10 @@
 import { formatTime } from "./utils.js";
+import { waha } from "./waha.js";
 
 // DOM Selector Cache
 export const elements = {
     chatList: document.getElementById('chat-list'),
     chatsLoader: document.getElementById('chats-loader'),
-    chatCountBadge: document.getElementById('chat-count'),
     chatSearch: document.getElementById('chat-search'),
     refreshChatsBtn: document.getElementById('refresh-chats-btn'),
     backendStatusText: document.getElementById('backend-status-text'),
@@ -16,7 +16,8 @@ export const elements = {
     messagesContainer: document.getElementById('messages-container'),
     messageForm: document.getElementById('message-form'),
     messageInput: document.getElementById('message-input'),
-    backToSidebarBtn: document.getElementById('back-to-sidebar'),
+    // backToSidebarBtn: document.getElementById('back-to-sidebar'),
+    backToSidebarBtn: document.getElementById('active-chat-container'),
     sidebar: document.querySelector('.sidebar'),
     settingsModal: document.getElementById('settings-modal'),
     settingsIconBtn: document.querySelector('.header-actions button[title="Settings"]'),
@@ -27,7 +28,7 @@ export const elements = {
     inputSession: document.getElementById('settings-session'),
     inputApiKey: document.getElementById('settings-api-key'),
     loggedUserName: document.getElementById('pandora-username'),
-    userIcon: document.getElementById('pandora-user-icon')
+    // userIcon: document.getElementById('pandora-user-icon')
 };
 
 export const ui = {
@@ -81,24 +82,24 @@ export const ui = {
      */
     renderChatList(chats, activeChat, onChatSelect) {
         elements.chatList.innerHTML = '';
-        elements.chatCountBadge.textContent = chats.length;
 
         if (chats.length === 0) {
             elements.chatList.innerHTML = `<li class="loading-chats">No chats found</li>`;
             return;
         }
 
-        chats.forEach(chat => {
+        chats.forEach(async (chat) =>   {
             const li = document.createElement('li');
             li.className = `chat-item ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
             li.dataset.id = chat.id;
+            const picture = await waha.getChatPicture(chat.id);
 
             const initials = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
             const hasUnread = chat.unreadCount && chat.unreadCount > 0;
             const timeStr = formatTime(chat.timestamp || new Date());
 
             li.innerHTML = `
-                <div class="avatar">${initials}</div>
+                <div class="avatar"><img src="${picture.url}"></div>
                 <div class="chat-item-info">
                     <div class="chat-item-meta">
                         <span class="chat-item-name">${chat.name}</span>
@@ -133,7 +134,7 @@ export const ui = {
             groupDiv.className = `message-group ${isOutgoing ? 'outgoing' : 'incoming'}`;
             groupDiv.id = msg.id;
             
-            const senderName = isOutgoing ? 'Me' : (msg.senderName || activeChatName);
+            const senderName = isOutgoing ? 'Me' : (msg.from || activeChatName);
             const timeStr = formatTime(msg.timestamp || new Date());
             
             let statusCheck = '';
@@ -148,9 +149,10 @@ export const ui = {
             }
 
             groupDiv.innerHTML = `
-                ${!isOutgoing ? `<span class="message-sender">${senderName}</span>` : ''}
-                <div class="message-bubble">
-                    ${msg.body || msg.text}
+            <div class="message-indicator"></div>
+            <div class="message-bubble">
+                    ${!isOutgoing ? `<span class="message-sender">${senderName}</span>` : ''}
+                    ${msg.body || msg.text || "<i>Empty message, maybe something shows up on your phone...</i>"}
                     <div class="message-meta">
                         <span>${timeStr}</span>
                         ${statusCheck}

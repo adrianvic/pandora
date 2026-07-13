@@ -8,39 +8,34 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
             <header class="sidebar-header">
+                <p class="app-name">PANDORA</p>
                 <div class="user-profile">
-                    <div id="pandora-user-icon" class="avatar user-avatar">P</div>
+                    <!-- <div id="pandora-user-icon" class="avatar user-avatar">P</div> -->
                     <div class="user-info">
                         <h3 id="pandora-username">Pandora User</h3>
-                        <span class="status-indicator online">Online</span>
                     </div>
                 </div>
                 <div class="header-actions">
-                    <button class="icon-btn" title="New Chat"><i data-lucide="message-square-plus"></i></button>
-                    <button class="icon-btn" id="refresh-chats-btn" title="Refresh Chats"><i data-lucide="refresh-cw"></i></button>
-                    <button class="icon-btn" title="Settings"><i data-lucide="settings"></i></button>
+                    <button class="text-btn" title="New Chat">new chat</button>
+                    <button class="text-btn" id="refresh-chats-btn" title="Refresh Chats">refresh</button>
+                    <button class="text-btn" title="Settings">settings</button>
                 </div>
             </header>
 
             <div class="search-container">
                 <div class="search-wrapper">
-                    <i data-lucide="search" class="search-icon"></i>
                     <input type="text" id="chat-search" placeholder="Search or start new chat...">
                 </div>
             </div>
 
             <div class="chat-list-container">
-                <div class="chat-list-header">
-                    <span>Recent Chats</span>
-                    <span class="badge" id="chat-count">0</span>
-                </div>
                 <div class="loading-chats" id="chats-loader">
                     <div class="spinner"></div>
                     <span>Loading chats...</span>
@@ -75,7 +70,7 @@
             <div class="active-chat-container hidden" id="active-chat-container">
                 <header class="chat-header">
                     <div class="active-contact-info">
-                        <button class="icon-btn back-btn" id="back-to-sidebar"><i data-lucide="arrow-left"></i></button>
+                        <!-- <button class="icon-btn back-btn" id="back-to-sidebar"><i data-lucide="arrow-left"></i></button> -->
                         <div class="avatar active-avatar" id="active-chat-avatar">C</div>
                         <div>
                             <h3 id="active-chat-name">Contact Name</h3>
@@ -83,10 +78,10 @@
                         </div>
                     </div>
                     <div class="chat-actions">
-                        <button class="icon-btn" title="Search in conversation"><i data-lucide="search"></i></button>
+                        <!-- <button class="icon-btn" title="Search in conversation"><i data-lucide="search"></i></button>
                         <button class="icon-btn" title="Call"><i data-lucide="phone"></i></button>
                         <button class="icon-btn" title="Video Call"><i data-lucide="video"></i></button>
-                        <button class="icon-btn" title="More Options"><i data-lucide="more-vertical"></i></button>
+                        <button class="icon-btn" title="More Options"><i data-lucide="more-vertical"></i></button> -->
                     </div>
                 </header>
 
@@ -99,7 +94,7 @@
                 <footer class="chat-input-panel">
                     <div class="input-actions-left">
                         <button class="icon-btn" title="Attach file"><i data-lucide="paperclip"></i></button>
-                        <button class="icon-btn" title="Add emoji"><i data-lucide="smile"></i></button>
+                        <!-- <button class="icon-btn" title="Add emoji"><i data-lucide="smile"></i></button> -->
                     </div>
                     <form class="input-form" id="message-form">
                         <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
@@ -116,7 +111,7 @@
     <div class="modal-overlay hidden" id="settings-modal">
         <div class="modal-content">
             <header class="modal-header">
-                <h2>WAHA Connection Settings</h2>
+                <h2>SETTINGS</h2>
                 <button class="icon-btn close-modal-btn" id="close-settings"><i data-lucide="x"></i></button>
             </header>
             <div class="modal-body">
