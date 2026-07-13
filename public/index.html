@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pandora</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <header class="sidebar-header">
+                <div class="user-profile">
+                    <div id="pandora-user-icon" class="avatar user-avatar">P</div>
+                    <div class="user-info">
+                        <h3 id="pandora-username">Pandora User</h3>
+                        <span class="status-indicator online">Online</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" title="New Chat"><i data-lucide="message-square-plus"></i></button>
+                    <button class="icon-btn" id="refresh-chats-btn" title="Refresh Chats"><i data-lucide="refresh-cw"></i></button>
+                    <button class="icon-btn" title="Settings"><i data-lucide="settings"></i></button>
+                </div>
+            </header>
+
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="chat-search" placeholder="Search or start new chat...">
+                </div>
+            </div>
+
+            <div class="chat-list-container">
+                <div class="chat-list-header">
+                    <span>Recent Chats</span>
+                    <span class="badge" id="chat-count">0</span>
+                </div>
+                <div class="loading-chats" id="chats-loader">
+                    <div class="spinner"></div>
+                    <span>Loading chats...</span>
+                </div>
+                <ul class="chat-list" id="chat-list">
+                    <!-- Chats will be dynamically injected here -->
+                </ul>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="api-status-badge">
+                    <span class="pulse-dot"></span>
+                    <span id="backend-status-text">Backend connected</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <!-- No Chat Selected State -->
+            <div class="no-chat-state" id="no-chat-state">
+                <div class="empty-state-content">
+                    <div class="empty-state-icon">
+                        <i data-lucide="message-square"></i>
+                    </div>
+                    <h2>Welcome to Pandora Chat</h2>
+                    <p>Select a contact from the sidebar to view the conversation or start a new chat. Your chats are synced directly with the WAHA API backend.</p>
+                </div>
+            </div>
+
+            <!-- Active Chat State -->
+            <div class="active-chat-container hidden" id="active-chat-container">
+                <header class="chat-header">
+                    <div class="active-contact-info">
+                        <button class="icon-btn back-btn" id="back-to-sidebar"><i data-lucide="arrow-left"></i></button>
+                        <div class="avatar active-avatar" id="active-chat-avatar">C</div>
+                        <div>
+                            <h3 id="active-chat-name">Contact Name</h3>
+                            <span class="contact-status" id="active-chat-status">Active now</span>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="icon-btn" title="Search in conversation"><i data-lucide="search"></i></button>
+                        <button class="icon-btn" title="Call"><i data-lucide="phone"></i></button>
+                        <button class="icon-btn" title="Video Call"><i data-lucide="video"></i></button>
+                        <button class="icon-btn" title="More Options"><i data-lucide="more-vertical"></i></button>
+                    </div>
+                </header>
+
+                <!-- Messages Area -->
+                <div class="messages-container" id="messages-container">
+                    <!-- Messages will be dynamically injected here -->
+                </div>
+
+                <!-- Input Panel -->
+                <footer class="chat-input-panel">
+                    <div class="input-actions-left">
+                        <button class="icon-btn" title="Attach file"><i data-lucide="paperclip"></i></button>
+                        <button class="icon-btn" title="Add emoji"><i data-lucide="smile"></i></button>
+                    </div>
+                    <form class="input-form" id="message-form">
+                        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                        <button type="submit" class="send-btn" id="send-button">
+                            <i data-lucide="send"></i>
+                        </button>
+                    </form>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay hidden" id="settings-modal">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2>WAHA Connection Settings</h2>
+                <button class="icon-btn close-modal-btn" id="close-settings"><i data-lucide="x"></i></button>
+            </header>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="settings-waha-url">WAHA Server URL</label>
+                    <input type="text" id="settings-waha-url" placeholder="http://localhost:3100">
+                </div>
+                <div class="form-group">
+                    <label for="settings-session">Session ID</label>
+                    <input type="text" id="settings-session" placeholder="session_01...">
+                </div>
+                <div class="form-group">
+                    <label for="settings-api-key">API Key (X-API-KEY)</label>
+                    <input type="password" id="settings-api-key" placeholder="Enter API Key">
+                </div>
+                <p class="settings-warning">⚠️ Note: Requests are sent directly from your browser to the WAHA server. Make sure CORS is enabled on your WAHA instance.</p>
+            </div>
+            <footer class="modal-footer">
+                <button class="btn secondary-btn" id="cancel-settings">Cancel</button>
+                <button class="btn primary-btn" id="save-settings">Save Config</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Client-side script loaded as ES Module -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
