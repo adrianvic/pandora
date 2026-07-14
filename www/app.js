@@ -10,11 +10,26 @@ let userInfo;
 
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
-    userInfo = await waha.getMyInfo();
     setupEventListeners();
-    fetchChats();
-    checkWahaStatus();
-    initWebSocket();
+    try {
+        userInfo = await waha.getMyInfo();
+        fetchChats();
+        checkWahaStatus();
+        initWebSocket();
+    } catch (error) {
+        console.error('Failed to load chats:', error);
+        elements.chatList.innerHTML = `
+            <li class="loading-chats" style="color: var(--text-primary); text-align: center; padding: 20px;">
+                <p>Connection to WAHA failed.</p>
+                <p style="font-size: 0.75rem; color: var(--text-primary); margin-top: 8px;">
+                    Ensure WAHA server is running and CORS is enabled, or click Settings to configure.
+                </p>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">${error.message}</p>
+            </li>
+        `;
+    } finally {
+        elements.chatsLoader.classList.add('hidden');
+    }
 });
 
 function setupEventListeners() {
@@ -155,7 +170,18 @@ async function selectChat(chat) {
     elements.activeChatName.textContent = chat.name.toUpperCase();
     elements.activeChatAvatar.textContent = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
 
-    elements.messagesContainer.innerHTML = '<div class="loading-chats"><div class="spinner"></div><span>Loading messages...</span></div>';
+    elements.messagesContainer.innerHTML = `
+    <div class="loading-chats">
+        <div class='dots'>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <span>Loading messages...
+        </span>
+    </div>`;
     
     if (window.innerWidth <= 768) {
         elements.sidebar.classList.add('hidden');
@@ -164,7 +190,7 @@ async function selectChat(chat) {
     try {
         const rawMessages = await waha.getChatMessages(chat.id);
         const processedMessages = compensateMessageOrdering(rawMessages);
-        ui.renderMessages(processedMessages, chat.name, userInfo.id);
+        ui.renderMessages(processedMessages, chat.name, userInfo.id, chat.id);
     } catch (error) {
         console.error('Failed to load messages:', error);
         elements.messagesContainer.innerHTML = '<div class="loading-chats">Error loading messages</div>';

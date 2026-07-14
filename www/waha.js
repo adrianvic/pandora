@@ -89,7 +89,11 @@ export const waha = {
     },
 
     async getChatMessages(chatId) {
-        return request(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=true&limit=40`);
+        return request(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40`);
+    },
+
+    async getSingleChatMessage(chatId, messageId, downladMedia) {
+        return request(`/api/${config.session}/chats/${chatId}/messages/${messageId}?downloadMedia=${downladMedia}`);
     },
 
     async getChatPicture(chatId) {

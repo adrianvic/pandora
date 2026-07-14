@@ -77,50 +77,50 @@ export const ui = {
         }
     },
     
-    /**
-    * Render sidebar contact chats list
-    */
-    renderChatList(chats, activeChat, onChatSelect) {
+    async renderChatList(chats, activeChat, onChatSelect) {
         elements.chatList.innerHTML = '';
+        
+        chats.sort((a, b) => b.timestamp - a.timestamp);
         
         if (chats.length === 0) {
             elements.chatList.innerHTML = `<li class="loading-chats">No chats found</li>`;
             return;
         }
         
-        chats.forEach(async (chat) => {
+        for (const chat of chats) {
+            console.log(chat);
             const li = document.createElement('li');
             li.className = `chat-item ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
             li.dataset.id = chat.id;
-            const picture = await waha.getChatPicture(chat.id);
             
+            const picture = await waha.getChatPicture(chat.id);
             const initials = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
             const hasUnread = chat.unreadCount && chat.unreadCount > 0;
             const timeStr = formatTime(chat.timestamp || new Date());
             
             li.innerHTML = `
-                <div class="avatar"><img src="${picture.url}"></div>
-                <div class="chat-item-info">
-                    <div class="chat-item-meta">
-                        <span class="chat-item-name">${chat.name}</span>
-                        <span class="chat-item-time">${timeStr}</span>
-                    </div>
-                    <div class="chat-item-preview">
-                        <span class="chat-item-msg">${chat.lastMessage || 'No messages yet'}</span>
-                        ${hasUnread ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
-                    </div>
+            <div class="avatar"><img src="${picture.url}" alt="${initials}"></div>
+            <div class="chat-item-info">
+                <div class="chat-item-meta">
+                    <span class="chat-item-name">${chat.name}</span>
+                    <span class="chat-item-time">${timeStr}</span>
                 </div>
-            `;
+                <div class="chat-item-preview">
+                    <span class="chat-item-msg">${chat.lastMessage || 'No messages yet'}</span>
+                    ${hasUnread ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
+                </div>
+            </div>
+        `;
             
             li.addEventListener('click', () => onChatSelect(chat));
             elements.chatList.appendChild(li);
-        });
+        }
     },
     
     /**
     * Render chat message log inside chat view container
     */
-    async renderMessages(messages, activeChatName, userID) {
+    async renderMessages(messages, activeChatName, userID, chatId) {
         elements.messagesContainer.innerHTML = '';
         
         if (messages.length === 0) {
@@ -129,7 +129,7 @@ export const ui = {
         }
         
         for (const msg of messages) {
-            this.appendSingleMessage(msg, activeChatName, userID);
+            this.appendSingleMessage(msg, activeChatName, userID, chatId);
         }
         
         lucide.createIcons();
@@ -139,7 +139,7 @@ export const ui = {
     /**
     * Append a single message (used for optimistic updates immediately upon sending)
     */
-    appendSingleMessage(msg, activeChatName, userID) {
+    appendSingleMessage(msg, activeChatName, userID, chatId) {
         console.log(msg);
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
@@ -179,12 +179,14 @@ export const ui = {
         contentEl.appendChild(textEl);
         bubble.appendChild(contentEl);
         
-        if (msg.media?.url) {
+        if (msg.hasMedia) {        
             const a = document.createElement('a');
-            a.innerText = `Request media (${msg.media.filename})`;
+            a.innerText = `[Request media]`;
             
             a.addEventListener('click', async (e) => {
-                const url = new URL(msg.media.url);
+                const mediaMsg = await waha.getSingleChatMessage(chatId, msg.id, true);
+                
+                const url = new URL(mediaMsg.media.url);
                 const reqID = url.pathname.split('/').filter(Boolean).pop();
                 
                 const { blob, filename } = await waha.downloadMedia(reqID);
@@ -199,7 +201,7 @@ export const ui = {
                     img.src = objectUrl;
                     a.appendChild(img);
                 } else {
-                    e.target.textContent = filename || `Download ${msg.media.filename}`;
+                    e.target.textContent = filename || `Download ${mediaMsg.media.filename}`;
                 }
                 
             })
