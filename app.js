@@ -39,7 +39,7 @@ function setupEventListeners() {
             ui.toggleChatState();
         }
     });
-
+    
     elements.refreshChatsBtn.addEventListener('click', () => {
         elements.refreshChatsBtn.classList.add('spinning');
         fetchChats().finally(() => {
@@ -48,7 +48,7 @@ function setupEventListeners() {
             }, 600);
         });
     });
-
+    
     elements.chatSearch.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = chatsState.filter(chat => 
@@ -56,24 +56,24 @@ function setupEventListeners() {
         );
         ui.renderChatList(filtered, activeChatState, selectChat);
     });
-
+    
     elements.messageForm.addEventListener('submit', (e) => {
         e.preventDefault();
         sendMessage();
     });
-
+    
     elements.chatBottomBar.style.height = `${elements.chatInputPanel.offsetHeight}px`;
     const observer = new ResizeObserver(() => {
         elements.chatBottomBar.style.height =
-            `${elements.chatInputPanel.offsetHeight}px`;
+        `${elements.chatInputPanel.offsetHeight}px`;
     });
-
+    
     observer.observe(elements.chatInputPanel);
     elements.chatBottomBarBtn.addEventListener('click', ui.toggleChatBottomBar);
     elements.chatBottomBar.addEventListener('click', (e) => {
         if (e.target == e.currentTarget) ui.toggleChatBottomBar();
     });
-
+    
     elements.attachmentBtn.addEventListener('click', () => {
         elements.attachmentInput.click();
     })
@@ -81,12 +81,12 @@ function setupEventListeners() {
         const firstFile = this.files[0];
         sendFileMessage(firstFile);
     })
-
+    
     elements.backToSidebarBtn.addEventListener('click', () => {
         elements.sidebar.classList.remove('hidden');
         elements.activeChatContainer.classList.add('hidden');
     });
-
+    
     elements.settingsIconBtn.addEventListener('click', openSettings);
     elements.cancelSettingsBtn.addEventListener('click', () => ui.toggleModal(false));
     elements.saveSettingsBtn.addEventListener('click', saveSettings);
@@ -112,18 +112,18 @@ function normalizeChatId(raw) {
 
 function handleIncomingMessage(msg) {
     if (!msg) return;
-
+    
     // console.log('[WS] handleIncomingMessage payload:', msg);
-
+    
     const rawChatId = msg.chatId || msg.from || (msg.chat && msg.chat.id);
     const msgChatId = normalizeChatId(rawChatId);
     if (!msgChatId) {
         console.warn('[WS] Could not resolve chatId from payload:', msg);
         return;
     }
-
+    
     // console.log('[WS] Resolved msgChatId:', msgChatId, '| activeChatState:', activeChatState?.id);
-
+    
     if (activeChatState && activeChatState.id === msgChatId) {
         const msgId = normalizeChatId(msg.id) || msg.id;
         const exists = document.getElementById(msgId);
@@ -132,23 +132,23 @@ function handleIncomingMessage(msg) {
             ui.scrollToBottom();
         }
     }
-
+    
     const chatIndex = chatsState.findIndex(c => c.id === msgChatId);
     if (chatIndex !== -1) {
         const chat = chatsState[chatIndex];
         chat.lastMessage = msg.body || msg.text || 'Media message';
         chat.timestamp = msg.timestamp ? (msg.timestamp * 1000) : Date.now();
-
+        
         if (!msg.fromMe && (!activeChatState || activeChatState.id !== msgChatId)) {
             chat.unreadCount = (chat.unreadCount || 0) + 1;
         }
-
+        
         chatsState.sort((a, b) => {
             const tA = new Date(a.timestamp).getTime();
             const tB = new Date(b.timestamp).getTime();
             return tB - tA;
         });
-
+        
         // ui.renderChatList(chatsState, activeChatState, selectChat);
     } else {
         // fetchChats();
@@ -182,13 +182,13 @@ async function selectChat(chat) {
     activeChatState = chat;
     
     chat.unreadCount = 0;
-
+    
     // ui.renderChatList(chatsState, activeChatState, selectChat);
-
+    
     ui.toggleChatState(true);
     elements.activeChatName.textContent = chat.name.toUpperCase();
     elements.activeChatAvatar.textContent = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
-
+    
     elements.messagesContainer.innerHTML = `
     <div class="loading-chats">
         <div class='dots'>
@@ -205,7 +205,7 @@ async function selectChat(chat) {
     if (window.innerWidth <= 768) {
         elements.sidebar.classList.add('hidden');
     }
-
+    
     try {
         const rawMessages = await waha.getChatMessages(chat.id);
         const processedMessages = compensateMessageOrdering(rawMessages);
@@ -219,9 +219,9 @@ async function selectChat(chat) {
 async function sendMessage() {
     const text = elements.messageInput.value.trim();
     if (!text || !activeChatState) return;
-
+    
     elements.messageInput.value = '';
-
+    
     const tempMsg = {
         id: 'temp-' + Date.now(),
         body: text,
@@ -230,10 +230,10 @@ async function sendMessage() {
         timestamp: new Date().toISOString(),
         status: 'sending'
     };
-
+    
     ui.appendSingleMessage(tempMsg, activeChatState.name, userInfo.id);
     ui.scrollToBottom();
-
+    
     try {
         try {
             await waha.startTyping(activeChatState.id);
@@ -242,13 +242,13 @@ async function sendMessage() {
         } catch (e) {
             console.warn('Presence start failed:', e);
         }
-
+        
         try {
             await waha.stopTyping(activeChatState.id);
         } catch (e) {
             console.warn('Presence stop failed:', e);
         }
-
+        
         try {
             if (!activeChatState.id.endsWith('@lid')) {
                 await waha.readChat(activeChatState.id);
@@ -256,9 +256,9 @@ async function sendMessage() {
         } catch (e) {
             console.warn('readChat failed (non-fatal):', e.message);
         }
-
+        
         const responseData = await waha.sendTextMessage(activeChatState.id, text);
-
+        
         const tempBubble = document.getElementById(tempMsg.id);
         if (tempBubble) {
             if (responseData && responseData.id) {
@@ -267,7 +267,7 @@ async function sendMessage() {
             const meta = tempBubble.querySelector('.message-meta');
             meta.innerHTML = `<span>${formatTime(new Date())}</span><span style="width:14px; height:14px;" class="mif-done">`;
         }
-
+        
         activeChatState.lastMessage = text;
         activeChatState.timestamp = new Date();
         
@@ -289,9 +289,29 @@ async function sendMessage() {
 
 async function sendFileMessage(file) {
     try {
+        const tempId = 'temp-' + Date.now();
+        const tempMsg = {
+            _data: {
+                mimetype: file.type
+            },
+            id: tempId,
+            body: "",
+            fromMe: true,
+            sender: 'me',
+            timestamp: new Date().toISOString(),
+            status: 'sending',
+            hasMedia: true,
+            media: {
+                url: URL.createObjectURL(file),
+                filename: file.name
+            }
+        };
+        
+        ui.appendSingleMessage(tempMsg, activeChatState.name, userInfo.id, activeChatState.id, true);
+        ui.scrollToBottom();
+        
         const result = await waha.sendFileMessage(activeChatState.id, file);
-        console.log(result)
-        // ui.appendSingleMessage(result, activeChatState.name, userInfo.id, activeChatState.id);
+        ui.updateMessageTick(tempId, result.status);
     } catch (error) {
         console.error(error.message);
     }

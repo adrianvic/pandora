@@ -142,11 +142,29 @@ export const ui = {
     /**
     * Append a single message (used for optimistic updates immediately upon sending)
     */
-    appendSingleMessage(msg, activeChatName, userID, chatId) {
-        elements.messagesContainer.appendChild(this.generateMessage(msg, activeChatName, userID, chatId))
+    appendSingleMessage(msg, activeChatName, userID, chatId, isLocal = false) {
+        elements.messagesContainer.appendChild(this.generateMessage(msg, activeChatName, userID, chatId, isLocal))
     },
     
-    generateMessage(msg, activeChatName, userID, chatId) {
+    generateTempMessageLink(msg) {
+        const a = document.createElement('a');
+        a.target = "_blank";
+        a.href = msg.media.url;
+        
+        if (msg._data?.mimetype?.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.classList.add('message-image-attachement');
+            img.src = msg.media.url;
+            a.appendChild(img);
+        } else {
+            a.textContent = msg.media.filename || "Download file";
+            a.download = msg.media.filename;
+        }
+        
+        return a;
+    },
+    
+    generateMessage(msg, activeChatName, userID, chatId, isLocal = false) {
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         const groupDiv = document.createElement('div');
@@ -187,43 +205,50 @@ export const ui = {
         contentEl.appendChild(textEl);
         bubble.appendChild(contentEl);
         
-        if (msg.hasMedia) {        
-            const a = document.createElement('a');
-            a.innerText = `[Request media]`;
-            a.target = "_blank";
+        if (msg.hasMedia) {
+            let a;
             
-            const clickListener = async (e) => {
-                a.removeEventListener('click', clickListener);
-                a.innerText = `[Downloading]`;
-                const mediaMsg = await waha.getSingleChatMessage(chatId, msg.id, true);
+            if (isLocal) {
+                a = this.generateTempMessageLink(msg);    
+            } else {
+                a = document.createElement('a');
+                a.innerText = `[Request media]`;
+                a.target = "_blank";
                 
-                const url = new URL(mediaMsg.media.url);
-                const reqID = url.pathname.split('/').filter(Boolean).pop();
-                
-                const { blob, filename } = await waha.downloadMedia(reqID);
-                
-                const objectUrl = URL.createObjectURL(blob);
-                e.target.href = objectUrl;
-                
-                if (blob.type.startsWith('image/')) {
-                    a.textContent = "";
-                    const img = document.createElement('img');
-                    img.classList.add('message-image-attachement');
-                    img.src = objectUrl;
-                    a.appendChild(img);
-                } else {
-                    e.target.textContent = filename || `Download ${mediaMsg.media.filename}`;
+                const clickListener = async (e) => {
+                    a.removeEventListener('click', clickListener);
+                    a.innerText = `[Downloading]`;
+                    const mediaMsg = msg.media ? msg : await waha.getSingleChatMessage(chatId, msg.id, true);
+                    console.log(mediaMsg.media.url);
+                    const url = new URL(mediaMsg.media.url);
+                    const reqID = url.pathname.split('/').filter(Boolean).pop();
+                    
+                    const { blob, filename } = await waha.downloadMedia(reqID);
+                    
+                    const objectUrl = URL.createObjectURL(blob);
+                    e.target.href = objectUrl;
+                    
+                    if (blob.type.startsWith('image/')) {
+                        a.textContent = "";
+                        const img = document.createElement('img');
+                        img.classList.add('message-image-attachement');
+                        img.src = objectUrl;
+                        a.appendChild(img);
+                    } else {
+                        e.target.textContent = filename || `Download ${mediaMsg.media.filename}`;
+                    }
                 }
+                
+                a.addEventListener('click', clickListener);
             }
             
             contentEl.appendChild(a);
-            a.addEventListener('click', clickListener);
             
-            if (msg._data.mimetype.startsWith('image/')) {
+            if (!isLocal && msg._data?.mimetype?.startsWith('image/')) {
                 a.click();
             }
         }
-
+        
         
         const meta = document.createElement('div');
         meta.className = 'message-meta';
@@ -233,7 +258,7 @@ export const ui = {
         let uid = "";
         
         function getPrevMessageElem() {
-            return elements.messagesContainer.lastElementChild; // <‑‑ key change
+            return elements.messagesContainer.lastElementChild;
         }
         
         const prevMsgEl = getPrevMessageElem();
@@ -264,6 +289,21 @@ export const ui = {
         if (originalMsg) {
             originalMsg.replaceWith(generatedMsg)
         }
+    },
+    
+    updateMessageTick(id, status) {
+        let statusCheck;
+        if (status === 'read') {
+            statusCheck = '<span class="mif-done_all" style="color: var(--online-color); width:14px; height:14px;"></span>';
+        } else if (status === 'delivered') {
+            statusCheck = '<span class="mif-done" style="width:14px; height:14px;"></span>';
+        } else if (status === 'sending') {
+            statusCheck = '<span class="mif-earth" style="width:14px; height:14px;"></span>';
+        } else {
+            statusCheck = '<span class="mif-done" style="width:14px; height:14px;"></span>';
+        }
+
+        document.getElementById(id).querySelector('.message-meta').outerHTML = statusCheck;
     },
     
     toggleChatBottomBar() {
