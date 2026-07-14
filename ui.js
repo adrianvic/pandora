@@ -147,7 +147,6 @@ export const ui = {
     },
     
     generateMessage(msg, activeChatName, userID, chatId) {
-        console.log(msg)
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         const groupDiv = document.createElement('div');

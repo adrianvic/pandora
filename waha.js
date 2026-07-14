@@ -144,7 +144,6 @@ export const waha = {
 
     async sendFileMessage(chatId, file) {
         const fileBase64 = await getBase64(file);
-        console.log(fileBase64)
         const body = {
             method: 'POST',
             body: JSON.stringify({
@@ -157,9 +156,13 @@ export const waha = {
                 session: config.session
             })
         };
-        console.log(body);
-        const result = await request('/api/sendFile', body);
-        console.log(result);
+
+        let endpoint = "/api/sendFile";
+
+        if (file.type.startsWith('image/')) endpoint = '/api/sendImage';
+        if (file.type.startsWith('video/')) endpoint = '/api/sendVideo';
+
+        const result = await request(endpoint, body);
         return result;
     }
 };

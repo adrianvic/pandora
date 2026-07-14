@@ -290,6 +290,8 @@ async function sendMessage() {
 async function sendFileMessage(file) {
     try {
         const result = await waha.sendFileMessage(activeChatState.id, file);
+        console.log(result)
+        // ui.appendSingleMessage(result, activeChatState.name, userInfo.id, activeChatState.id);
     } catch (error) {
         console.error(error.message);
     }
