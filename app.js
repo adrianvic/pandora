@@ -265,8 +265,7 @@ async function sendMessage() {
                 tempBubble.id = responseData.id;
             }
             const meta = tempBubble.querySelector('.message-meta');
-            meta.innerHTML = `<span>${formatTime(new Date())}</span><i data-lucide="check" style="width:14px; height:14px;"></i>`;
-            lucide.createIcons();
+            meta.innerHTML = `<span>${formatTime(new Date())}</span><span style="width:14px; height:14px;" class="mif-done">`;
         }
 
         activeChatState.lastMessage = text;
@@ -290,7 +289,7 @@ async function sendMessage() {
 
 async function sendFileMessage(file) {
     try {
-        console.log(await waha.sendFileMessage(activeChatState.id, file));
+        const result = await waha.sendFileMessage(activeChatState.id, file);
     } catch (error) {
         console.error(error.message);
     }

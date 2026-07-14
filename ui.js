@@ -143,6 +143,11 @@ export const ui = {
     * Append a single message (used for optimistic updates immediately upon sending)
     */
     appendSingleMessage(msg, activeChatName, userID, chatId) {
+        elements.messagesContainer.appendChild(this.generateMessage(msg, activeChatName, userID, chatId))
+    },
+    
+    generateMessage(msg, activeChatName, userID, chatId) {
+        console.log(msg)
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         const groupDiv = document.createElement('div');
@@ -156,11 +161,13 @@ export const ui = {
         let statusCheck = '';
         if (isOutgoing) {
             if (msg.status === 'read') {
-                statusCheck = '<i data-lucide="check-check" style="color: var(--online-color); width:14px; height:14px;"></i>';
+                statusCheck = '<span class="mif-done_all" style="color: var(--online-color); width:14px; height:14px;"></span>';
             } else if (msg.status === 'delivered') {
-                statusCheck = '<i data-lucide="check-check" style="width:14px; height:14px;"></i>';
+                statusCheck = '<span class="mif-done" style="width:14px; height:14px;"></span>';
+            } else if (msg.status === 'sending') {
+                statusCheck = '<span class="mif-earth" style="width:14px; height:14px;"></span>';
             } else {
-                statusCheck = '<i data-lucide="check" style="width:14px; height:14px;"></i>';
+                statusCheck = '<span class="mif-done" style="width:14px; height:14px;"></span>';
             }
         }
         
@@ -185,7 +192,9 @@ export const ui = {
             const a = document.createElement('a');
             a.innerText = `[Request media]`;
             
-            a.addEventListener('click', async (e) => {
+            const clickListener = async (e) => {
+                a.removeEventListener('click', clickListener);
+                a.innerText = `[Downloading]`;
                 const mediaMsg = await waha.getSingleChatMessage(chatId, msg.id, true);
                 
                 const url = new URL(mediaMsg.media.url);
@@ -205,11 +214,16 @@ export const ui = {
                 } else {
                     e.target.textContent = filename || `Download ${mediaMsg.media.filename}`;
                 }
-                
-            })
+            }
             
             contentEl.appendChild(a);
+            a.addEventListener('click', clickListener);
+            
+            if (msg._data.mimetype.startsWith('image/')) {
+                a.click();
+            }
         }
+
         
         const meta = document.createElement('div');
         meta.className = 'message-meta';
@@ -242,10 +256,16 @@ export const ui = {
         }
         
         groupDiv.appendChild(bubble);
-        
-        elements.messagesContainer.appendChild(groupDiv);
+        return groupDiv;
     },
-
+    
+    updateMessage(originalMsgId, generatedMsg) {
+        const originalMsg = document.querySelector(`#${originalMsgId}`);
+        if (originalMsg) {
+            originalMsg.replaceWith(generatedMsg)
+        }
+    },
+    
     toggleChatBottomBar() {
         elements.chatBottomBar.classList.toggle("collapsed");
     }
