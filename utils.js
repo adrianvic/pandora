@@ -79,3 +79,27 @@ export function compensateMessageOrdering(messages) {
     // Clean up temporary property
     return msgs.map(({ _time, ...m }) => m);
 }
+
+export function getBase64(file) {
+    return new Promise((resolve, reject) => {
+        console.log("Reading file...", file);
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            resolve(reader.result.split(",")[1]);
+        };
+
+        reader.onerror = (e) => {
+            console.error("Error", e);
+            reject(e);
+        };
+
+        reader.onabort = () => {
+            console.log("Aborted");
+            reject(new Error("Aborted"));
+        };
+
+        reader.readAsDataURL(file);
+    });
+}

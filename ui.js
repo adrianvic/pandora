@@ -31,6 +31,8 @@ export const elements = {
     chatBottomBar: document.getElementById('chat-bottom-bar'),
     chatBottomBarBtn: document.getElementById('chat-bottom-bar-btn'),
     chatInputPanel: document.getElementById('chat-input-panel'),
+    attachmentInput: document.getElementById('attachment-input'),
+    attachmentBtn: document.getElementById('attachment-btn'),
 };
 
 export const ui = {
@@ -90,7 +92,6 @@ export const ui = {
         }
         
         for (const chat of chats) {
-            console.log(chat);
             const li = document.createElement('li');
             li.className = `chat-item ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
             li.dataset.id = chat.id;
@@ -142,7 +143,6 @@ export const ui = {
     * Append a single message (used for optimistic updates immediately upon sending)
     */
     appendSingleMessage(msg, activeChatName, userID, chatId) {
-        console.log(msg);
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         const groupDiv = document.createElement('div');

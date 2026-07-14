@@ -618,13 +618,13 @@ input:focus {
     transform: translateY(100%);
 }
 
-.alternate-panel button {
+.alternate-panel button, .alternate-panel input {
     border: medium solid white;
     border-radius: 100%;
     background-color: transparent;
 }
 
-.alternate-panel button:hover {
+.alternate-panel button:hover, .alternate-panel input:hover {
     border-color: white;
     background-color: white;
     color: black;

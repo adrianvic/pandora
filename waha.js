@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { getBase64 } from "./utils.js";
 
 async function request(path, options = {}) {
     const url = `${config.wahaUrl}${path}`;
@@ -11,7 +12,7 @@ async function request(path, options = {}) {
         headers['X-Api-Key'] = config.apiKey;
     }
 
-    console.log(`[WAHA] ${options.method || 'GET'} ${url}`, options.body ? JSON.parse(options.body) : '');
+    // console.log(`[WAHA] ${options.method || 'GET'} ${url}`, options.body ? JSON.parse(options.body) : '');
 
     const response = await fetch(url, { ...options, headers });
     if (!response.ok) {
@@ -139,5 +140,26 @@ export const waha = {
                 session: config.session
             })
         });
+    },
+
+    async sendFileMessage(chatId, file) {
+        const fileBase64 = await getBase64(file);
+        console.log(fileBase64)
+        const body = {
+            method: 'POST',
+            body: JSON.stringify({
+                chatId,
+                file: {
+                    mimetype: file.type,
+                    filename: file.name,
+                    data: fileBase64
+                },
+                session: config.session
+            })
+        };
+        console.log(body);
+        const result = await request('/api/sendFile', body);
+        console.log(result);
+        return result;
     }
 };

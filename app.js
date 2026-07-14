@@ -34,9 +34,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function setupEventListeners() {
     document.addEventListener('keydown', (e) => {
-        e.preventDefault();
-
         if (e.code == "Escape") {
+            e.preventDefault();
             ui.toggleChatState();
         }
     });
@@ -74,6 +73,14 @@ function setupEventListeners() {
     elements.chatBottomBar.addEventListener('click', (e) => {
         if (e.target == e.currentTarget) ui.toggleChatBottomBar();
     });
+
+    elements.attachmentBtn.addEventListener('click', () => {
+        elements.attachmentInput.click();
+    })
+    elements.attachmentInput.addEventListener('change', function () {
+        const firstFile = this.files[0];
+        sendFileMessage(firstFile);
+    })
 
     elements.backToSidebarBtn.addEventListener('click', () => {
         elements.sidebar.classList.remove('hidden');
@@ -278,6 +285,14 @@ async function sendMessage() {
             const meta = tempBubble.querySelector('.message-meta');
             meta.innerHTML = `<span style="color: #ef4444;">Failed to send</span>`;
         }
+    }
+}
+
+async function sendFileMessage(file) {
+    try {
+        console.log(await waha.sendFileMessage(activeChatState.id, file));
+    } catch (error) {
+        console.error(error.message);
     }
 }
 
