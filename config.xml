@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="org.adrianvictor.hellocordova" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="org.adrianvictor.hellocordova" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>Pandora</name>
     <description>
         A messaging client for WAHA API.
@@ -10,6 +10,7 @@
     <content src="index.html" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+    <access origin="*" />
     <platform name="android">
         <adaptive-icon background="#000000" foreground="resources/android/icon.png" />
         <icon density="mdpi" src="resources/android/icon/drawable-mdpi-icon.png" />
@@ -41,5 +42,11 @@
         <preference name="AndroidWindowSplashScreenAnimationDuration" value="200" />
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="resources/android/splash/icon.png" />
         <preference name="SplashScreenBackgroundColor" value="#000000" />
+        <preference name="AndroidInsecureFileModeEnabled" value="true" />
+        <edit-config file="app/src/main/AndroidManifest.xml"
+             mode="merge"
+                     target="/manifest/application">
+            <application android:usesCleartextTraffic="true" />
+        </edit-config>
     </platform>
 </widget>
