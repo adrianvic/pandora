@@ -82,8 +82,6 @@ export function compensateMessageOrdering(messages) {
 
 export function getBase64(file) {
     return new Promise((resolve, reject) => {
-        console.log("Reading file...", file);
-
         const reader = new FileReader();
 
         reader.onload = () => {
@@ -96,7 +94,6 @@ export function getBase64(file) {
         };
 
         reader.onabort = () => {
-            console.log("Aborted");
             reject(new Error("Aborted"));
         };
 

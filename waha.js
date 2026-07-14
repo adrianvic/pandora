@@ -40,7 +40,7 @@ async function downloadFile(path, options = {}) {
 
   if (config.apiKey) headers['X-Api-Key'] = config.apiKey;
 
-  console.log(`[WAHA] ${options.method || 'GET'} ${url}`);
+//   console.log(`[WAHA] ${options.method || 'GET'} ${url}`);
 
   const response = await fetch(url, { ...options, headers });
 

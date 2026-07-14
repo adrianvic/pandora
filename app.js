@@ -94,7 +94,7 @@ function setupEventListeners() {
 
 function initWebSocket() {
     websocket.connect((data) => {
-        console.log('[WS] Received event:', data.event, data);
+        // console.log('[WS] Received event:', data.event, data);
         const ev = data.event;
         if (ev === 'message' || ev === 'message.any' || ev === 'message.ack') {
             handleIncomingMessage(data.payload);
@@ -113,7 +113,7 @@ function normalizeChatId(raw) {
 function handleIncomingMessage(msg) {
     if (!msg) return;
 
-    console.log('[WS] handleIncomingMessage payload:', msg);
+    // console.log('[WS] handleIncomingMessage payload:', msg);
 
     const rawChatId = msg.chatId || msg.from || (msg.chat && msg.chat.id);
     const msgChatId = normalizeChatId(rawChatId);
@@ -122,7 +122,7 @@ function handleIncomingMessage(msg) {
         return;
     }
 
-    console.log('[WS] Resolved msgChatId:', msgChatId, '| activeChatState:', activeChatState?.id);
+    // console.log('[WS] Resolved msgChatId:', msgChatId, '| activeChatState:', activeChatState?.id);
 
     if (activeChatState && activeChatState.id === msgChatId) {
         const msgId = normalizeChatId(msg.id) || msg.id;

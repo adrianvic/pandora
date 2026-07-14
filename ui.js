@@ -190,6 +190,7 @@ export const ui = {
         if (msg.hasMedia) {        
             const a = document.createElement('a');
             a.innerText = `[Request media]`;
+            a.target = "_blank";
             
             const clickListener = async (e) => {
                 a.removeEventListener('click', clickListener);
