@@ -7,6 +7,7 @@ import { compensateMessageOrdering, formatTime } from "./utils.js";
 let chatsState = [];
 let activeChatState = null;
 let userInfo;
+const messageTone = new Audio("./message.ogg");
 
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
@@ -123,6 +124,7 @@ function handleIncomingMessage(msg) {
     }
     
     // console.log('[WS] Resolved msgChatId:', msgChatId, '| activeChatState:', activeChatState?.id);
+    messageTone.play();
     
     if (activeChatState && activeChatState.id === msgChatId) {
         const msgId = normalizeChatId(msg.id) || msg.id;
