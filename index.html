@@ -105,16 +105,19 @@
                 </div>
 
                 <!-- Input Panel -->
-                <footer class="chat-input-panel">
+                <footer id="chat-input-panel" class="chat-input-panel">
                     <div class="input-actions-left">
-                        <button class="icon-btn send-btn mif-attachment mif-3x" title="Attach file"></button>
-                        <!-- <button class="icon-btn" title="Add emoji"><i data-lucide="smile"></i></button> -->
+                        <button id="chat-bottom-bar-btn" class="icon-btn mif-expand-less mif-3x" title="Expand"></button>
                     </div>
                     <form class="input-form" id="message-form">
                         <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
                         <button type="submit" class="send-btn mif-paper-plane mif-3x" id="send-button">
                         </button>
                     </form>
+                </footer>
+                <!-- Bottom Bar -->
+                <footer id="chat-bottom-bar" class="chat-expanded-panel alternate-panel collapsed">
+                    <button class="icon-btn send-btn mif-attachment mif-2x" title="Attach file"></button>
                 </footer>
             </div>
         </main>

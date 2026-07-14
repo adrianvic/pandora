@@ -63,6 +63,18 @@ function setupEventListeners() {
         sendMessage();
     });
 
+    elements.chatBottomBar.style.height = `${elements.chatInputPanel.offsetHeight}px`;
+    const observer = new ResizeObserver(() => {
+        elements.chatBottomBar.style.height =
+            `${elements.chatInputPanel.offsetHeight}px`;
+    });
+
+    observer.observe(elements.chatInputPanel);
+    elements.chatBottomBarBtn.addEventListener('click', ui.toggleChatBottomBar);
+    elements.chatBottomBar.addEventListener('click', (e) => {
+        if (e.target == e.currentTarget) ui.toggleChatBottomBar();
+    });
+
     elements.backToSidebarBtn.addEventListener('click', () => {
         elements.sidebar.classList.remove('hidden');
         elements.activeChatContainer.classList.add('hidden');

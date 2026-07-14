@@ -448,6 +448,8 @@ input:focus {
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
+    overflow: hidden;
 }
 
 .chat-header {
@@ -590,10 +592,42 @@ input:focus {
 
 /* Chat Input Panel */
 .chat-input-panel {
-    padding: 20px 24px;
+    padding: .8rem;
     display: flex;
     align-items: center;
     gap: 16px;
+}
+
+.alternate-panel {
+    background-color: var(--bg-secondary);
+    padding: .4em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: .6em;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateY(0);
+    transition: transform .3s;
+    flex: 1;
+}
+
+.alternate-panel.collapsed {
+    transform: translateY(100%);
+}
+
+.alternate-panel button {
+    border: medium solid white;
+    border-radius: 100%;
+    background-color: transparent;
+}
+
+.alternate-panel button:hover {
+    border-color: white;
+    background-color: white;
+    color: black;
 }
 
 .chat-input-panel button {

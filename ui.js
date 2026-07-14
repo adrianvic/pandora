@@ -28,7 +28,9 @@ export const elements = {
     inputSession: document.getElementById('settings-session'),
     inputApiKey: document.getElementById('settings-api-key'),
     loggedUserName: document.getElementById('pandora-username'),
-    // userIcon: document.getElementById('pandora-user-icon')
+    chatBottomBar: document.getElementById('chat-bottom-bar'),
+    chatBottomBarBtn: document.getElementById('chat-bottom-bar-btn'),
+    chatInputPanel: document.getElementById('chat-input-panel'),
 };
 
 export const ui = {
@@ -242,5 +244,9 @@ export const ui = {
         groupDiv.appendChild(bubble);
         
         elements.messagesContainer.appendChild(groupDiv);
+    },
+
+    toggleChatBottomBar() {
+        elements.chatBottomBar.classList.toggle("collapsed");
     }
 };
