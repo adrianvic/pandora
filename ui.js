@@ -102,7 +102,7 @@ export const ui = {
             const timeStr = formatTime(chat.timestamp || new Date());
             
             li.innerHTML = `
-            <div class="avatar"><img src="${picture.url}" alt="${initials}"></div>
+            <div class="avatar"><img src="${picture.url ? picture.url : ""}" alt="${initials}"></div>
             <div class="chat-item-info">
                 <div class="chat-item-meta">
                     <span class="chat-item-name">${chat.name}</span>
