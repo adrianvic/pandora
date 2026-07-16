@@ -3,7 +3,6 @@ import { waha } from "./waha.js";
 import { config } from "./config.js";
 import { getChatPicture, getMessage, getMedia } from "./storage.js";
 
-// DOM Selector Cache
 export const elements = {
     chatList: document.getElementById('chat-list'),
     chatsLoader: document.getElementById('chats-loader'),
@@ -18,7 +17,6 @@ export const elements = {
     messagesContainer: document.getElementById('messages-container'),
     messageForm: document.getElementById('message-form'),
     messageInput: document.getElementById('message-input'),
-    // backToSidebarBtn: document.getElementById('back-to-sidebar'),
     backToSidebarBtn: document.querySelector('.chat-header'),
     sidebar: document.querySelector('.sidebar'),
     settingsModal: document.getElementById('settings-modal'),

@@ -745,7 +745,7 @@ input:focus {
     }
 
     .message-group {
-        max-width: 100%;
+        max-width: 90%;
     }
 
     .message-image-attachement {
