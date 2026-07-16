@@ -120,7 +120,7 @@ export const ui = {
             elements.chatList.appendChild(li);
         }
     },
-
+    
     async updateChatInChatList(msg) {
         const li = document.getElementById(msg.from);
         li.querySelector(".chat-item-msg").innerText = msg.body;
@@ -173,12 +173,18 @@ export const ui = {
     generateMessage(msg, activeChatName, userID, chatId, isLocal = false) {
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
+        function getPrevMessageElem() {
+            return elements.messagesContainer.lastElementChild;
+        }
+        
+        const prevMsgEl = getPrevMessageElem();
+        
         const groupDiv = document.createElement('div');
         groupDiv.className = `message-group ${isOutgoing ? 'outgoing' : 'incoming'}`;
         groupDiv.id = msg.id;
         groupDiv.dataset.from = msg.participant || msg.from;
         
-        const senderName = isOutgoing ? userID : (msg._data.notifyName || activeChatName);
+        const senderName = isOutgoing ? userID : (msg._data.notifyName || msg.from);
         const timeStr = formatTime(msg.timestamp || new Date());
         
         let statusCheck = '';
@@ -196,8 +202,16 @@ export const ui = {
         
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
+
+        let prevUid;
         
-        if (!isOutgoing) {
+        if (msg.participant) {
+            prevUid = msg.participant;
+        } else {
+            prevUid = msg.from;
+        }
+
+        if (!isOutgoing && (!prevMsgEl || prevUid !== prevMsgEl.dataset.from)) {
             const senderEl = document.createElement('span');
             senderEl.className = 'message-sender';
             senderEl.textContent = senderName;
@@ -239,7 +253,8 @@ export const ui = {
                         const img = document.createElement('img');
                         img.classList.add('message-image-attachement');
                         img.src = objectUrl;
-                        a.appendChild(img);
+                        bubble.after(img);
+                        bubble.querySelector('.message-content').remove();
                     } else {
                         e.target.textContent = filename || `Download ${mediaMsg.media.filename}`;
                     }
@@ -261,13 +276,6 @@ export const ui = {
         meta.innerHTML = `<span>${timeStr}</span>${statusCheck}`;
         
         bubble.appendChild(meta);
-        let uid = "";
-        
-        function getPrevMessageElem() {
-            return elements.messagesContainer.lastElementChild;
-        }
-        
-        const prevMsgEl = getPrevMessageElem();
         
         if (isOutgoing) {
             if (prevMsgEl && prevMsgEl.classList.contains('outgoing')) {
@@ -275,13 +283,11 @@ export const ui = {
                 groupDiv.appendChild(document.createElement('div')).className = 'message-indicator';
             }
         } else if (msg.participant) {
-            uid = msg.participant;
-            if (!prevMsgEl || uid !== prevMsgEl.dataset.from) {
+            if (!prevMsgEl || prevUid !== prevMsgEl.dataset.from) {
                 groupDiv.appendChild(document.createElement('div')).className = 'message-indicator';
             }
         } else {
-            uid = msg.from;
-            if (!prevMsgEl || uid !== prevMsgEl.dataset.from) {
+            if (!prevMsgEl || prevUid !== prevMsgEl.dataset.from) {
                 groupDiv.appendChild(document.createElement('div')).className = 'message-indicator';
             }
         }
@@ -308,7 +314,7 @@ export const ui = {
         } else {
             statusCheck = '<span class="mif-done" style="width:14px; height:14px;"></span>';
         }
-
+        
         document.getElementById(id).querySelector('.message-meta').outerHTML = statusCheck;
     },
     
