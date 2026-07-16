@@ -3,14 +3,14 @@ import { waha } from "./waha.js";
 import { ui, elements } from "./ui.js";
 import { websocket } from "./websocket.js";
 import { compensateMessageOrdering, formatTime } from "./utils.js";
-import { fetchChats, getAppUser, getChatMessages, getChats } from "./storage.js";
+import { fetchChats, getAppUser, getChatMessages, getChats, updateOnlineStatus } from "./storage.js";
 import { upsertMessages } from "./db.js";
 
 let activeChatState = null;
-let userInfo;
 const messageTone = new Audio("./message.ogg");
 
 document.addEventListener('DOMContentLoaded', async () => {
+    await updateOnlineStatus();
     setupEventListeners();
     try {
         elements.loggedUserName.textContent = await getAppUser().pushName;
@@ -137,7 +137,7 @@ function handleIncomingMessage(msg) {
     }
     
     // console.log('[WS] Resolved msgChatId:', msgChatId, '| activeChatState:', activeChatState?.id);
-    if (msg.fromMe) {
+    if (!msg.fromMe) {
         messageTone.play();
     }
     
@@ -145,7 +145,7 @@ function handleIncomingMessage(msg) {
         const msgId = normalizeChatId(msg.id) || msg.id;
         const exists = document.getElementById(msgId);
         if (!exists) {
-            ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name, userInfo.id);
+            ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name, getAppUser().id);
             ui.scrollToBottom();
         }
     }
@@ -215,7 +215,7 @@ async function sendMessage() {
         status: 'sending'
     };
     
-    ui.appendSingleMessage(tempMsg, activeChatState.name, userInfo.id);
+    ui.appendSingleMessage(tempMsg, activeChatState.name, getAppUser().id);
     ui.scrollToBottom();
     
     try {
@@ -284,11 +284,12 @@ async function sendFileMessage(file) {
             }
         };
         
-        ui.appendSingleMessage(tempMsg, activeChatState.name, userInfo.id, activeChatState.id, true);
+        ui.appendSingleMessage(tempMsg, activeChatState.name, getAppUser().id, activeChatState.id, true);
         ui.scrollToBottom();
         
         const result = await waha.sendFileMessage(activeChatState.id, file);
-        ui.updateMessageTick(tempId, result.status);
+        ui.removeChatMessage(tempId);
+        ui.appendSingleMessage(result.id, activeChatState.name, getAppUser().id, activeChatState.id);
     } catch (error) {
         console.error(error.message);
     }

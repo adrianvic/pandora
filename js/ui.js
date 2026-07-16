@@ -110,7 +110,7 @@ export const ui = {
                     <span class="chat-item-time">${timeStr}</span>
                 </div>
                 <div class="chat-item-preview">
-                    <span class="chat-item-msg">${chat.lastMessage || 'No messages yet'}</span>
+                    <span class="chat-item-msg" data-chatid="${chat.id}">${chat.lastMessage || 'No messages yet'}</span>
                     ${hasUnread ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
                 </div>
             </div>
@@ -122,8 +122,10 @@ export const ui = {
     },
     
     async updateChatInChatList(msg) {
-        const li = document.getElementById(msg.from);
-        li.querySelector(".chat-item-msg").innerText = msg.body;
+        const span = document.querySelector(`.chat-item-msg[data-chatid="${msg.from}"]`);
+        if (span) {
+            span.innerText = msg.body;
+        }
     },
     
     /**
@@ -170,7 +172,6 @@ export const ui = {
     },
     
     generateMessage(msg, activeChatName, userID, chatId, isLocal = false) {
-        console.log(msg);
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         function getPrevMessageElem() {
@@ -239,6 +240,11 @@ export const ui = {
                     a.removeEventListener('click', clickListener);
                     a.innerText = `[Downloading]`;
                     const mediaMsg = msg.media ? msg : await getMessage(chatId, msg.id, true);
+                    if (!mediaMsg.media.url) {
+                        a.addEventListener('click', clickListener);
+                        a.innerText = `[Error, click to try again]`
+                        return;
+                    }
                     const url = new URL(mediaMsg.media.url);
                     const reqID = url.pathname.split('/').filter(Boolean).pop();
                     
@@ -319,5 +325,10 @@ export const ui = {
     
     toggleChatBottomBar() {
         elements.chatBottomBar.classList.toggle("collapsed");
+    },
+
+    removeChatMessage(msgId) {
+        const message = document.getElementById(msgId);
+        if (message) message.remove();
     }
 };

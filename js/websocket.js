@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { isOnline, updateOnlineStatus } from "./storage.js";
 
 let socket = null;
 let reconnectTimer = null;
@@ -6,6 +7,7 @@ let currentOnMessageCallback = null;
 
 export const websocket = {
     connect(onMessageCallback) {
+        if (!isOnline) return;
         currentOnMessageCallback = onMessageCallback;
 
         this.disconnect(false);
@@ -64,6 +66,7 @@ export const websocket = {
                 socket = null;
                 
                 reconnectTimer = setTimeout(() => {
+                    updateOnlineStatus();
                     this.connect(currentOnMessageCallback);
                 }, 5000);
             };
