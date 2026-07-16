@@ -92,6 +92,7 @@ export const ui = {
         }
         
         for (const chat of chats) {
+            console.log(chat);
             const li = document.createElement('li');
             li.className = `chat-item ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
             li.dataset.id = chat.id;
@@ -118,6 +119,11 @@ export const ui = {
             li.addEventListener('click', () => onChatSelect(chat));
             elements.chatList.appendChild(li);
         }
+    },
+
+    async updateChatInChatList(msg) {
+        const li = document.getElementById(msg.from);
+        li.querySelector(".chat-item-msg").innerText = msg.body;
     },
     
     /**

@@ -115,6 +115,8 @@ function handleIncomingMessage(msg) {
     if (!msg) return;
     
     // console.log('[WS] handleIncomingMessage payload:', msg);
+
+    ui.updateChatInChatList(msg);
     
     const rawChatId = msg.chatId || msg.from || (msg.chat && msg.chat.id);
     const msgChatId = normalizeChatId(rawChatId);
@@ -124,7 +126,9 @@ function handleIncomingMessage(msg) {
     }
     
     // console.log('[WS] Resolved msgChatId:', msgChatId, '| activeChatState:', activeChatState?.id);
-    messageTone.play();
+    if (msg.fromMe) {
+        messageTone.play();
+    }
     
     if (activeChatState && activeChatState.id === msgChatId) {
         const msgId = normalizeChatId(msg.id) || msg.id;

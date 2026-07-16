@@ -73,7 +73,7 @@ export const waha = {
     },
 
     async getChats() {
-        const data = await request(`/api/${config.session}/chats?sortBy=conversationTimestamp`);
+        const data = await request(`/api/${config.session}/chats`);
         return data.map(chat => {
             let chatId = chat.id;
             if (chatId && typeof chatId === "object") {
