@@ -3,20 +3,31 @@ import { waha } from "./waha.js";
 import { ui, elements } from "./ui.js";
 import { websocket } from "./websocket.js";
 import { compensateMessageOrdering, formatTime } from "./utils.js";
+import { fetchChats, getAppUser, getChatMessages, getChats } from "./storage.js";
+import { upsertMessages } from "./db.js";
 
-let chatsState = [];
 let activeChatState = null;
 let userInfo;
 const messageTone = new Audio("./message.ogg");
 
-// Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
     try {
-        userInfo = await waha.getMyInfo();
-        fetchChats();
+        elements.loggedUserName.textContent = await getAppUser().pushName;
+        loadChats();
         checkWahaStatus();
         initWebSocket();
+    } finally {
+        elements.chatsLoader.classList.add('hidden');
+    }
+});
+
+function loadChats() {
+    try {
+        elements.chatsLoader.classList.remove('hidden');
+        fetchChats().then(() => { 
+            ui.renderChatList(getChats(), activeChatState, selectChat);
+        });
     } catch (error) {
         console.error('Failed to load chats:', error);
         elements.chatList.innerHTML = `
@@ -31,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } finally {
         elements.chatsLoader.classList.add('hidden');
     }
-});
+}
 
 function setupEventListeners() {
     document.addEventListener('keydown', (e) => {
@@ -43,16 +54,15 @@ function setupEventListeners() {
     
     elements.refreshChatsBtn.addEventListener('click', () => {
         elements.refreshChatsBtn.classList.add('spinning');
-        fetchChats().finally(() => {
-            setTimeout(() => {
-                elements.refreshChatsBtn.classList.remove('spinning');
-            }, 600);
-        });
+        loadChats()
+        setTimeout(() => {
+            elements.refreshChatsBtn.classList.remove('spinning');
+        }, 600);
     });
     
     elements.chatSearch.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
-        const filtered = chatsState.filter(chat => 
+        const filtered = getChats().filter(chat => 
             chat.name.toLowerCase().includes(query)
         );
         ui.renderChatList(filtered, activeChatState, selectChat);
@@ -99,6 +109,7 @@ function initWebSocket() {
         const ev = data.event;
         if (ev === 'message' || ev === 'message.any' || ev === 'message.ack') {
             handleIncomingMessage(data.payload);
+            upsertMessages([data.payload]);
         }
     });
 }
@@ -115,7 +126,7 @@ function handleIncomingMessage(msg) {
     if (!msg) return;
     
     // console.log('[WS] handleIncomingMessage payload:', msg);
-
+    
     ui.updateChatInChatList(msg);
     
     const rawChatId = msg.chatId || msg.from || (msg.chat && msg.chat.id);
@@ -139,48 +150,15 @@ function handleIncomingMessage(msg) {
         }
     }
     
-    const chatIndex = chatsState.findIndex(c => c.id === msgChatId);
+    const chatIndex = getChats().findIndex(c => c.id === msgChatId);
     if (chatIndex !== -1) {
-        const chat = chatsState[chatIndex];
+        const chat = getChats()[chatIndex];
         chat.lastMessage = msg.body || msg.text || 'Media message';
         chat.timestamp = msg.timestamp ? (msg.timestamp * 1000) : Date.now();
         
         if (!msg.fromMe && (!activeChatState || activeChatState.id !== msgChatId)) {
             chat.unreadCount = (chat.unreadCount || 0) + 1;
-        }
-        
-        chatsState.sort((a, b) => {
-            const tA = new Date(a.timestamp).getTime();
-            const tB = new Date(b.timestamp).getTime();
-            return tB - tA;
-        });
-        
-        // ui.renderChatList(chatsState, activeChatState, selectChat);
-    } else {
-        // fetchChats();
-    }
-}
-
-async function fetchChats() {
-    try {
-        elements.loggedUserName.textContent = userInfo.pushName;
-        // elements.userIcon.innerText = userInfo.pushName[0];
-        elements.chatsLoader.classList.remove('hidden');
-        chatsState = await waha.getChats();
-        ui.renderChatList(chatsState, activeChatState, selectChat);
-    } catch (error) {
-        console.error('Failed to load chats:', error);
-        elements.chatList.innerHTML = `
-            <li class="loading-chats" style="color: var(--text-primary); text-align: center; padding: 20px;">
-                <p>Connection to WAHA failed.</p>
-                <p style="font-size: 0.75rem; color: var(--text-primary); margin-top: 8px;">
-                    Ensure WAHA server is running and CORS is enabled, or click Settings to configure.
-                </p>
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">${error.message}</p>
-            </li>
-        `;
-    } finally {
-        elements.chatsLoader.classList.add('hidden');
+        }        
     }
 }
 
@@ -213,9 +191,9 @@ async function selectChat(chat) {
     }
     
     try {
-        const rawMessages = await waha.getChatMessages(chat.id);
+        const rawMessages = await getChatMessages(chat.id);
         const processedMessages = compensateMessageOrdering(rawMessages);
-        ui.renderMessages(processedMessages, chat.name, userInfo.id, chat.id);
+        ui.renderMessages(processedMessages, chat.name, getAppUser().id, chat.id);
     } catch (error) {
         console.error('Failed to load messages:', error);
         elements.messagesContainer.innerHTML = '<div class="loading-chats">Error loading messages</div>';
@@ -276,13 +254,6 @@ async function sendMessage() {
         
         activeChatState.lastMessage = text;
         activeChatState.timestamp = new Date();
-        
-        chatsState.sort((a, b) => {
-            const tA = new Date(a.timestamp).getTime();
-            const tB = new Date(b.timestamp).getTime();
-            return tB - tA;
-        });
-        // ui.renderChatList(chatsState, activeChatState, selectChat);
     } catch (error) {
         console.error('Failed to send message:', error);
         const tempBubble = document.getElementById(tempMsg.id);
@@ -337,7 +308,7 @@ function saveSettings() {
         elements.inputApiKey.value
     );
     ui.toggleModal(false);
-    fetchChats();
+    loadChats();
     checkWahaStatus();
     initWebSocket();
 }

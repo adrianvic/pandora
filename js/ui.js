@@ -1,6 +1,7 @@
 import { formatTime } from "./utils.js";
 import { waha } from "./waha.js";
 import { config } from "./config.js";
+import { getChatPicture, getMessage, getMedia } from "./storage.js";
 
 // DOM Selector Cache
 export const elements = {
@@ -92,12 +93,11 @@ export const ui = {
         }
         
         for (const chat of chats) {
-            console.log(chat);
             const li = document.createElement('li');
             li.className = `chat-item ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
             li.dataset.id = chat.id;
             
-            const picture = await waha.getChatPicture(chat.id);
+            const picture = await getChatPicture(chat.id);
             const initials = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
             const hasUnread = chat.unreadCount && chat.unreadCount > 0;
             const timeStr = formatTime(chat.timestamp || new Date());
@@ -141,7 +141,6 @@ export const ui = {
             this.appendSingleMessage(msg, activeChatName, userID, chatId);
         }
         
-        lucide.createIcons();
         this.scrollToBottom();
     },
     
@@ -171,6 +170,7 @@ export const ui = {
     },
     
     generateMessage(msg, activeChatName, userID, chatId, isLocal = false) {
+        console.log(msg);
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         function getPrevMessageElem() {
@@ -238,12 +238,11 @@ export const ui = {
                 const clickListener = async (e) => {
                     a.removeEventListener('click', clickListener);
                     a.innerText = `[Downloading]`;
-                    const mediaMsg = msg.media ? msg : await waha.getSingleChatMessage(chatId, msg.id, true);
-                    console.log(mediaMsg.media.url);
+                    const mediaMsg = msg.media ? msg : await getMessage(chatId, msg.id, true);
                     const url = new URL(mediaMsg.media.url);
                     const reqID = url.pathname.split('/').filter(Boolean).pop();
                     
-                    const { blob, filename } = await waha.downloadMedia(reqID);
+                    const { blob, filename } = await getMedia(reqID);
                     
                     const objectUrl = URL.createObjectURL(blob);
                     e.target.href = objectUrl;
