@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await updateOnlineStatus();
     setupEventListeners();
     try {
-        elements.loggedUserName.textContent = await getAppUser().pushName;
+        elements.loggedUserName.textContent = (await getAppUser()).pushName;
         loadChats();
         checkWahaStatus();
         initWebSocket();
@@ -122,7 +122,7 @@ function normalizeChatId(raw) {
     return raw;
 }
 
-function handleIncomingMessage(msg) {
+async function handleIncomingMessage(msg) {
     if (!msg) return;
     
     // console.log('[WS] handleIncomingMessage payload:', msg);
@@ -145,7 +145,7 @@ function handleIncomingMessage(msg) {
         const msgId = normalizeChatId(msg.id) || msg.id;
         const exists = document.getElementById(msgId);
         if (!exists) {
-            ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name, getAppUser().id);
+            ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name, (await getAppUser()).id);
             ui.scrollToBottom();
         }
     }
@@ -193,7 +193,7 @@ async function selectChat(chat) {
     try {
         const rawMessages = await getChatMessages(chat.id);
         const processedMessages = compensateMessageOrdering(rawMessages);
-        ui.renderMessages(processedMessages, chat.name, getAppUser().id, chat.id);
+        ui.renderMessages(processedMessages, chat.name, (await getAppUser()).id, chat.id);
     } catch (error) {
         console.error('Failed to load messages:', error);
         elements.messagesContainer.innerHTML = '<div class="loading-chats">Error loading messages</div>';
@@ -215,7 +215,7 @@ async function sendMessage() {
         status: 'sending'
     };
     
-    ui.appendSingleMessage(tempMsg, activeChatState.name, getAppUser().id);
+    ui.appendSingleMessage(tempMsg, activeChatState.name, (await getAppUser()).id);
     ui.scrollToBottom();
     
     try {
@@ -284,12 +284,12 @@ async function sendFileMessage(file) {
             }
         };
         
-        ui.appendSingleMessage(tempMsg, activeChatState.name, getAppUser().id, activeChatState.id, true);
+        ui.appendSingleMessage(tempMsg, activeChatState.name, (await getAppUser()).id, activeChatState.id, true);
         ui.scrollToBottom();
         
         const result = await waha.sendFileMessage(activeChatState.id, file);
         ui.removeChatMessage(tempId);
-        ui.appendSingleMessage(result.id, activeChatState.name, getAppUser().id, activeChatState.id);
+        ui.appendSingleMessage(result.id, activeChatState.name, (await getAppUser()).id, activeChatState.id);
     } catch (error) {
         console.error(error.message);
     }

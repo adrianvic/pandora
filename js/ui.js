@@ -122,7 +122,7 @@ export const ui = {
     },
     
     async updateChatInChatList(msg) {
-        const span = document.querySelector(`.chat-item-msg[data-chatid="${msg.from}"]`);
+        const span = document.querySelector(`.chat-item-msg[data-chatid="${msg.fromMe ? msg.to : msg.from}"]`);
         if (span) {
             span.innerText = msg.body;
         }
@@ -240,7 +240,7 @@ export const ui = {
                     a.removeEventListener('click', clickListener);
                     a.innerText = `[Downloading]`;
                     const mediaMsg = msg.media ? msg : await getMessage(chatId, msg.id, true);
-                    if (!mediaMsg.media.url) {
+                    if (!mediaMsg || !mediaMsg?.media.url) {
                         a.addEventListener('click', clickListener);
                         a.innerText = `[Error, click to try again]`
                         return;
