@@ -1,7 +1,7 @@
 import { formatTime } from "./utils.js";
 import { waha } from "./waha.js";
 import { config } from "./config.js";
-import { getChatPicture, getMessage, getMedia } from "./storage.js";
+import { getChatPicture, getMessage, getMedia, getMoreChatMessages } from "./storage.js";
 
 export const elements = {
     chatList: document.getElementById('chat-list'),
@@ -136,19 +136,48 @@ export const ui = {
             elements.messagesContainer.innerHTML = '<div class="loading-chats">No messages. Say hello!</div>';
             return;
         }
+
+        const loadMore = document.createElement("button");
+        loadMore.classList.add("load-more-btn");
+        loadMore.innerText = "Load more";
+        loadMore.addEventListener('click', () => {
+            this.loadMoreMessages(chatId, userID);
+        });
+        elements.messagesContainer.appendChild(loadMore);
         
         for (const msg of messages) {
-            this.appendSingleMessage(msg, activeChatName, userID, chatId);
+            this.appendSingleMessage(msg, userID, chatId);
         }
         
         this.scrollToBottom();
+    },
+
+    async loadMoreMessages(chatId, userId) {
+        const oldest = document.querySelector('.message-group:first-of-type');
+        const oldestTimestamp = oldest.dataset.timestamp;
+        const oldestId = oldest.id;
+        console.log(oldest)
+        console.log(oldestId)
+        console.log(oldestTimestamp)
+
+        const loadMoreButton = document.querySelector('.load-more-btn');
+        loadMoreButton.removeEventListener('click', this.loadMoreMessages);
+
+        const msgs = await getMoreChatMessages(chatId, oldestTimestamp, oldestId);
+        msgs.shift();
+        
+        msgs.forEach(async msg => {
+            loadMoreButton.after(this.generateMessage(msg, userId, chatId));
+        });
+
+        loadMoreButton.addEventListener('click', this.loadMoreMessages);
     },
     
     /**
     * Append a single message (used for optimistic updates immediately upon sending)
     */
-    appendSingleMessage(msg, activeChatName, userID, chatId, isLocal = false) {
-        elements.messagesContainer.appendChild(this.generateMessage(msg, activeChatName, userID, chatId, isLocal))
+    appendSingleMessage(msg, userID, chatId, isLocal = false) {
+        elements.messagesContainer.appendChild(this.generateMessage(msg, userID, chatId, isLocal))
     },
     
     generateTempMessageLink(msg) {
@@ -169,7 +198,7 @@ export const ui = {
         return a;
     },
     
-    generateMessage(msg, activeChatName, userID, chatId, isLocal = false) {
+    generateMessage(msg, userID, chatId, isLocal = false) {
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         function getPrevMessageElem() {
@@ -181,6 +210,7 @@ export const ui = {
         const groupDiv = document.createElement('div');
         groupDiv.className = `message-group ${isOutgoing ? 'outgoing' : 'incoming'}`;
         groupDiv.id = msg.id;
+        groupDiv.dataset.timestamp = msg.timestamp;
         groupDiv.dataset.from = msg.participant || msg.from;
         
         const senderName = isOutgoing ? userID : (msg._data.notifyName || msg.from);

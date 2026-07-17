@@ -69,7 +69,7 @@ async function downloadFile(path, options = {}) {
 
 export const waha = {
     async getVersion() {
-        return request('/api/version');
+        return await request('/api/version');
     },
 
     async getChats() {
@@ -89,8 +89,9 @@ export const waha = {
         });
     },
 
-    async getChatMessages(chatId) {
-        return request(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40`);
+    async getChatMessages(chatId, beforeTimestamp) {
+        console.log(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40&sortBy=timestamp${beforeTimestamp ? `&filter.timestamp.gte=${beforeTimestamp}` : "" }`);
+        return request(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40${beforeTimestamp ? `&filter.timestamp.lte=${beforeTimestamp}` : "" }`);
     },
 
     async getSingleChatMessage(chatId, messageId, downladMedia) {

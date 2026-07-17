@@ -30,6 +30,7 @@ function openDb() {
         msgStore = db.createObjectStore("messages", { keyPath: "id" });
         msgStore.createIndex("from", "from", { unique: false });
         msgStore.createIndex("fingerprint", ["from", "timestamp"], { unique: false });
+        msgStore.createIndex("cidTimestampId", ["chatId", "timestamp", "id"], { unique: false });
       } else {
         msgStore = tx.objectStore("messages");
       }
@@ -164,6 +165,39 @@ export async function loadLatestMessages(chatId, limit = 50) {
       if (!cursor) return resolve(out);
 
       out.push(cursor.value);
+      if (out.length >= limit) resolve(out);
+      else cursor.continue();
+    };
+
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+export async function loadOlderMessages(chatId, oldestTimestamp, oldestId, limit = 50) {
+  const db = await openDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("messages", "readonly");
+    const store = tx.objectStore("messages");
+    const idx = store.index("cidTimestampId");
+
+    const out = [];
+
+    const parsedTimestamp = isNaN(oldestTimestamp) ? oldestTimestamp : Number(oldestTimestamp);
+
+    const range = IDBKeyRange.bound(
+      [chatId, -Infinity, ""],
+      [chatId, parsedTimestamp, oldestId],
+      false,
+      false
+    );
+
+    idx.openCursor(range, "prev").onsuccess = (e) => {
+      const cursor = e.target.result;
+      if (!cursor) return resolve(out);
+
+      out.push(cursor.value);
+
       if (out.length >= limit) resolve(out);
       else cursor.continue();
     };

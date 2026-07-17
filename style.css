@@ -506,6 +506,18 @@ input:focus {
         radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 40%);
 }
 
+.load-more-btn {
+    margin: auto;
+    background-color: var(--bg-secondary);
+    padding: .4em;
+    cursor: pointer;
+}
+
+.load-more-btn:hover {
+    background-color: var(--text-primary);
+    color: var(--bg-main);
+}
+
 .message-group {
     display: flex;
     flex-direction: column;

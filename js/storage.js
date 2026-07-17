@@ -1,4 +1,4 @@
-import { loadChatsSorted, loadLatestMessages, loadMedia, upsertChats, upsertMedia, upsertMessages } from "./db.js";
+import { loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db.js";
 import { waha } from "./waha.js";
 
 let online = false;
@@ -104,6 +104,14 @@ export async function getChatMessages(chatId) {
     return newMessages;
   } else {
     return await loadLatestMessages(chatId);
+  }
+}
+
+export async function getMoreChatMessages(chatId, oldestTimestamp, oldestId, limit = 50) {
+  if (online) {
+    return waha.getChatMessages(chatId, oldestTimestamp);
+  } else {
+    return await loadOlderMessages(chatId, oldestTimestamp, oldestId);
   }
 }
 
