@@ -274,7 +274,7 @@ async function closeActiveChat(isPopState = false) {
         setTimeout(() => {
             if (!activeChatState) {
                 elements.appContainer.classList.add('no-active-chat');
-                ui.toggleChatState(false);
+                // ui.toggleChatState(false);
             }
         }, 350);
     } else {
@@ -282,9 +282,9 @@ async function closeActiveChat(isPopState = false) {
     }
     
     if (!isPopState) {
-        if (window.location.hash.startsWith('#chat-')) {
-            history.back();
-        }
+        // if (window.location.hash.startsWith('#chat-')) {
+        //     history.back();
+        // }
     }
 }
 
