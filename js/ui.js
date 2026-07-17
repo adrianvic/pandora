@@ -1,5 +1,6 @@
 import { formatTime, normalizeId } from "./utils.js";
 import { getChatPicture, getMessage, getMedia, getMoreChatMessages } from "./storage.js";
+import { getCurrentChat } from "./app.js";
 
 export const elements = {
     chatList: document.getElementById('chat-list'),
@@ -43,7 +44,7 @@ export const ui = {
             }
         })
     },
-
+    
     /**
     * Switch view state when a contact chat is opened or closed
     */
@@ -80,7 +81,6 @@ export const ui = {
     
     async renderChatList(chats, activeChat, onChatSelect) {
         elements.chatList.innerHTML = '';
-        
         chats.sort((a, b) => b.timestamp - a.timestamp);
         
         if (chats.length === 0) {
@@ -93,34 +93,61 @@ export const ui = {
             li.className = `chat-item ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
             li.dataset.id = chat.id;
             
-            const picture = await getChatPicture(chat.id);
             const initials = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
             const hasUnread = chat.unreadCount && chat.unreadCount > 0;
             const timeStr = formatTime(chat.timestamp || new Date());
             
             li.innerHTML = `
-            <div class="avatar"><img src="${picture.url ? picture.url : ""}" alt="${initials}"></div>
-            <div class="chat-item-info">
-                <div class="chat-item-meta">
-                    <span class="chat-item-name">${chat.name}</span>
-                    <span class="chat-item-time">${timeStr}</span>
-                </div>
-                <div class="chat-item-preview">
-                    <span class="chat-item-msg" data-chatid="${chat.id}">${chat.lastMessage || 'No messages yet'}</span>
-                    ${hasUnread ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
-                </div>
-            </div>
-        `;
+      <div class="avatar">
+        <img
+          src=""
+          alt="${initials}"
+          data-chat-avatar="${chat.id}"
+        />
+      </div>
+      <div class="chat-item-info">
+        <div class="chat-item-meta">
+          <span class="chat-item-name">${chat.name}</span>
+          <span class="chat-item-time">${timeStr}</span>
+        </div>
+        <div class="chat-item-preview">
+          <span class="chat-item-msg" data-chatid="${chat.id}">
+            ${chat.lastMessage || 'No messages yet'}
+          </span>
+          ${hasUnread ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
+        </div>
+      </div>
+    `;
             
             li.addEventListener('click', () => onChatSelect(chat));
             elements.chatList.appendChild(li);
+            
+            (async () => {
+                try {
+                    const picture = await getChatPicture(chat.id);
+                    const img = li.querySelector(`img[data-chat-avatar="${chat.id}"]`);
+                    if (img) img.src = picture.url ? picture.url : '';
+                } catch (e) {
+                }
+            })();
         }
     },
     
     async updateChatInChatList(msg) {
-        const span = document.querySelector(`.chat-item-msg[data-chatid="${msg.fromMe ? msg.to : msg.from}"]`);
-        if (span) {
-            span.innerText = msg.body;
+        const chat = document.querySelector(`.chat-item[data-id="${msg.fromMe ? msg.to : msg.from}"]`);
+        
+        if (chat) {
+            const messageItem = chat.querySelector('.chat-item-msg');
+            const time = chat.querySelector('.chat-item-time')
+            messageItem.innerText = msg.body || msg.text || 'Media message';
+            time.innerText = msg.timestamp ? formatTime(msg.timestamp) : Date.now();
+            
+            const activeChatState = getCurrentChat();
+            
+            if (!msg.fromMe && (!activeChatState || activeChatState.id !== (msg.fromMe ? msg.to : msg.from))) {
+                const unreadBadge = chat.querySelector('.unread-badge');
+                unreadBadge.innerText = (Number(unreadBadge.innerHTML) || 0) + 1;
+            }
         }
     },
     
@@ -134,7 +161,7 @@ export const ui = {
             elements.messagesContainer.innerHTML = '<div class="loading-chats">No messages. Say hello!</div>';
             return;
         }
-
+        
         const loadMore = document.createElement("button");
         loadMore.classList.add("load-more-btn");
         loadMore.innerText = "Load more";
@@ -149,7 +176,7 @@ export const ui = {
         
         this.scrollToBottom();
     },
-
+    
     async loadMoreMessages(chatId, userId) {
         const oldest = document.querySelector('.message-group:first-of-type');
         const oldestTimestamp = oldest.dataset.timestamp;
@@ -157,17 +184,17 @@ export const ui = {
         console.log(oldest)
         console.log(oldestId)
         console.log(oldestTimestamp)
-
+        
         const loadMoreButton = document.querySelector('.load-more-btn');
         loadMoreButton.removeEventListener('click', this.loadMoreMessages);
-
+        
         const msgs = await getMoreChatMessages(chatId, oldestTimestamp, oldestId);
         msgs.shift();
         
         msgs.forEach(async msg => {
             loadMoreButton.after(this.generateMessage(msg, userId, chatId));
         });
-
+        
         loadMoreButton.addEventListener('click', this.loadMoreMessages);
     },
     
@@ -229,7 +256,7 @@ export const ui = {
         
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-
+        
         let prevUid;
         
         if (msg.participant) {
@@ -237,7 +264,7 @@ export const ui = {
         } else {
             prevUid = msg.from;
         }
-
+        
         if (!isOutgoing && (!prevMsgEl || prevUid !== prevMsgEl.dataset.from)) {
             const senderEl = document.createElement('span');
             senderEl.className = 'message-sender';
@@ -310,17 +337,18 @@ export const ui = {
         
         if (isOutgoing) {
             if (prevMsgEl && prevMsgEl.classList.contains('outgoing')) {
+                groupDiv.classList.add('same-sender');
             } else {
                 groupDiv.appendChild(document.createElement('div')).className = 'message-indicator';
             }
         } else if (msg.participant) {
             if (!prevMsgEl || prevUid !== prevMsgEl.dataset.from) {
                 groupDiv.appendChild(document.createElement('div')).className = 'message-indicator';
-            }
+            } else groupDiv.classList.add('same-sender');
         } else {
             if (!prevMsgEl || prevUid !== prevMsgEl.dataset.from) {
                 groupDiv.appendChild(document.createElement('div')).className = 'message-indicator';
-            }
+            } else groupDiv.classList.add('same-sender');
         }
         
         groupDiv.appendChild(bubble);
@@ -352,7 +380,7 @@ export const ui = {
     toggleChatBottomBar() {
         elements.chatBottomBar.classList.toggle("collapsed");
     },
-
+    
     removeChatMessage(msgId) {
         const message = document.getElementById(msgId);
         if (message) message.remove();

@@ -26,9 +26,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function loadChats() {
+    elements.chatsLoader.classList.remove('hidden');
     try {
-        elements.chatsLoader.classList.remove('hidden');
-        fetchChats().then(() => { 
+        fetchChats().then(async () => { 
             ui.renderChatList(getChats(), activeChatState, selectChat);
             
             const hash = window.location.hash;
@@ -181,8 +181,6 @@ function initWebSocket() {
 async function handleIncomingMessage(msg) {
     if (!msg) return;
     
-    // console.log('[WS] handleIncomingMessage payload:', msg);
-    
     ui.updateChatInChatList(msg);
     
     const rawChatId = msg.chatId || msg.from || (msg.chat && msg.chat.id);
@@ -201,20 +199,12 @@ async function handleIncomingMessage(msg) {
         const msgId = normalizeId(msg.id) || msg.id;
         const exists = document.getElementById(msgId);
         if (!exists) {
+            const scrolled = elements.messagesContainer.scrollTop == elements.messagesContainer.scrollTopMax;
             ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name, (await getAppUser()).id);
-            ui.scrollToBottom();
+            if (scrolled) {
+                ui.scrollToBottom();
+            } 
         }
-    }
-    
-    const chatIndex = getChats().findIndex(c => c.id === msgChatId);
-    if (chatIndex !== -1) {
-        const chat = getChats()[chatIndex];
-        chat.lastMessage = msg.body || msg.text || 'Media message';
-        chat.timestamp = msg.timestamp ? (msg.timestamp * 1000) : Date.now();
-        
-        if (!msg.fromMe && (!activeChatState || activeChatState.id !== msgChatId)) {
-            chat.unreadCount = (chat.unreadCount || 0) + 1;
-        }        
     }
 }
 
@@ -249,6 +239,7 @@ async function selectChat(chat, isPopState = false, smoothScroll = true) {
     }
     
     if (!isPopState && window.location.hash !== `#chat-${chat.id}`) {
+        window.location.hash = ``;
         window.location.hash = `chat-${chat.id}`;
     }
     
@@ -393,4 +384,8 @@ async function checkWahaStatus() {
     } catch (e) {
         ui.updateConnectionStatus(false, 'WAHA Server Offline');
     }
+}
+
+export function getCurrentChat() {
+    return activeChatState;
 }
