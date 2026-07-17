@@ -120,14 +120,6 @@ function setupEventListeners() {
         }
     });
     
-    elements.refreshChatsBtn.addEventListener('click', () => {
-        elements.refreshChatsBtn.classList.add('spinning');
-        loadChats()
-        setTimeout(() => {
-            elements.refreshChatsBtn.classList.remove('spinning');
-        }, 600);
-    });
-    
     elements.chatSearch.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = getChats().filter(chat => 
@@ -164,9 +156,13 @@ function setupEventListeners() {
     elements.backToSidebarBtn.addEventListener('click', () => {
         closeActiveChat(false);
     });
-    
-    elements.settingsIconBtn.addEventListener('click', openSettings);
-    elements.cancelSettingsBtn.addEventListener('click', () => ui.toggleModal(false));
+
+    elements.desktopSidebarButtons.forEach(sidebarBtn => {
+        sidebarBtn.addEventListener('click', () => {
+            ui.showExtraPage(sidebarBtn.dataset.page);           
+        })
+    })
+
     elements.saveSettingsBtn.addEventListener('click', saveSettings);
 }
 
@@ -271,20 +267,15 @@ async function closeActiveChat(isPopState = false) {
     
     if (window.innerWidth <= 768) {
         scrollToList();
-        setTimeout(() => {
-            if (!activeChatState) {
-                elements.appContainer.classList.add('no-active-chat');
-                // ui.toggleChatState(false);
-            }
-        }, 350);
     } else {
         ui.toggleChatState(false);
     }
+
     
     if (!isPopState) {
-        // if (window.location.hash.startsWith('#chat-')) {
-        //     history.back();
-        // }
+        if (window.location.hash.startsWith('#chat-')) {
+            history.back();
+        }
     }
 }
 
@@ -383,18 +374,13 @@ async function sendFileMessage(file) {
     }
 }
 
-function openSettings() {
-    
-    ui.toggleModal(true);
-}
-
 function saveSettings() {
     config.save(
         elements.inputWahaUrl.value,
         elements.inputSession.value,
         elements.inputApiKey.value
     );
-    ui.toggleModal(false);
+    location.reload();
     loadChats();
     checkWahaStatus();
     initWebSocket();

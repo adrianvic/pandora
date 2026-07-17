@@ -22,6 +22,11 @@
         });
     </script>
     <div class="app-container no-active-chat">
+        <aside id="desktop-aside">
+            <button id="chats-sidebar-btn" class="icon-btn mif-qa mif-2x" data-page="chat-page"></button>
+            <button id="settings-sidebar-btn" class="icon-btn mif-cog mif-2x" data-page="settings-page"></button>
+        </aside>
+
         <!-- Sidebar -->
         <aside class="sidebar">
             <header class="sidebar-header">
@@ -31,11 +36,6 @@
                     <div class="user-info">
                         <h3 id="pandora-username">Pandora User</h3>
                     </div>
-                </div>
-                <div class="header-actions">
-                    <!-- <button class="text-btn" title="New Chat">new chat</button> -->
-                    <button class="text-btn" id="refresh-chats-btn" title="Refresh Chats">refresh</button>
-                    <button class="text-btn" title="Settings">settings</button>
                 </div>
             </header>
             
@@ -68,59 +68,61 @@
             </div>
         </aside>
         
-        <!-- Main Chat Area -->
-        <main class="chat-area">
-            <!-- No Chat Selected State -->
-            <div class="no-chat-state" id="no-chat-state">
-                <div class="empty-state-content">
-                    <div class="empty-state-icon mif-qa mif-3x">
-                    </div>
-                    <p>Select a contact from the sidebar to view the conversation or start a new chat.</p>
-                </div>
-            </div>
-            
-            <!-- Active Chat State -->
-            <div class="active-chat-container hidden" id="active-chat-container">
-                <header class="chat-header">
-                    <div class="active-contact-info">
-                        <!-- <button class="icon-btn back-btn mif-arrow-left mif-2x" id="back-to-sidebar" title="Back to chats"></button> -->
-                        <div class="avatar active-avatar" id="active-chat-avatar">C</div>
-                        <div>
-                            <h3 id="active-chat-name">Contact Name</h3>
-                            <span class="contact-status" id="active-chat-status"></span>
+        <div class="extra-page" id="chat-page">
+            <!-- Main Chat Area -->
+            <main class="chat-area">
+                <!-- No Chat Selected State -->
+                <div class="no-chat-state" id="no-chat-state">
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon mif-qa mif-3x">
                         </div>
+                        <p>Select a contact to view the conversation or start a new chat.</p>
                     </div>
-                    <div class="chat-actions">
-                        <!-- <button class="icon-btn" title="Search in conversation"><i data-lucide="search"></i></button>
-                        <button class="icon-btn" title="Call"><i data-lucide="phone"></i></button>
-                        <button class="icon-btn" title="Video Call"><i data-lucide="video"></i></button>
-                        <button class="icon-btn" title="More Options"><i data-lucide="more-vertical"></i></button> -->
-                    </div>
-                </header>
-                
-                <!-- Messages Area -->
-                <div class="messages-container" id="messages-container">
-                    <!-- Messages will be dynamically injected here -->
                 </div>
                 
-                <!-- Input Panel -->
-                <footer id="chat-input-panel" class="chat-input-panel">
-                    <div class="input-actions-left">
-                        <button id="chat-bottom-bar-btn" class="icon-btn mif-expand-less mif-3x" title="Expand"></button>
+                <!-- Active Chat State -->
+                <div class="active-chat-container hidden" id="active-chat-container">
+                    <header class="chat-header">
+                        <div class="active-contact-info">
+                            <!-- <button class="icon-btn back-btn mif-arrow-left mif-2x" id="back-to-sidebar" title="Back to chats"></button> -->
+                            <div class="avatar active-avatar" id="active-chat-avatar">C</div>
+                            <div>
+                                <h3 id="active-chat-name">Contact Name</h3>
+                                <span class="contact-status" id="active-chat-status"></span>
+                            </div>
+                        </div>
+                        <div class="chat-actions">
+                            <!-- <button class="icon-btn" title="Search in conversation"><i data-lucide="search"></i></button>
+                            <button class="icon-btn" title="Call"><i data-lucide="phone"></i></button>
+                            <button class="icon-btn" title="Video Call"><i data-lucide="video"></i></button>
+                            <button class="icon-btn" title="More Options"><i data-lucide="more-vertical"></i></button> -->
+                        </div>
+                    </header>
+                    
+                    <!-- Messages Area -->
+                    <div class="messages-container" id="messages-container">
+                        <!-- Messages will be dynamically injected here -->
                     </div>
-                    <form class="input-form" id="message-form">
-                        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                        <button type="submit" class="send-btn mif-paper-plane mif-3x" id="send-button">
-                        </button>
-                    </form>
-                </footer>
-                <!-- Bottom Bar -->
-                <footer id="chat-bottom-bar" class="chat-expanded-panel alternate-panel collapsed">
-                    <input id="attachment-input" style="display: none;" type="file">
-                    <button id="attachment-btn" class="icon-btn send-btn mif-attachment mif-2x" title="Attach file"></button>
-                </footer>
-            </div>
-        </main>
+                    
+                    <!-- Input Panel -->
+                    <footer id="chat-input-panel" class="chat-input-panel">
+                        <div class="input-actions-left">
+                            <button id="chat-bottom-bar-btn" class="icon-btn mif-expand-less mif-3x" title="Expand"></button>
+                        </div>
+                        <form class="input-form" id="message-form">
+                            <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                            <button type="submit" class="send-btn mif-paper-plane mif-3x" id="send-button">
+                            </button>
+                        </form>
+                    </footer>
+                    <!-- Bottom Bar -->
+                    <footer id="chat-bottom-bar" class="chat-expanded-panel alternate-panel collapsed">
+                        <input id="attachment-input" style="display: none;" type="file">
+                        <button id="attachment-btn" class="icon-btn send-btn mif-attachment mif-2x" title="Attach file"></button>
+                    </footer>
+                </div>
+            </main>
+        </div>
         
         <section class="extra-page" id="settings-page">
             <div class="modal-content">
@@ -143,7 +145,6 @@
                     <p class="settings-warning">Note: Requests are sent directly from your browser to the WAHA server. Make sure CORS is enabled on your WAHA instance.</p>
                 </div>
                 <footer class="modal-footer">
-                    <button class="btn secondary-btn" id="cancel-settings">Cancel</button>
                     <button class="btn primary-btn" id="save-settings">Save Config</button>
                 </footer>
             </div>

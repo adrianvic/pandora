@@ -364,6 +364,16 @@ input:focus {
     to { transform: rotate(360deg); }
 }
 
+/* Desktop aside */
+#desktop-aside {
+    height: 100%;
+    background-color: black;
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    padding: .2em;
+}
+
 /* Sidebar Footer */
 .sidebar-footer {
     padding: 14px 20px;
@@ -383,14 +393,14 @@ input:focus {
     height: 8px;
     background-color: var(--online-color);
     border-radius: 50%;
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
     animation: pulse 1.8s infinite;
 }
 
 @keyframes pulse {
     0% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
     }
     70% {
         transform: scale(1);
@@ -740,11 +750,16 @@ input:focus {
 /* Extra Pages */
 .extra-page {
     display: none;
+    width: 100%;
 }
 
 .extra-page-content {
     padding: 24px;
     color: var(--text-secondary);
+}
+
+#chat-page {
+    display: flex;
 }
 
 @media (max-width: 768px) {
@@ -806,11 +821,6 @@ input:focus {
         overflow-y: auto;
     }
     
-    /* Disable scrolling to active chat if none is selected */
-    /* .app-container.no-active-chat .chat-area {
-        display: none !important;
-    } */
-    
     .back-btn {
         display: flex;
         margin-right: 12px;
@@ -822,6 +832,10 @@ input:focus {
 
     .message-image-attachement {
         max-height: 20em;
+    }
+
+    #desktop-aside {
+        display: none;
     }
 }
 
@@ -847,6 +861,7 @@ input:focus {
     backdrop-filter: var(--glass-blur);
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 
 .modal-header {

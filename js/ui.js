@@ -1,13 +1,10 @@
 import { formatTime, normalizeId } from "./utils.js";
-import { waha } from "./waha.js";
-import { config } from "./config.js";
 import { getChatPicture, getMessage, getMedia, getMoreChatMessages } from "./storage.js";
 
 export const elements = {
     chatList: document.getElementById('chat-list'),
     chatsLoader: document.getElementById('chats-loader'),
     chatSearch: document.getElementById('chat-search'),
-    refreshChatsBtn: document.getElementById('refresh-chats-btn'),
     backendStatusText: document.getElementById('backend-status-text'),
     apiStatusIndicator: document.querySelector('.pulse-dot'),
     noChatState: document.getElementById('no-chat-state'),
@@ -21,8 +18,7 @@ export const elements = {
     sidebar: document.querySelector('.sidebar'),
     appContainer: document.querySelector('.app-container'),
     settingsModal: document.getElementById('settings-page'),
-    settingsIconBtn: document.querySelector('.header-actions button[title="Settings"]'),
-    cancelSettingsBtn: document.getElementById('cancel-settings'),
+    settingsIconBtn: document.getElementById('settings-sidebar-btn'),
     saveSettingsBtn: document.getElementById('save-settings'),
     inputWahaUrl: document.getElementById('settings-waha-url'),
     inputSession: document.getElementById('settings-session'),
@@ -33,20 +29,21 @@ export const elements = {
     chatInputPanel: document.getElementById('chat-input-panel'),
     attachmentInput: document.getElementById('attachment-input'),
     attachmentBtn: document.getElementById('attachment-btn'),
+    extraPages: document.querySelectorAll('.extra-page'),
+    desktopSidebarButtons: document.querySelectorAll("#desktop-aside button")
 };
 
 export const ui = {
-    /**
-    * Show or hide Settings connection modal
-    */
-    toggleModal(show) {
-        if (show) {
-            elements.settingsModal.scrollTo();
-        } else {
-            elements.sidebar.scrollTo();
-        }
+    showExtraPage(pageId) {
+        elements.extraPages.forEach(page => {
+            if (page.id != pageId) {
+                page.style.display = "none";
+            } else {
+                page.style.display = "flex";
+            }
+        })
     },
-    
+
     /**
     * Switch view state when a contact chat is opened or closed
     */
