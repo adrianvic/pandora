@@ -27,6 +27,15 @@ function loadChats() {
         elements.chatsLoader.classList.remove('hidden');
         fetchChats().then(() => { 
             ui.renderChatList(getChats(), activeChatState, selectChat);
+            
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#chat-')) {
+                const chatId = hash.replace('#chat-', '');
+                const chat = getChats().find(c => c.id === chatId);
+                if (chat) {
+                    selectChat(chat, true, false);
+                }
+            }
         });
     } catch (error) {
         console.error('Failed to load chats:', error);
@@ -44,11 +53,67 @@ function loadChats() {
     }
 }
 
+let isScrollingProgrammatically = false;
+let scrollTimeout = null;
+
+function scrollToChat(smooth = true) {
+    isScrollingProgrammatically = true;
+    elements.appContainer.scrollTo({
+        left: elements.appContainer.clientWidth,
+        behavior: smooth ? 'smooth' : 'auto'
+    });
+    setTimeout(() => { isScrollingProgrammatically = false; }, smooth ? 400 : 50);
+}
+
+function scrollToList(smooth = true) {
+    isScrollingProgrammatically = true;
+    elements.appContainer.scrollTo({
+        left: 0,
+        behavior: smooth ? 'smooth' : 'auto'
+    });
+    setTimeout(() => { isScrollingProgrammatically = false; }, smooth ? 400 : 50);
+}
+
 function setupEventListeners() {
+    if (!window.location.hash) {
+        window.location.hash = '';
+    }
+    
+    window.addEventListener('hashchange', () => {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#chat-')) {
+            const chatId = hash.replace('#chat-', '');
+            const chat = getChats().find(c => c.id === chatId);
+            if (chat) {
+                selectChat(chat, true);
+            }
+        } else {
+            closeActiveChat(true);
+        }
+    });
+
+    elements.appContainer.addEventListener('scroll', () => {
+        if (window.innerWidth > 768) return;
+        if (isScrollingProgrammatically) return;
+        
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            const scrollLeft = elements.appContainer.scrollLeft;
+            const width = elements.appContainer.clientWidth;
+            
+            if (scrollLeft < width * 0.2) {
+                // User swiped back to the list view
+                if (activeChatState) {
+                    closeActiveChat(false);
+                }
+            }
+        }, 100);
+    });
+
     document.addEventListener('keydown', (e) => {
         if (e.code == "Escape") {
             e.preventDefault();
-            ui.toggleChatState();
+            closeActiveChat(false);
         }
     });
     
@@ -94,8 +159,7 @@ function setupEventListeners() {
     })
     
     elements.backToSidebarBtn.addEventListener('click', () => {
-        elements.sidebar.classList.remove('hidden');
-        elements.activeChatContainer.classList.add('hidden');
+        closeActiveChat(false);
     });
     
     elements.settingsIconBtn.addEventListener('click', openSettings);
@@ -155,7 +219,7 @@ async function handleIncomingMessage(msg) {
     }
 }
 
-async function selectChat(chat) {
+async function selectChat(chat, isPopState = false, smoothScroll = true) {
     activeChatState = chat;
     
     chat.unreadCount = 0;
@@ -179,8 +243,14 @@ async function selectChat(chat) {
         </span>
     </div>`;
     
+    elements.appContainer.classList.remove('no-active-chat');
+    
     if (window.innerWidth <= 768) {
-        elements.sidebar.classList.add('hidden');
+        scrollToChat(smoothScroll);
+    }
+    
+    if (!isPopState && window.location.hash !== `#chat-${chat.id}`) {
+        window.location.hash = `chat-${chat.id}`;
     }
     
     try {
@@ -190,6 +260,28 @@ async function selectChat(chat) {
     } catch (error) {
         console.error('Failed to load messages:', error);
         elements.messagesContainer.innerHTML = '<div class="loading-chats">Error loading messages</div>';
+    }
+}
+
+async function closeActiveChat(isPopState = false) {
+    activeChatState = null;
+    
+    if (window.innerWidth <= 768) {
+        scrollToList();
+        setTimeout(() => {
+            if (!activeChatState) {
+                elements.appContainer.classList.add('no-active-chat');
+                ui.toggleChatState(false);
+            }
+        }, 350);
+    } else {
+        ui.toggleChatState(false);
+    }
+    
+    if (!isPopState) {
+        if (window.location.hash.startsWith('#chat-')) {
+            history.back();
+        }
     }
 }
 

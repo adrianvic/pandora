@@ -19,6 +19,7 @@ export const elements = {
     messageInput: document.getElementById('message-input'),
     backToSidebarBtn: document.querySelector('.chat-header'),
     sidebar: document.querySelector('.sidebar'),
+    appContainer: document.querySelector('.app-container'),
     settingsModal: document.getElementById('settings-modal'),
     settingsIconBtn: document.querySelector('.header-actions button[title="Settings"]'),
     cancelSettingsBtn: document.getElementById('cancel-settings'),
