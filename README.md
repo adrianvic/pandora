@@ -21,7 +21,7 @@ It's heavily inspired on Windows Phone 8 MetroUI.
 - [X] Local message storing
 - [ ] Message encryption
 - [ ] Light theme
-- [ ] Custom wallpaper
+- [X] Custom wallpaper
 
 1. Does not show contact name in any engine other than WEBJS
 2. Loads the last 40 messages
