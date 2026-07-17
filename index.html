@@ -14,11 +14,11 @@
 <body>
     <script defer>
         document.addEventListener("DOMContentLoaded", () => {
-          setTimeout(() => {
-            document.querySelectorAll(".dots").forEach(el => {
-              el.classList.add("animate");
-            });
-          }, 100);
+            setTimeout(() => {
+                document.querySelectorAll(".dots").forEach(el => {
+                    el.classList.add("animate");
+                });
+            }, 100);
         });
     </script>
     <div class="app-container no-active-chat">
@@ -38,13 +38,13 @@
                     <button class="text-btn" title="Settings">settings</button>
                 </div>
             </header>
-
+            
             <div class="search-container">
                 <div class="search-wrapper">
                     <input type="text" id="chat-search" placeholder="Search or start new chat...">
                 </div>
             </div>
-
+            
             <div class="chat-list-container">
                 <div class="loading-chats" id="chats-loader">
                     <div class='dots'>
@@ -67,7 +67,7 @@
                 </div>
             </div>
         </aside>
-
+        
         <!-- Main Chat Area -->
         <main class="chat-area">
             <!-- No Chat Selected State -->
@@ -78,7 +78,7 @@
                     <p>Select a contact from the sidebar to view the conversation or start a new chat.</p>
                 </div>
             </div>
-
+            
             <!-- Active Chat State -->
             <div class="active-chat-container hidden" id="active-chat-container">
                 <header class="chat-header">
@@ -97,12 +97,12 @@
                         <button class="icon-btn" title="More Options"><i data-lucide="more-vertical"></i></button> -->
                     </div>
                 </header>
-
+                
                 <!-- Messages Area -->
                 <div class="messages-container" id="messages-container">
                     <!-- Messages will be dynamically injected here -->
                 </div>
-
+                
                 <!-- Input Panel -->
                 <footer id="chat-input-panel" class="chat-input-panel">
                     <div class="input-actions-left">
@@ -121,36 +121,35 @@
                 </footer>
             </div>
         </main>
-    </div>
-
-    <!-- Settings Modal -->
-    <div class="modal-overlay hidden" id="settings-modal">
-        <div class="modal-content">
-            <header class="modal-header">
-                <h2>SETTINGS</h2>
-            </header>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="settings-waha-url">WAHA Server URL</label>
-                    <input type="text" id="settings-waha-url" placeholder="http://localhost:3100">
+        
+        <section class="extra-page" id="settings-page">
+            <div class="modal-content">
+                <header class="modal-header">
+                    <h2>SETTINGS</h2>
+                </header>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="settings-waha-url">WAHA Server URL</label>
+                        <input type="text" id="settings-waha-url" placeholder="http://localhost:3100">
+                    </div>
+                    <div class="form-group">
+                        <label for="settings-session">Session ID</label>
+                        <input type="text" id="settings-session" placeholder="session_01...">
+                    </div>
+                    <div class="form-group">
+                        <label for="settings-api-key">API Key (X-API-KEY)</label>
+                        <input type="password" id="settings-api-key" placeholder="Enter API Key">
+                    </div>
+                    <p class="settings-warning">Note: Requests are sent directly from your browser to the WAHA server. Make sure CORS is enabled on your WAHA instance.</p>
                 </div>
-                <div class="form-group">
-                    <label for="settings-session">Session ID</label>
-                    <input type="text" id="settings-session" placeholder="session_01...">
-                </div>
-                <div class="form-group">
-                    <label for="settings-api-key">API Key (X-API-KEY)</label>
-                    <input type="password" id="settings-api-key" placeholder="Enter API Key">
-                </div>
-                <p class="settings-warning">Note: Requests are sent directly from your browser to the WAHA server. Make sure CORS is enabled on your WAHA instance.</p>
+                <footer class="modal-footer">
+                    <button class="btn secondary-btn" id="cancel-settings">Cancel</button>
+                    <button class="btn primary-btn" id="save-settings">Save Config</button>
+                </footer>
             </div>
-            <footer class="modal-footer">
-                <button class="btn secondary-btn" id="cancel-settings">Cancel</button>
-                <button class="btn primary-btn" id="save-settings">Save Config</button>
-            </footer>
-        </div>
+        </section>
     </div>
-
+    
     <!-- Client-side script loaded as ES Module -->
     <script type="module" src="./js/app.js"></script>
 </body>

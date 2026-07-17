@@ -10,6 +10,9 @@ let activeChatState = null;
 const messageTone = new Audio("./message.ogg");
 
 document.addEventListener('DOMContentLoaded', async () => {
+    elements.inputApiKey.value = config.apiKey;
+    elements.inputWahaUrl.value = config.wahaUrl;
+    elements.inputSession.value = config.session;
     await updateOnlineStatus();
     setupEventListeners();
     try {
@@ -381,9 +384,7 @@ async function sendFileMessage(file) {
 }
 
 function openSettings() {
-    elements.inputWahaUrl.value = config.wahaUrl;
-    elements.inputSession.value = config.session;
-    elements.inputApiKey.value = config.apiKey;
+    
     ui.toggleModal(true);
 }
 

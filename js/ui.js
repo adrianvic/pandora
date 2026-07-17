@@ -20,7 +20,7 @@ export const elements = {
     backToSidebarBtn: document.querySelector('.chat-header'),
     sidebar: document.querySelector('.sidebar'),
     appContainer: document.querySelector('.app-container'),
-    settingsModal: document.getElementById('settings-modal'),
+    settingsModal: document.getElementById('settings-page'),
     settingsIconBtn: document.querySelector('.header-actions button[title="Settings"]'),
     cancelSettingsBtn: document.getElementById('cancel-settings'),
     saveSettingsBtn: document.getElementById('save-settings'),
@@ -41,9 +41,9 @@ export const ui = {
     */
     toggleModal(show) {
         if (show) {
-            elements.settingsModal.classList.remove('hidden');
+            elements.settingsModal.scrollTo();
         } else {
-            elements.settingsModal.classList.add('hidden');
+            elements.sidebar.scrollTo();
         }
     },
     

@@ -738,6 +738,16 @@ input:focus {
     display: none !important;
 }
 
+/* Extra Pages */
+.extra-page {
+    display: none;
+}
+
+.extra-page-content {
+    padding: 24px;
+    color: var(--text-secondary);
+}
+
 @media (max-width: 768px) {
     .app-container {
         width: 100%;
@@ -781,6 +791,21 @@ input:focus {
         z-index: 1;
         scroll-snap-align: start;
         scroll-snap-stop: always;
+    }
+    
+    .extra-page {
+        display: block;
+        width: 100%;
+        flex: 0 0 100%;
+        position: relative;
+        left: auto;
+        top: auto;
+        height: 100%;
+        z-index: 1;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+        background-color: var(--bg-main);
+        overflow-y: auto;
     }
     
     /* Disable scrolling to active chat if none is selected */
