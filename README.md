@@ -18,7 +18,8 @@ It's heavily inspired on Windows Phone 8 MetroUI.
 - [ ] Browser notification
 - [x] Download attachments
 - [x] Automatically download images<sup>6</sup>
-- [ ] Local encrypted message storing
+- [X] Local message storing
+- [ ] Message encryption
 - [ ] Light theme
 - [ ] Custom wallpaper
 
