@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     elements.inputApiKey.value = config.apiKey;
     elements.inputWahaUrl.value = config.wahaUrl;
     elements.inputSession.value = config.session;
+    elements.inputBackgroundImage.value = config.bgImg;
+    elements.inputBackgroundOpacity.value = config.bgOpacity;
+    elements.activeChatContainer.style.setProperty('--background-image', `URL("${config.bgImg}")`);
+    elements.activeChatContainer.style.setProperty('--background-opacity', `${config.bgOpacity}`);
     await updateOnlineStatus();
     setupEventListeners();
     try {
@@ -369,7 +373,9 @@ function saveSettings() {
     config.save(
         elements.inputWahaUrl.value,
         elements.inputSession.value,
-        elements.inputApiKey.value
+        elements.inputApiKey.value,
+        elements.inputBackgroundImage.value,
+        elements.inputBackgroundOpacity.value
     );
     location.reload();
     loadChats();

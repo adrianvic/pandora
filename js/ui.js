@@ -24,6 +24,8 @@ export const elements = {
     inputWahaUrl: document.getElementById('settings-waha-url'),
     inputSession: document.getElementById('settings-session'),
     inputApiKey: document.getElementById('settings-api-key'),
+    inputBackgroundImage: document.getElementById('settings-background-image'),
+    inputBackgroundOpacity: document.getElementById('settings-background-opacity'),
     loggedUserName: document.getElementById('pandora-username'),
     chatBottomBar: document.getElementById('chat-bottom-bar'),
     chatBottomBarBtn: document.getElementById('chat-bottom-bar-btn'),
