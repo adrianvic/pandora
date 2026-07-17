@@ -1,4 +1,4 @@
-import { formatTime } from "./utils.js";
+import { formatTime, normalizeId } from "./utils.js";
 import { waha } from "./waha.js";
 import { config } from "./config.js";
 import { getChatPicture, getMessage, getMedia, getMoreChatMessages } from "./storage.js";
@@ -209,7 +209,7 @@ export const ui = {
         
         const groupDiv = document.createElement('div');
         groupDiv.className = `message-group ${isOutgoing ? 'outgoing' : 'incoming'}`;
-        groupDiv.id = msg.id;
+        groupDiv.id = normalizeId(msg._serialized ? msg : msg.id);
         groupDiv.dataset.timestamp = msg.timestamp;
         groupDiv.dataset.from = msg.participant || msg.from;
         
@@ -267,7 +267,7 @@ export const ui = {
                 const clickListener = async (e) => {
                     a.removeEventListener('click', clickListener);
                     a.innerText = `[Downloading]`;
-                    const mediaMsg = msg.media ? msg : await getMessage(chatId, msg.id, true);
+                    const mediaMsg = msg.media ? msg : await getMessage(chatId, normalizeId(msg._serialized ? msg : msg.id), true);
                     if (!mediaMsg || !mediaMsg?.media.url) {
                         a.addEventListener('click', clickListener);
                         a.innerText = `[Error, click to try again]`

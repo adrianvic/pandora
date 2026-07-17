@@ -23,7 +23,7 @@ export const websocket = {
 
         const apiKey = config.apiKey;
         const session = config.session;
-        const events = ['session.status', 'message', 'message.any'];
+        const events = ['session.status', 'message.any'];
 
         const queryParams = new URLSearchParams();
         if (apiKey) {

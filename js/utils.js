@@ -100,3 +100,16 @@ export function getBase64(file) {
         reader.readAsDataURL(file);
     });
 }
+
+/**
+ * Normalize a WhatsApp ID (chatId, messageId, etc.) to its string representation
+ * @param {string|object} raw
+ * @returns {string|null}
+ */
+export function normalizeId(raw) {
+    if (!raw) return null;
+    if (typeof raw === 'object') {
+        return raw._serialized || raw.user || JSON.stringify(raw);
+    }
+    return raw;
+}

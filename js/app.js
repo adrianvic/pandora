@@ -2,7 +2,7 @@ import { config } from "./config.js";
 import { waha } from "./waha.js";
 import { ui, elements } from "./ui.js";
 import { websocket } from "./websocket.js";
-import { compensateMessageOrdering, formatTime } from "./utils.js";
+import { compensateMessageOrdering, formatTime, normalizeId } from "./utils.js";
 import { fetchChats, getAppUser, getChatMessages, getChats, updateOnlineStatus } from "./storage.js";
 import { upsertMessages } from "./db.js";
 
@@ -114,13 +114,6 @@ function initWebSocket() {
     });
 }
 
-function normalizeChatId(raw) {
-    if (!raw) return null;
-    if (typeof raw === 'object') {
-        return raw._serialized || raw.user || JSON.stringify(raw);
-    }
-    return raw;
-}
 
 async function handleIncomingMessage(msg) {
     if (!msg) return;
@@ -130,7 +123,7 @@ async function handleIncomingMessage(msg) {
     ui.updateChatInChatList(msg);
     
     const rawChatId = msg.chatId || msg.from || (msg.chat && msg.chat.id);
-    const msgChatId = normalizeChatId(rawChatId);
+    const msgChatId = normalizeId(rawChatId);
     if (!msgChatId) {
         console.warn('[WS] Could not resolve chatId from payload:', msg);
         return;
@@ -142,7 +135,7 @@ async function handleIncomingMessage(msg) {
     }
     
     if (activeChatState && activeChatState.id === msgChatId) {
-        const msgId = normalizeChatId(msg.id) || msg.id;
+        const msgId = normalizeId(msg.id) || msg.id;
         const exists = document.getElementById(msgId);
         if (!exists) {
             ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name, (await getAppUser()).id);
@@ -246,7 +239,7 @@ async function sendMessage() {
         const tempBubble = document.getElementById(tempMsg.id);
         if (tempBubble) {
             if (responseData && responseData.id) {
-                tempBubble.id = responseData.id;
+                tempBubble.id = normalizeId(responseData.id);
             }
             const meta = tempBubble.querySelector('.message-meta');
             meta.innerHTML = `<span>${formatTime(new Date())}</span><span style="width:14px; height:14px;" class="mif-done">`;

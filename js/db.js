@@ -1,14 +1,8 @@
+import { normalizeId } from "./utils.js";
+
 const DB_NAME = "pandora";
 const DB_VERSION = 6;
 let dbPromise = null;
-
-function normalizeId(raw) {
-  if (!raw) return null;
-  if (typeof raw === 'object') {
-    return raw._serialized || raw.user || JSON.stringify(raw);
-  }
-  return raw;
-}
 
 function openDb() {
   if (dbPromise) return dbPromise;
@@ -120,7 +114,7 @@ function mapMessage(m) {
 
   return {
     _data: m._data,
-    id: m.id,
+    id: normalizeId(m.id),
     timestamp: m.timestamp,
     body: m.body,
     from: from,
