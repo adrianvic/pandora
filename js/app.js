@@ -224,16 +224,15 @@ async function selectChat(chat, isPopState = false, smoothScroll = true) {
     elements.activeChatAvatar.textContent = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
     
     elements.messagesContainer.innerHTML = `
-    <div class="loading-chats">
-        <div class='dots'>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
+    <div class='loading-animation-wrapper'>
+        <div class="animation">
+            <p class="animation"></p>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
         </div>
-        <span>Loading messages...
-        </span>
     </div>`;
     
     elements.appContainer.classList.remove('no-active-chat');
