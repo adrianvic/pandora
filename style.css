@@ -22,6 +22,24 @@
     --high-box-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3), 0px -4px 10px rgba(0, 0, 0, 0.3);
 }
 
+body.light {
+    --bg-main: white;
+    --bg-secondary: #F0F0F0;
+    --sidebar-bg: white;
+    --chat-bg: white;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.15);
+    --text-primary: black;
+    --text-secondary: black;
+    --text-muted: rgb(134, 134, 134);
+    --accent: black;                                                                   --accent-gradient: white;                                                          --accent-hover: #4f46e5;                                                           --online-color: rgba(0, 0, 000, 0.6);
+    --bubble-incoming: #01abaa;
+    --bubble-outgoing: #016f6e;
+    --input-bg: white;                                                                 --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);                                                                                   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);                                                                                  --glass-blur: blur(20px);
+    --high-box-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3), 0px -4px 10px rgba(0, 0, 0, 0.3);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -281,11 +299,16 @@ input:focus {
     border: 1px solid transparent;
 }
 
-.chat-item:hover {
-    background: rgba(255, 255, 255, 0.04);
-    transform: scale(0.98) skewX(10deg);
-    filter: blur(.1px);
-    opacity: .6;
+@media (hover: hover) {
+  .chat-item:hover {
+    background: rgba(255, 255, 255, 0.04);                                             transform: scale(0.98) skewX(10deg);                                               filter: blur(.1px);                                                                opacity: .6;
+  }
+}
+
+@media (hover: none) {
+  .chat-item:active {
+    background: rgba(255, 255, 255, 0.04);                                             transform: scale(0.98) skewX(10deg);                                               filter: blur(.1px);                                                                opacity: .6;
+  }
 }
 
 .chat-item-info {
@@ -695,15 +718,15 @@ input:focus {
 }
 
 .alternate-panel button, .alternate-panel input {
-    border: medium solid white;
+    border: medium solid var(--text-primary);
     border-radius: 100%;
     background-color: transparent;
 }
 
 .alternate-panel button:hover, .alternate-panel input:hover {
-    border-color: white;
-    background-color: white;
-    color: black;
+    border-color: var(--bg-primary);
+    background-color: var(--text-primary);
+    color: var(--bg-primary);
 }
 
 .chat-input-panel button {
@@ -726,8 +749,8 @@ input:focus {
 #message-input {
     flex: 1;
     padding: 12px 18px;
-    background-color: white;
-    border: 1px solid var(--border-color);
+    background-color: var(--text-primary);
+    border: medium solid var(--border-color);
     color: var(--bg-main);
     font-size: 0.95rem;
     transition: all 0.2s ease;
@@ -739,7 +762,6 @@ input:focus {
     outline: none;
     border-color: var(--accent);
     background: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
 .send-btn {
@@ -882,19 +904,6 @@ input:focus {
 }
 
 /* Modal Styling */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    display: flex;
-    z-index: 100;
-    transition: all 0.3s ease;
-}
-
 .modal-content {
     width: 100%;
     background: var(--bg-main);
