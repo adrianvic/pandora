@@ -5,6 +5,7 @@ import { websocket } from "./websocket.js";
 import { compensateMessageOrdering, debounce, formatTime, normalizeId } from "./utils.js";
 import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getUser, getUserAbout, sendStatus, updateOnlineStatus } from "./storage.js";
 import { upsertMessages } from "./db.js";
+import { showNotification } from "./notification.js";
 
 let activeChatState = null;
 const messageTone = new Audio("./message.ogg");
@@ -192,6 +193,11 @@ function setupEventListeners() {
 
     elements.inputUserStatus.addEventListener('input', debounce(async function() {
         const result = await sendStatus(elements.inputUserStatus.value);
+        if (result?.success) {
+            showNotification("Status updated successfully!", "", 2000);
+        } else {
+            showNotification("Failed to update status...", "", 2000);
+        }
         console.log(result);
     }, 2000))
 

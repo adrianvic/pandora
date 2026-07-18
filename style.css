@@ -899,6 +899,27 @@ input:focus {
     border-bottom-color: var(--text-primary);
 }
 
+
+.notification-box {
+    transition: transform 1s cubic-bezier(0.19, 1, 0.22, 1);
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: var(--bg-secondary);
+    transform: translateY(-100%);
+    padding: .4em;
+    text-transform: uppercase;
+}
+
+.notification-box.shown {
+    transform: none;
+}
+
+.notification-box h1 {
+    font-size: 1rem;
+}
+
 @media (max-width: 768px) {
     .app-container {
         width: 100%;
