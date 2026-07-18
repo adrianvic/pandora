@@ -336,22 +336,12 @@ input:focus {
   opacity: .6;
 }
 
-@media (hover: hover) {
-  .selectable:hover {
-    background: rgba(255, 255, 255, 0.04);
-    transform: scale(0.98) skewX(10deg);
-    filter: blur(.1px);
-    opacity: .6;
-  }
-}
 
-@media (hover: none) {
-  .selectable:active {
-    background: rgba(255, 255, 255, 0.04);
-    transform: scale(0.98) skewX(10deg);
-    filter: blur(.1px);
-    opacity: .6;
-  }
+.selectable:active {
+  background: rgba(255, 255, 255, 0.04);
+  transform: scale(0.98) skewX(10deg);
+  filter: blur(.1px);
+  opacity: .6;
 }
 
 .chat-item-info {

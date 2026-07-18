@@ -8,6 +8,8 @@ import { upsertMessages } from "./db.js";
 
 let activeChatState = null;
 const messageTone = new Audio("./message.ogg");
+const longPressEvent = new CustomEvent("longpress");
+export let isLoadingChat = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     elements.inputApiKey.value = config.apiKey;
@@ -178,7 +180,7 @@ function setupEventListeners() {
     
     elements.backToSidebarBtn.addEventListener('click', () => {
         closeActiveChat(false);
-    });
+    }); 
 
     elements.desktopSidebarButtons.forEach(sidebarBtn => {
         sidebarBtn.addEventListener('click', () => {
@@ -193,11 +195,29 @@ function setupEventListeners() {
         console.log(result);
     }, 2000))
 
-    // elements.selectable.forEach(e => {
-    //     e.addEventListener('pointerdown', () => {
+    elements.selectable.forEach(e => {
+        let timerId, longPressed;
 
-    //     })
-    // })
+        e.addEventListener('mousedown', () => {
+            longPressed = false;
+
+            timerId = setTimeout(() => {
+                longPressed = true;
+                e.dispatchEvent(longPressEvent);
+            })
+        })
+
+        e.addEventListener('click', () => {
+            if (longPressed) {
+                e.preventDefault();
+                clearTimeout(timerId);
+            }
+        })
+
+        e.addEventListener('mouseleave', () => {
+            clearTimeout(timerId);
+        })
+    })
 }
 
 function initWebSocket() {
@@ -243,6 +263,9 @@ async function handleIncomingMessage(msg) {
 }
 
 async function selectChat(chat, isPopState = false, smoothScroll = true) {
+    if (isLoadingChat) return;
+    
+    isLoadingChat = true;
     activeChatState = chat;
     
     chat.unreadCount = 0;
@@ -284,6 +307,8 @@ async function selectChat(chat, isPopState = false, smoothScroll = true) {
         console.error('Failed to load messages:', error);
         elements.messagesContainer.innerHTML = '<div class="loading-chats">Error loading messages</div>';
     }
+
+    isLoadingChat = false;
 }
 
 async function closeActiveChat(isPopState = false) {
