@@ -11,8 +11,10 @@ let activeChatState = null;
 const messageTone = new Audio("./message.ogg");
 const longPressEvent = new CustomEvent("longpress");
 export let isLoadingChat = false;
+export let notificationAuthorization = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    askForNotificationPermission();
     elements.inputApiKey.value = config.apiKey;
     elements.inputWahaUrl.value = config.wahaUrl;
     elements.inputSession.value = config.session;
@@ -31,6 +33,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         elements.chatsLoader.classList.add('hidden');
     }
 });
+
+async function askForNotificationPermission() {
+    notificationAuthorization = await Notification.requestPermission();
+}
 
 async function setupElementsData() {
     const usr = await getAppUser();
@@ -253,6 +259,9 @@ async function handleIncomingMessage(msg) {
     // console.log('[WS] Resolved msgChatId:', msgChatId, '| activeChatState:', activeChatState?.id);
     if (!msg.fromMe) {
         messageTone.play();
+    }
+    if (notificationAuthorization) {
+        new Notification("New message", { body: msg.body });
     }
     
     if (activeChatState && activeChatState.id === msgChatId) {

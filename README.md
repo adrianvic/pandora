@@ -1,4 +1,4 @@
-<img width="1920" height="1080" alt="PANDORA" src="https://github.com/user-attachments/assets/d9d7ba36-4510-47e1-8c49-b1977a26c448" />
+<img width="1920" height="auto" alt="PANDORA" src="https://github.com/user-attachments/assets/d9d7ba36-4510-47e1-8c49-b1977a26c448" />
 
 Pandora is an open-source web client for the WAHA API.
 
@@ -13,7 +13,7 @@ Pandora is an open-source web client for the WAHA API.
 - [ ] Sending audio messages
 - [x] Sending attachments (sends image/video as such)<sup>4</sup>
 - [x] Notification sound<sup>5</sup>
-- [ ] Browser notification
+- [x] Browser notification
 - [x] Download attachments
 - [x] Automatically download images<sup>6</sup>
 - [X] Local message storing
