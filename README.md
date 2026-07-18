@@ -1,8 +1,6 @@
-# Pandora
-Pandora is an open-source web client for the WAHA API.
+<img width="1920" height="1080" alt="PANDORA" src="https://github.com/user-attachments/assets/d9d7ba36-4510-47e1-8c49-b1977a26c448" />
 
-![Pandora home and chat screeshots](https://i.postimg.cc/66cgNJNn/Pic-Collage-1784079255896.jpg)
-It's heavily inspired on Windows Phone 8 MetroUI.
+Pandora is an open-source web client for the WAHA API.
 
 ## Features
 - [x] Contact list<sup>1</sup>
