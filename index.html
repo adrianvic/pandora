@@ -16,10 +16,11 @@
 <body>
     <div class="app-container no-active-chat">
         <aside id="desktop-aside">
+            <button id="profile-sidebar-btn" class="icon-btn mif-person mif-2x" data-page="profile-page"></button>
             <button id="chats-sidebar-btn" class="icon-btn mif-qa mif-2x" data-page="chat-page"></button>
             <button id="settings-sidebar-btn" class="icon-btn mif-cog mif-2x" data-page="settings-page"></button>
         </aside>
-
+        
         <!-- Sidebar -->
         <aside class="sidebar">
             <header class="sidebar-header">
@@ -27,7 +28,7 @@
                 <div class="user-profile">
                     <!-- <div id="pandora-user-icon" class="avatar user-avatar">P</div> -->
                     <div class="user-info">
-                        <h3 id="pandora-username">Pandora User</h3>
+                        <h3 id="pandora-username" data-content="app-user">Pandora User</h3>
                     </div>
                 </div>
             </header>
@@ -53,13 +54,6 @@
                 <ul class="chat-list" id="chat-list">
                     <!-- Chats will be dynamically injected here -->
                 </ul>
-            </div>
-            
-            <div class="sidebar-footer">
-                <div class="api-status-badge">
-                    <span class="pulse-dot"></span>
-                    <span id="backend-status-text">Backend connected</span>
-                </div>
             </div>
         </aside>
         
@@ -119,6 +113,17 @@
             </main>
         </div>
         
+        <section class="extra-page" id="profile-page">
+            <h2 data-content="app-user">Pandora User</h2>
+            <div class="content">
+                <img id="profile-page-picture" data-resource="app-user-image">
+                <div id="profile-page-user-info">
+                    <p id="profile-page-user-number" data-content="app-user-number">Pandora User</p>
+                    <input id="profile-page-status-input" placeholder="enter your status" data-value="app-user-status">
+                </div>
+            </div>
+        </section>
+        
         <section class="extra-page" id="settings-page">
             <div class="modal-content">
                 <header class="modal-header">
@@ -152,6 +157,12 @@
                 <footer class="modal-footer">
                     <button class="btn primary-btn" id="save-settings">Save</button>
                 </footer>
+                <div class="sidebar-footer">
+                    <div class="api-status-badge">
+                        <span class="pulse-dot"></span>
+                        <span id="backend-status-text">Backend connected</span>
+                    </div>
+                </div>
             </div>
         </section>
     </div>

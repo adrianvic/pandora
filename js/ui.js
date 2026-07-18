@@ -33,7 +33,13 @@ export const elements = {
     attachmentInput: document.getElementById('attachment-input'),
     attachmentBtn: document.getElementById('attachment-btn'),
     extraPages: document.querySelectorAll('.extra-page'),
-    desktopSidebarButtons: document.querySelectorAll("#desktop-aside button")
+    desktopSidebarButtons: document.querySelectorAll("#desktop-aside button"),
+    contentUserName: document.querySelectorAll('[data-content="app-user"]'),
+    contentUserNumber: document.querySelectorAll('[data-content="app-user-number"]'),
+    resourceUserPic: document.querySelectorAll('[data-resource="app-user-image"]'),
+    valueUserStatus: document.querySelectorAll('[data-value="app-user-status"]'),
+    inputUserStatus: document.getElementById('profile-page-status-input'),
+    selectable: document.querySelectorAll('.selectable'),
 };
 
 export const ui = {
@@ -92,7 +98,7 @@ export const ui = {
         
         for (const chat of chats) {
             const li = document.createElement('li');
-            li.className = `chat-item ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
+            li.className = `chat-item selectable ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
             li.dataset.id = chat.id;
             
             const initials = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
@@ -235,7 +241,7 @@ export const ui = {
         const prevMsgEl = getPrevMessageElem();
         
         const groupDiv = document.createElement('div');
-        groupDiv.className = `message-group ${isOutgoing ? 'outgoing' : 'incoming'}`;
+        groupDiv.className = `message-group selectable ${isOutgoing ? 'outgoing' : 'incoming'}`;
         groupDiv.id = normalizeId(msg._serialized ? msg : msg.id);
         groupDiv.dataset.timestamp = msg.timestamp;
         groupDiv.dataset.from = msg.participant || msg.from;

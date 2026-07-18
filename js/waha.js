@@ -102,6 +102,14 @@ export const waha = {
         return request(`/api/${config.session}/chats/${chatId}/picture`);
     },
 
+    async getUser(chatId) {
+        return request(`/api/${config.session}/contacts/${chatId}`);
+    },
+
+    async getUserAbout(chatId) {
+        return request(`/api/contacts/about?contactId=${chatId}&session=${config.session}`);
+    },
+
     async readChat(chatId) {
         return request('/api/sendSeen', {
             method: 'POST',
@@ -139,6 +147,15 @@ export const waha = {
                 chatId,
                 text,
                 session: config.session
+            })
+        });
+    },
+
+    async setStatus(text) {
+        return request(`/api/${config.session}/profile/status`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                status: text
             })
         });
     },

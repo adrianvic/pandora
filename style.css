@@ -1,3 +1,33 @@
+@font-face {
+  font-family: Selawik;
+  src: url(./fonts/selawk.ttf);
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: Selawik;
+  src: url(./fonts/selawkl.ttf);
+  font-weight: 200;
+}
+
+@font-face {
+  font-family: Selawik;
+  src: url(./fonts/selawksl.ttf);
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: Selawik;
+  src: url(./fonts/selawkb.ttf);
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: Selawik;
+  src: url(./fonts/selawkb.ttf);
+  font-weight: 800;
+}
+
 :root {
     --bg-main: black;
     --bg-secondary: #242424;
@@ -44,7 +74,7 @@ body.light {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: Selawik, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     user-select: none;
 }
 
@@ -106,7 +136,7 @@ input:focus {
 }
 
 .app-name {
-    font-weight: bolder;
+    font-weight: bold;
 }
 
 /* Sidebar Styling */
@@ -299,15 +329,28 @@ input:focus {
     border: 1px solid transparent;
 }
 
+.selected {
+  background: rgba(255, 255, 255, 0.04);
+  transform: scale(0.98) skewX(10deg);
+  filter: blur(.1px);
+  opacity: .6;
+}
+
 @media (hover: hover) {
-  .chat-item:hover {
-    background: rgba(255, 255, 255, 0.04);                                             transform: scale(0.98) skewX(10deg);                                               filter: blur(.1px);                                                                opacity: .6;
+  .selectable:hover {
+    background: rgba(255, 255, 255, 0.04);
+    transform: scale(0.98) skewX(10deg);
+    filter: blur(.1px);
+    opacity: .6;
   }
 }
 
 @media (hover: none) {
-  .chat-item:active {
-    background: rgba(255, 255, 255, 0.04);                                             transform: scale(0.98) skewX(10deg);                                               filter: blur(.1px);                                                                opacity: .6;
+  .selectable:active {
+    background: rgba(255, 255, 255, 0.04);
+    transform: scale(0.98) skewX(10deg);
+    filter: blur(.1px);
+    opacity: .6;
   }
 }
 
@@ -351,6 +394,7 @@ input:focus {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-weight: 300;
     flex: 1;
 }
 
@@ -403,11 +447,6 @@ input:focus {
 }
 
 /* Sidebar Footer */
-.sidebar-footer {
-    padding: 14px 20px;
-    background: var(--bg-secondary);
-}
-
 .api-status-badge {
     display: flex;
     align-items: center;
@@ -555,7 +594,7 @@ input:focus {
 
 .active-contact-info h3 {
     font-size: 1rem;
-    font-weight: bolder;
+    font-weight: bold;
 }
 
 .contact-status {
@@ -604,6 +643,7 @@ input:focus {
     display: flex;
     flex-direction: column;
     max-width: 65%;
+    transition: .1s;
 }
 
 .message-group.incoming {
@@ -826,6 +866,49 @@ input:focus {
     display: flex;
 }
 
+#profile-page {
+    flex-direction: column;
+    background-color: var(--bg-main);
+}
+
+#profile-page .content {
+    padding: 1.4rem;
+    display: flex;
+    gap: 1em;
+}
+
+#profile-page-user-info {
+    flex: 1;
+}
+
+#profile-page h2 {
+    padding: 1.4rem;
+    font-size: 5rem;
+    text-wrap-mode: nowrap;
+    overflow: hidden;
+    font-weight: 200;
+}
+
+#profile-page-picture {
+    width: 100%;
+    max-width: 10%;
+    height: auto;
+    aspect-ratio: 1/1;
+}
+
+#profile-page-status-input {
+    width: 100%;
+    background-color: var(--bg-main);
+    font-size: xx-large;
+    border-bottom: medium solid transparent;
+    padding: 0;
+}
+
+#profile-page-status-input:focus {
+    color: var(--text-primary);
+    border-bottom-color: var(--text-primary);
+}
+
 @media (max-width: 768px) {
     .app-container {
         width: 100%;
@@ -900,6 +983,19 @@ input:focus {
     
     #desktop-aside {
         display: none;
+    }
+
+    #profile-page .content {
+        flex-direction: column;
+    }
+
+    #profile-page-picture {
+        max-width: 50%;
+        margin: auto;
+    }
+
+    #profile-page-user-number {
+        text-align: center;
     }
 }
 

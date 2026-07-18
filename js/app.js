@@ -2,8 +2,8 @@ import { config } from "./config.js";
 import { waha } from "./waha.js";
 import { ui, elements } from "./ui.js";
 import { websocket } from "./websocket.js";
-import { compensateMessageOrdering, formatTime, normalizeId } from "./utils.js";
-import { fetchChats, getAppUser, getChatMessages, getChats, updateOnlineStatus } from "./storage.js";
+import { compensateMessageOrdering, debounce, formatTime, normalizeId } from "./utils.js";
+import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getUser, getUserAbout, sendStatus, updateOnlineStatus } from "./storage.js";
 import { upsertMessages } from "./db.js";
 
 let activeChatState = null;
@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await updateOnlineStatus();
     setupEventListeners();
     try {
-        elements.loggedUserName.textContent = (await getAppUser()).pushName;
+        setupElementsData();  
         loadChats();
         checkWahaStatus();
         initWebSocket();
@@ -28,6 +28,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         elements.chatsLoader.classList.add('hidden');
     }
 });
+
+async function setupElementsData() {
+    const usr = await getAppUser();
+    const usrPic = (await getChatPicture(usr.id))?.url;
+    const usrInfo = await getUser(usr.id);
+    const usrAbout = (await getUserAbout(usr.id)).about;
+    elements.contentUserName.forEach(e => {
+        e.innerHTML = usr.pushName;
+    })
+    elements.contentUserNumber.forEach(async e => {
+        e.innerHTML = usrInfo.number;
+    })
+    elements.resourceUserPic.forEach(async e => {
+        e.src = usrPic;
+    })
+    elements.valueUserStatus.forEach(async e => {
+        e.value = usrAbout.trim();
+    })
+}
 
 function loadChats() {
     elements.chatsLoader.classList.remove('hidden');
@@ -168,6 +187,17 @@ function setupEventListeners() {
     })
 
     elements.saveSettingsBtn.addEventListener('click', saveSettings);
+
+    elements.inputUserStatus.addEventListener('input', debounce(async function() {
+        const result = await sendStatus(elements.inputUserStatus.value);
+        console.log(result);
+    }, 2000))
+
+    // elements.selectable.forEach(e => {
+    //     e.addEventListener('pointerdown', () => {
+
+    //     })
+    // })
 }
 
 function initWebSocket() {

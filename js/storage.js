@@ -43,8 +43,20 @@ export function getGroups() {
   return chats.filter(c => c.id.endsWith("@g.us"));
 }
 
-export function getUser(number) {
-  return users.find(user => user.id === number);
+export async function getUser(number) {
+  if (online) {
+    return await waha.getUser(number);
+  } else {
+    return;
+  }
+}
+
+export async function getUserAbout(userId) {
+  if (online) {
+    return await waha.getUserAbout(userId);
+  } else {
+    return;
+  }
 }
 
 export function getChats() {
@@ -125,4 +137,14 @@ export async function getChatPicture(chatId) {
 
 export function isOnline() {
   return online;
+}
+
+export async function sendStatus(text) {
+  if (online) {
+    return await waha.setStatus(text);
+  } else {
+    return {
+      success: false
+    }
+  }
 }
