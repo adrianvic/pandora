@@ -1,4 +1,4 @@
-import { loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db.js";
+import { loadChat, loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db.js";
 import { waha } from "./waha.js";
 
 let online = false;
@@ -147,4 +147,14 @@ export async function sendStatus(text) {
       success: false
     }
   }
+}
+
+export async function markRead(chatId) {
+  if (online) {
+    await waha.readChat(chatId);
+  }
+
+  const chat = await loadChat(chatId);
+  chat.unreadCount = 0;
+  upsertMessages([chat]);
 }

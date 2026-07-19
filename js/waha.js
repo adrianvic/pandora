@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { showNotification } from "./notification.js";
 import { getBase64 } from "./utils.js";
 
 async function request(path, options = {}) {
@@ -24,6 +25,8 @@ async function request(path, options = {}) {
         } catch (_) {
             errorDetail = await response.text().catch(() => '');
         }
+
+        showNotification("API Error", `WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`, 2000);
         throw new Error(`WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`);
     }
     return response.json();

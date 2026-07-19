@@ -3,7 +3,7 @@ import { waha } from "./waha.js";
 import { ui, elements } from "./ui.js";
 import { websocket } from "./websocket.js";
 import { compensateMessageOrdering, debounce, formatTime, normalizeId } from "./utils.js";
-import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getUser, getUserAbout, sendStatus, updateOnlineStatus } from "./storage.js";
+import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getUser, getUserAbout, markRead, sendStatus, updateOnlineStatus } from "./storage.js";
 import { upsertMessages } from "./db.js";
 import { showNotification } from "./notification.js";
 
@@ -181,6 +181,9 @@ function setupEventListeners() {
         if (e.target == e.currentTarget) ui.toggleChatBottomBar();
     });
     
+    elements.markreadBtn.addEventListener('click', () => {
+        markRead(activeChatState.id);
+    })
     elements.attachmentBtn.addEventListener('click', () => {
         elements.attachmentInput.click();
     })

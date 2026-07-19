@@ -32,6 +32,7 @@ export const elements = {
     chatInputPanel: document.getElementById('chat-input-panel'),
     attachmentInput: document.getElementById('attachment-input'),
     attachmentBtn: document.getElementById('attachment-btn'),
+    markreadBtn: document.getElementById('markread-btn'),
     extraPages: document.querySelectorAll('.extra-page'),
     desktopSidebarButtons: document.querySelectorAll("#desktop-aside button"),
     contentUserName: document.querySelectorAll('[data-content="app-user"]'),

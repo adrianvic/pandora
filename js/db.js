@@ -107,6 +107,19 @@ export async function loadChatsSorted() {
   });
 }
 
+export async function loadChat(chatId) {
+  const db = await openDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("chats", "readonly");
+    const store = tx.objectStore("chats");
+    const req = store.get(chatId);
+
+    tx.oncomplete = () => resolve(req.result)
+    tx.onerror = () => reject(req.error);
+  });
+}
+
 function mapMessage(m) {
   const from = normalizeId(m.from);
   const to = normalizeId(m.to);
