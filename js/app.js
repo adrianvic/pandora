@@ -39,22 +39,26 @@ async function askForNotificationPermission() {
 }
 
 async function setupElementsData() {
-    const usr = await getAppUser();
-    const usrPic = (await getChatPicture(usr.id))?.url;
-    const usrInfo = await getUser(usr.id);
-    const usrAbout = (await getUserAbout(usr.id)).about;
-    elements.contentUserName.forEach(e => {
-        e.innerHTML = usr.pushName;
-    })
-    elements.contentUserNumber.forEach(async e => {
-        e.innerHTML = usrInfo.number;
-    })
-    elements.resourceUserPic.forEach(async e => {
-        e.src = usrPic;
-    })
-    elements.valueUserStatus.forEach(async e => {
-        e.value = usrAbout.trim();
-    })
+    try {
+        const usr = await getAppUser();
+        const usrPic = (await getChatPicture(usr.id))?.url;
+        const usrInfo = await getUser(usr.id);
+        const usrAbout = (await getUserAbout(usr.id))?.about;
+        elements.contentUserName.forEach(e => {
+            e.innerHTML = usr.pushName;
+        })
+        elements.contentUserNumber.forEach(async e => {
+            e.innerHTML = usrInfo.number;
+        })
+        elements.resourceUserPic.forEach(async e => {
+            e.src = usrPic;
+        })
+        elements.valueUserStatus.forEach(async e => {
+            e.value = usrAbout.trim();
+        })
+    } catch (error) {
+        console.error(error.message);
+    }
 }
 
 function loadChats() {
