@@ -154,7 +154,7 @@ export const ui = {
             
             if (!msg.fromMe && (!activeChatState || activeChatState.id !== (msg.fromMe ? msg.to : msg.from))) {
                 const unreadBadge = chat.querySelector('.unread-badge');
-                unreadBadge.innerText = (Number(unreadBadge.innerHTML) || 0) + 1;
+                if (unreadBadge) unreadBadge.innerText = (Number(unreadBadge.innerHTML) || 0) + 1;
             }
         }
     },
