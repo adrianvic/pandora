@@ -1,13 +1,20 @@
-// Client Configuration State & Storage Manager
+export interface Config {
+    wahaUrl: string;
+    session: string;
+    apiKey: string;
+    bgImg: string;
+    bgOpacity: string;
+    save(url: string, session: string, apiKey: string, bgImg: string, bgOpacity: string): void;
+}
 
-export const config = {
+export const config: Config = {
     wahaUrl: localStorage.getItem('waha_url') || 'http://inspiran.beetal-castor.ts.net:3100',
     session: localStorage.getItem('waha_session') || 'session_01kxc62bk5fs8vh4v127k88a7j',
     apiKey: localStorage.getItem('waha_api_key') || '',
     bgImg: localStorage.getItem('background_image') || '',
     bgOpacity: localStorage.getItem('background_opacity') || '0.4',
 
-    save(url, session, apiKey, bgImg, bgOpacity) {
+    save(url: string, session: string, apiKey: string, bgImg: string, bgOpacity: string): void {
         this.wahaUrl = url.trim().replace(/\/$/, "");
         this.session = session.trim();
         this.apiKey = apiKey.trim();

@@ -1,19 +1,18 @@
-import { config } from "./config.js";
-import { showNotification } from "./notification.js";
-import { getBase64 } from "./utils.js";
+import { config } from "./config";
+import { showNotification } from "./notification";
+import { getBase64 } from "./utils";
+import type { Message, VersionResponse, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse } from "./types";
 
-async function request(path, options = {}) {
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const url = `${config.wahaUrl}${path}`;
-    const headers = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'accept': '*/*',
-        ...options.headers
+        ...(options.headers as Record<string, string>)
     };
     if (config.apiKey) {
         headers['X-Api-Key'] = config.apiKey;
     }
-
-    // console.log(`[WAHA] ${options.method || 'GET'} ${url}`, options.body ? JSON.parse(options.body) : '');
 
     const response = await fetch(url, { ...options, headers });
     if (!response.ok) {
@@ -26,24 +25,22 @@ async function request(path, options = {}) {
             errorDetail = await response.text().catch(() => '');
         }
 
-        showNotification("API Error", `WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`, 2000);
+        showNotification("API Error", `WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`, 4000);
         throw new Error(`WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`);
     }
     return response.json();
 }
 
-async function downloadFile(path, options = {}) {
+async function downloadFile(path: string, options: RequestInit = {}): Promise<{ blob: Blob, filename: string }> {
   const url = `${config.wahaUrl}${path}`;
 
-  const headers = {
-    'Content-Type': options.headers?.['Content-Type'] ?? 'application/json',
+  const headers: Record<string, string> = {
+    'Content-Type': (options.headers as Record<string, string> | undefined)?.['Content-Type'] ?? 'application/json',
     'accept': '*/*',
-    ...options.headers
+    ...(options.headers as Record<string, string>)
   };
 
   if (config.apiKey) headers['X-Api-Key'] = config.apiKey;
-
-//   console.log(`[WAHA] ${options.method || 'GET'} ${url}`);
 
   const response = await fetch(url, { ...options, headers });
 
@@ -69,14 +66,13 @@ async function downloadFile(path, options = {}) {
   return { blob, filename };
 }
 
-
 export const waha = {
-    async getVersion() {
-        return await request('/api/version');
+    async getVersion(): Promise<VersionResponse> {
+        return await request<VersionResponse>('/api/version');
     },
 
-    async getChats() {
-        const data = await request(`/api/${config.session}/chats`);
+    async getChats(): Promise<any[]> {
+        const data = await request<any[]>(`/api/${config.session}/chats`);
         return data.map(chat => {
             let chatId = chat.id;
             if (chatId && typeof chatId === "object") {
@@ -92,59 +88,58 @@ export const waha = {
         });
     },
 
-    async getChatMessages(chatId, beforeTimestamp) {
-        console.log(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40&sortBy=timestamp${beforeTimestamp ? `&filter.timestamp.gte=${beforeTimestamp}` : "" }`);
-        return request(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40${beforeTimestamp ? `&filter.timestamp.lte=${beforeTimestamp}` : "" }`);
+    async getChatMessages(chatId: string, beforeTimestamp?: any): Promise<Message[]> {
+        return request<Message[]>(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40${beforeTimestamp ? `&filter.timestamp.lte=${beforeTimestamp}` : "" }`);
     },
 
-    async getSingleChatMessage(chatId, messageId, downladMedia) {
-        return request(`/api/${config.session}/chats/${chatId}/messages/${messageId}?downloadMedia=${downladMedia}`);
+    async getSingleChatMessage(chatId: string, messageId: string, downloadMedia: boolean): Promise<Message> {
+        return request<Message>(`/api/${config.session}/chats/${chatId}/messages/${messageId}?downloadMedia=${downloadMedia}`);
     },
 
-    async getChatPicture(chatId) {
-        return request(`/api/${config.session}/chats/${chatId}/picture`);
+    async getChatPicture(chatId: string): Promise<ChatPictureResponse> {
+        return request<ChatPictureResponse>(`/api/${config.session}/chats/${chatId}/picture`);
     },
 
-    async getUser(chatId) {
-        return request(`/api/${config.session}/contacts/${chatId}`);
+    async getUser(chatId: string): Promise<ContactInfo> {
+        return request<ContactInfo>(`/api/${config.session}/contacts/${chatId}`);
     },
 
-    async getUserAbout(chatId) {
-        return request(`/api/contacts/about?contactId=${chatId}&session=${config.session}`);
+    async getUserAbout(chatId: string): Promise<UserAboutResponse> {
+        return request<UserAboutResponse>(`/api/contacts/about?contactId=${chatId}&session=${config.session}`);
     },
 
-    async readChat(chatId) {
+    async readChat(chatId: string): Promise<any> {
         return request('/api/sendSeen', {
             method: 'POST',
             body: JSON.stringify({ chatId, session: config.session })
         });
     },
 
-    async downloadMedia(file) {
+    async downloadMedia(file: string): Promise<{ blob: Blob, filename: string }> {
         const { blob, filename } = await downloadFile(`/api/files/${config.session}/${file}`);
         return { blob, filename };
     },
 
-    async getMyInfo() {
-        return request(`/api/sessions/${config.session}/me`);
+    async getMyInfo(): Promise<AppUser> {
+        return request<AppUser>(`/api/sessions/${config.session}/me`);
     },
 
-    async startTyping(chatId) {
+    async startTyping(chatId: string): Promise<any> {
         return request('/api/startTyping', {
             method: 'POST',
             body: JSON.stringify({ chatId, session: config.session })
         });
     },
 
-    async stopTyping(chatId) {
+    async stopTyping(chatId: string): Promise<any> {
         return request('/api/stopTyping', {
             method: 'POST',
             body: JSON.stringify({ chatId, session: config.session })
         });
     },
 
-    async sendTextMessage(chatId, text) {
-        return request('/api/sendText', {
+    async sendTextMessage(chatId: string, text: string): Promise<Message> {
+        return request<Message>('/api/sendText', {
             method: 'POST',
             body: JSON.stringify({
                 chatId,
@@ -154,8 +149,8 @@ export const waha = {
         });
     },
 
-    async setStatus(text) {
-        return request(`/api/${config.session}/profile/status`, {
+    async setStatus(text: string): Promise<StatusResponse> {
+        return request<StatusResponse>(`/api/${config.session}/profile/status`, {
             method: 'PUT',
             body: JSON.stringify({
                 status: text
@@ -163,9 +158,9 @@ export const waha = {
         });
     },
 
-    async sendFileMessage(chatId, file) {
+    async sendFileMessage(chatId: string, file: File): Promise<Message> {
         const fileBase64 = await getBase64(file);
-        const body = {
+        const body: RequestInit = {
             method: 'POST',
             body: JSON.stringify({
                 chatId,
@@ -183,7 +178,7 @@ export const waha = {
         if (file.type.startsWith('image/')) endpoint = '/api/sendImage';
         if (file.type.startsWith('video/')) endpoint = '/api/sendVideo';
 
-        const result = await request(endpoint, body);
+        const result = await request<Message>(endpoint, body);
         return result;
     }
 };

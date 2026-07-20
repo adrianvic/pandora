@@ -233,11 +233,11 @@ input:focus {
 
 .icon-btn:hover {
     background: rgba(255, 255, 255, 0.08);
-    color: var(--bg-main);
+    color: var(--text-primary);
     border-color: var(--border-hover);
 }
 
-.icon-btn:hover::before {
+#chat-bottom-bar .icon-btn:hover::before {
     color: var(--bg-main);
 }
 

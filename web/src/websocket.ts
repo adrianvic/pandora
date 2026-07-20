@@ -1,13 +1,14 @@
-import { config } from "./config.js";
-import { isOnline, updateOnlineStatus } from "./storage.js";
+import { config } from "./config";
+import { isOnline, updateOnlineStatus } from "./storage";
+import type { WebSocketEvent } from "./types";
 
-let socket = null;
-let reconnectTimer = null;
-let currentOnMessageCallback = null;
+let socket: WebSocket | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let currentOnMessageCallback: ((data: WebSocketEvent) => void) | null = null;
 
 export const websocket = {
-    connect(onMessageCallback) {
-        if (!isOnline) return;
+    connect(onMessageCallback: (data: WebSocketEvent) => void) {
+        if (!isOnline()) return;
         currentOnMessageCallback = onMessageCallback;
 
         this.disconnect(false);
@@ -48,7 +49,7 @@ export const websocket = {
 
             socket.onmessage = (event) => {
                 try {
-                    const data = JSON.parse(event.data);
+                    const data = JSON.parse(event.data) as WebSocketEvent;
                     if (currentOnMessageCallback) {
                         currentOnMessageCallback(data);
                     }
@@ -64,10 +65,13 @@ export const websocket = {
             socket.onclose = (event) => {
                 console.log(`[WS] Connection closed (code: ${event.code}). Reconnecting in 5 seconds...`);
                 socket = null;
-                
+
                 reconnectTimer = setTimeout(() => {
-                    updateOnlineStatus();
-                    this.connect(currentOnMessageCallback);
+                    updateOnlineStatus().then(() => {
+                        if (currentOnMessageCallback) {
+                            this.connect(currentOnMessageCallback);
+                        }
+                    });
                 }, 5000);
             };
         } catch (e) {

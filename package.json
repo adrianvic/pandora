@@ -1,0 +1,18 @@
+{
+  "name": "pandora",
+  "version": "1.0.0",
+  "description": "<img width=\"1920\" height=\"auto\" alt=\"PANDORA\" src=\"https://github.com/user-attachments/assets/d9d7ba36-4510-47e1-8c49-b1977a26c448\" />",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5"
+  }
+}

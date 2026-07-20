@@ -1,10 +1,11 @@
-import { loadChat, loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db.js";
-import { waha } from "./waha.js";
+import { loadChat, loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db";
+import { waha } from "./waha";
+import type { Chat, Message, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse, DownloadedMedia } from "./types";
 
 let online = false;
-let chats = [];
+let chats: Chat[] = [];
 
-export async function updateOnlineStatus() {
+export async function updateOnlineStatus(): Promise<void> {
   try {
     await waha.getVersion();
     online = true;
@@ -14,17 +15,17 @@ export async function updateOnlineStatus() {
   }
 }
 
-export async function fetchChats() {
+export async function fetchChats(): Promise<void> {
   if (online) {
     await getRemoteChats()
   }
   chats = await loadChatsSorted();
 }
 
-export async function getRemoteChats() {
+export async function getRemoteChats(): Promise<void> {
   const u = await waha.getChats();
 
-  const mapped = u.map(chat => ({
+  const mapped: Chat[] = u.map(chat => ({
     id: chat.id,
     name: chat.name,
     lastMessage: chat.lastMessage,
@@ -35,15 +36,15 @@ export async function getRemoteChats() {
   await upsertChats(mapped);
 }
 
-export function getUsers() {
+export function getUsers(): Chat[] {
   return chats.filter(c => c.id.endsWith("@c.us"));
 }
 
-export function getGroups() {
+export function getGroups(): Chat[] {
   return chats.filter(c => c.id.endsWith("@g.us"));
 }
 
-export async function getUser(number) {
+export async function getUser(number: string): Promise<ContactInfo | undefined> {
   if (online) {
     return await waha.getUser(number);
   } else {
@@ -51,7 +52,7 @@ export async function getUser(number) {
   }
 }
 
-export async function getUserAbout(userId) {
+export async function getUserAbout(userId: string): Promise<UserAboutResponse | undefined> {
   if (online) {
     return await waha.getUserAbout(userId);
   } else {
@@ -59,25 +60,26 @@ export async function getUserAbout(userId) {
   }
 }
 
-export function getChats() {
+export function getChats(): Chat[] {
   return chats;
 }
 
-export async function getAppUser() {
+export async function getAppUser(): Promise<AppUser> {
   if (online) {
     const info = await waha.getMyInfo();
-    localStorage.setItem('pandora-last-username', info.name);
+    localStorage.setItem('pandora-last-username', info.pushName || info.name || '');
     localStorage.setItem('pandora-last-userid', info.id);
     return info;
   } else {
     return {
         pushName: localStorage.getItem('pandora-last-username') || 'Unknown',
+        name: localStorage.getItem('pandora-last-username') || 'Unknown',
         id: localStorage.getItem('pandora-last-userid') || 'Unknown'
-      }
+      } as AppUser;
   }
 }
 
-export async function getMessage(chatId, msgId, downloadMedia) {
+export async function getMessage(chatId: string, msgId: string, downloadMedia: boolean): Promise<Message> {
   if (online) {
     const newMessage = await waha.getSingleChatMessage(chatId, msgId, downloadMedia);
     upsertMessages([newMessage]);
@@ -88,14 +90,14 @@ export async function getMessage(chatId, msgId, downloadMedia) {
       body: "You're offline",
       from: "system",
       timestamp: new Date().toISOString()
-    };
+    } as Message;
   }
 }
 
-export async function getMedia(reqId) {
+export async function getMedia(reqId: string): Promise<DownloadedMedia | undefined> {
     const cached = await loadMedia(reqId);
     if (cached) {
-      return cached;
+      return { blob: cached.blob, filename: cached.filename };
     }
 
     try {
@@ -109,7 +111,7 @@ export async function getMedia(reqId) {
     }
 }
 
-export async function getChatMessages(chatId) {
+export async function getChatMessages(chatId: string): Promise<Message[]> {
   if (online) {
     const newMessages = await waha.getChatMessages(chatId);
     upsertMessages(newMessages);
@@ -119,7 +121,7 @@ export async function getChatMessages(chatId) {
   }
 }
 
-export async function getMoreChatMessages(chatId, oldestTimestamp, oldestId, limit = 50) {
+export async function getMoreChatMessages(chatId: string, oldestTimestamp: any, oldestId: string): Promise<Message[]> {
   if (online) {
     return waha.getChatMessages(chatId, oldestTimestamp);
   } else {
@@ -127,7 +129,7 @@ export async function getMoreChatMessages(chatId, oldestTimestamp, oldestId, lim
   }
 }
 
-export async function getChatPicture(chatId) {
+export async function getChatPicture(chatId: string): Promise<ChatPictureResponse> {
   if (online) {
     return await waha.getChatPicture(chatId);
   } else {
@@ -135,11 +137,11 @@ export async function getChatPicture(chatId) {
   }
 }
 
-export function isOnline() {
+export function isOnline(): boolean {
   return online;
 }
 
-export async function sendStatus(text) {
+export async function sendStatus(text: string): Promise<StatusResponse> {
   if (online) {
     return await waha.setStatus(text);
   } else {
@@ -149,12 +151,17 @@ export async function sendStatus(text) {
   }
 }
 
-export async function markRead(chatId) {
+export async function markRead(chatId: string): Promise<Chat | undefined> {
   if (online) {
     await waha.readChat(chatId);
   }
 
   const chat = await loadChat(chatId);
-  chat.unreadCount = 0;
-  upsertMessages([chat]);
+  if (chat) {
+      chat.unreadCount = 0;
+      // Note: upsertMessages was called with [chat] in JS, but chat is a Chat object, not Message.
+      // Keeping JS behavior but chat is Chat type here.
+      await upsertChats([chat]);
+  }
+  return chat;
 }

@@ -1,25 +1,26 @@
-import { normalizeId } from "./utils.js";
+import { normalizeId } from "./utils";
+import type { Chat, Message, StoredMedia } from "./types";
 
 const DB_NAME = "pandora";
 const DB_VERSION = 6;
-let dbPromise = null;
+let dbPromise: Promise<IDBDatabase> | null = null;
 
-function openDb() {
+function openDb(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
 
   dbPromise = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
 
-    req.onupgradeneeded = (e) => {
+    req.onupgradeneeded = () => {
       const db = req.result;
-      const tx = req.transaction;
+      const tx = req.transaction!;
 
       if (!db.objectStoreNames.contains("chats")) {
         const store = db.createObjectStore("chats", { keyPath: "id" });
         store.createIndex("timestamp", "timestamp", { unique: false });
       }
 
-      let msgStore;
+      let msgStore: IDBObjectStore;
       if (!db.objectStoreNames.contains("messages")) {
         msgStore = db.createObjectStore("messages", { keyPath: "id" });
         msgStore.createIndex("from", "from", { unique: false });
@@ -33,22 +34,21 @@ function openDb() {
         msgStore.createIndex("chatId_timestamp", ["chatId", "timestamp"], { unique: false });
       }
 
-      if (db.objectStoreNames.contains("messages")) {
-        msgStore.openCursor().onsuccess = (event) => {
-          const cursor = event.target.result;
-          if (cursor) {
-            const m = cursor.value;
-            const from = normalizeId(m.from);
-            const to = normalizeId(m.to);
-            const chatId = normalizeId(m.chatId) || (m.fromMe ? to : from);
-            if (!m.chatId && chatId) {
-              m.chatId = chatId;
-              cursor.update(m);
-            }
-            cursor.continue();
+      // Migration logic
+      msgStore.openCursor().onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
+        if (cursor) {
+          const m = cursor.value as Message;
+          const from = normalizeId(m.from);
+          const to = normalizeId(m.to);
+          const chatId = normalizeId(m.chatId) || (m.fromMe ? to : from);
+          if (!m.chatId && chatId) {
+            m.chatId = chatId;
+            cursor.update(m);
           }
-        };
-      }
+          cursor.continue();
+        }
+      };
 
       if (!db.objectStoreNames.contains("media")) {
         db.createObjectStore("media", { keyPath: "reqId" });
@@ -62,7 +62,7 @@ function openDb() {
   return dbPromise;
 }
 
-export async function upsertChats(chats) {
+export async function upsertChats(chats: Chat[]): Promise<void> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
@@ -84,7 +84,7 @@ export async function upsertChats(chats) {
   });
 }
 
-export async function loadChatsSorted() {
+export async function loadChatsSorted(): Promise<Chat[]> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
@@ -92,9 +92,9 @@ export async function loadChatsSorted() {
     const store = tx.objectStore("chats");
     const idx = store.index("timestamp");
 
-    const result = [];
+    const result: Chat[] = [];
     idx.openCursor(null, "prev").onsuccess = (e) => {
-      const cursor = e.target.result;
+      const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
       if (cursor) {
         result.push(cursor.value);
         cursor.continue();
@@ -107,7 +107,7 @@ export async function loadChatsSorted() {
   });
 }
 
-export async function loadChat(chatId) {
+export async function loadChat(chatId: string): Promise<Chat | undefined> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
@@ -115,12 +115,12 @@ export async function loadChat(chatId) {
     const store = tx.objectStore("chats");
     const req = store.get(chatId);
 
-    tx.oncomplete = () => resolve(req.result)
-    tx.onerror = () => reject(req.error);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
   });
 }
 
-function mapMessage(m) {
+function mapMessage(m: Message): any {
   const from = normalizeId(m.from);
   const to = normalizeId(m.to);
   const chatId = normalizeId(m.chatId) || (m.fromMe ? to : from);
@@ -139,7 +139,7 @@ function mapMessage(m) {
   }
 }
 
-export async function upsertMessages(messages) {
+export async function upsertMessages(messages: Message[]): Promise<void> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
@@ -155,7 +155,7 @@ export async function upsertMessages(messages) {
   });
 }
 
-export async function loadLatestMessages(chatId, limit = 50) {
+export async function loadLatestMessages(chatId: string, limit: number = 50): Promise<Message[]> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
@@ -163,12 +163,12 @@ export async function loadLatestMessages(chatId, limit = 50) {
     const store = tx.objectStore("messages");
     const idx = store.index("chatId_timestamp");
 
-    const out = [];
+    const out: Message[] = [];
 
     const range = IDBKeyRange.bound([chatId, -Infinity], [chatId, Infinity]);
 
     idx.openCursor(range, "prev").onsuccess = (e) => {
-      const cursor = e.target.result;
+      const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
       if (!cursor) return resolve(out);
 
       out.push(cursor.value);
@@ -180,7 +180,7 @@ export async function loadLatestMessages(chatId, limit = 50) {
   });
 }
 
-export async function loadOlderMessages(chatId, oldestTimestamp, oldestId, limit = 50) {
+export async function loadOlderMessages(chatId: string, oldestTimestamp: any, oldestId: string, limit: number = 50): Promise<Message[]> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
@@ -188,7 +188,7 @@ export async function loadOlderMessages(chatId, oldestTimestamp, oldestId, limit
     const store = tx.objectStore("messages");
     const idx = store.index("cidTimestampId");
 
-    const out = [];
+    const out: Message[] = [];
 
     const parsedTimestamp = isNaN(oldestTimestamp) ? oldestTimestamp : Number(oldestTimestamp);
 
@@ -200,7 +200,7 @@ export async function loadOlderMessages(chatId, oldestTimestamp, oldestId, limit
     );
 
     idx.openCursor(range, "prev").onsuccess = (e) => {
-      const cursor = e.target.result;
+      const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
       if (!cursor) return resolve(out);
 
       out.push(cursor.value);
@@ -213,7 +213,7 @@ export async function loadOlderMessages(chatId, oldestTimestamp, oldestId, limit
   });
 }
 
-export async function upsertMedia(reqId, blob, filename) {
+export async function upsertMedia(reqId: string, blob: Blob, filename: string): Promise<void> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
@@ -231,7 +231,7 @@ export async function upsertMedia(reqId, blob, filename) {
   });
 }
 
-export async function loadMedia(reqId) {
+export async function loadMedia(reqId: string): Promise<StoredMedia | undefined> {
   const db = await openDb();
 
   return new Promise((resolve, reject) => {
