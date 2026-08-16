@@ -79,11 +79,11 @@ export const waha = {
                 chatId = chatId._serialized || chatId.user || JSON.stringify(chatId);
             }
             return {
-                id: chatId || chat.chatId || chat.name,
-                name: chat.name || "Unknown Contact",
+                id: chatId || chat.chatId || null,
+                name: chat.name || null,
                 unreadCount: chat.unreadCount || 0,
-                lastMessage: chat.lastMessage?.body || chat.lastMessageText || "Click to open chat",
-                timestamp: chat.lastMessage?.timestamp || new Date()
+                lastMessage: chat.lastMessage?.body || chat.lastMessageText || null,
+                timestamp: chat.lastMessage?.timestamp || null
             };
         });
     },

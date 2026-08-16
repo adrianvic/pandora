@@ -243,3 +243,7 @@ export async function loadMedia(reqId: string): Promise<StoredMedia | undefined>
     req.onerror = () => reject(req.error);
   });
 }
+
+export function deleteDatabase() {
+  indexedDB.deleteDatabase(DB_NAME);
+}

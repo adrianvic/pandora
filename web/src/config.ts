@@ -8,8 +8,8 @@ export interface Config {
 }
 
 export const config: Config = {
-    wahaUrl: localStorage.getItem('waha_url') || 'http://inspiran.beetal-castor.ts.net:3100',
-    session: localStorage.getItem('waha_session') || 'session_01kxc62bk5fs8vh4v127k88a7j',
+    wahaUrl: localStorage.getItem('waha_url') || '',
+    session: localStorage.getItem('waha_session') || '',
     apiKey: localStorage.getItem('waha_api_key') || '',
     bgImg: localStorage.getItem('background_image') || '',
     bgOpacity: localStorage.getItem('background_opacity') || '0.4',

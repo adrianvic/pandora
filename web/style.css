@@ -93,9 +93,6 @@ html, body {
 body {
     background-color: var(--bg-main);
     color: var(--text-primary);
-    background-image: 
-    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.12) 0px, transparent 50%);
 }
 
 a {
@@ -129,14 +126,42 @@ input:focus {
 
 .app-container {
     display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100dvh;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.main-holder {
+    display: flex;
+}
+
+._scrollableView, ._scrollableContainer {
+    display: flex;
+    flex-direction: row;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.app-container::-webkit-scrollbar, ._scrollableContainer::-webkit-scrollbar, ._scrollableView::-webkit-scrollbar {
+    display: none;
 }
 
 .app-name {
     font-weight: bold;
+}
+
+.dim {
+    opacity: .6;
 }
 
 /* Sidebar Styling */
@@ -235,10 +260,6 @@ input:focus {
     background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
     border-color: var(--border-hover);
-}
-
-#chat-bottom-bar .icon-btn:hover::before {
-    color: var(--bg-main);
 }
 
 .icon-btn:active {
@@ -444,6 +465,7 @@ input:focus {
 .api-status-badge {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     font-size: 0.75rem;
     color: var(--text-secondary);
@@ -480,6 +502,7 @@ input:focus {
     display: flex;
     flex-direction: column;
     position: relative;
+    height: 100%;
 }
 
 /* Empty State */
@@ -847,8 +870,14 @@ input:focus {
 
 /* Extra Pages */
 .extra-page {
-    display: none;
+    display: flex;
+    flex-direction: column;
     width: 100%;
+    height: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    flex: 0 0 100%;
+
 }
 
 .extra-page-content {
@@ -875,7 +904,7 @@ input:focus {
     flex: 1;
 }
 
-#profile-page h2 {
+.big-title {
     padding: 1.4rem;
     font-size: 5rem;
     text-wrap-mode: nowrap;
@@ -935,13 +964,12 @@ input:focus {
         scroll-snap-type: x mandatory;
         -webkit-overflow-scrolling: touch;
         
-        /* Hide scrollbars */
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
     
     .app-container::-webkit-scrollbar {
-        display: none; /* Chrome, Safari, Opera */
+        display: none;
     }
     
     .sidebar {
@@ -969,7 +997,7 @@ input:focus {
     }
     
     .extra-page {
-        display: block;
+        display: flex;
         width: 100%;
         flex: 0 0 100%;
         position: relative;
@@ -1018,7 +1046,6 @@ input:focus {
 .modal-content {
     width: 100%;
     background: var(--bg-main);
-    padding: 24px;
     box-shadow: var(--shadow-lg);
     backdrop-filter: var(--glass-blur);
     display: flex;
@@ -1035,7 +1062,7 @@ input:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    padding: 1em 2em 0em 2em;
 }
 
 .modal-header h2 {
@@ -1047,6 +1074,11 @@ input:focus {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    min-height: 0;
+    overflow-y: auto;
+    flex: 1;
+    overflow-x: hidden;
+    padding: 0 2rem 0 2rem;
 }
 
 .form-group {
@@ -1071,7 +1103,7 @@ input:focus {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    margin-top: auto;
+    padding: 1rem 2rem;
 }
 
 .btn {
@@ -1084,8 +1116,15 @@ input:focus {
 }
 
 .primary-btn {
-    background: var(--accent-gradient);
-    color: white;
+    background: transparent;
+    color: var(--text-primary);
+    border: medium solid var(--bg-secondary);
+}
+
+.primary-btn:hover {
+    background: var(--text-primary);
+    color: var(--bg-main);
+    border-color: var(--text-primary);
 }
 
 .secondary-btn {

@@ -1,28 +1,34 @@
 import { config } from "./config";
 import { waha } from "./waha";
-import { ui, elements } from "./ui";
+import { ui, elements, views } from "./ui";
 import { websocket } from "./websocket";
 import { compensateMessageOrdering, debounce, formatTime, normalizeId } from "./utils";
 import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getUser, getUserAbout, markRead, sendStatus, updateOnlineStatus } from "./storage";
-import { upsertMessages } from "./db";
+import { deleteDatabase, upsertMessages } from "./db";
 import { showNotification } from "./notification";
 import type { Chat, Message, WebSocketEvent } from "./types";
+import { activeChatState, setActiveChatState } from "./states";
 
-let activeChatState: Chat | null = null;
 const messageTone = new Audio("./message.ogg");
 const longPressEvent = new CustomEvent("longpress");
 export let isLoadingChat = false;
 export let notificationAuthorization: NotificationPermission = "default";
+const mainViewEl = document.getElementById("main-view");
+if (!mainViewEl) throw console.error();
+const mainView = views.get(mainViewEl);
 
 document.addEventListener('DOMContentLoaded', async () => {
+    updateSidebarPosition();
     askForNotificationPermission();
-    elements.inputApiKey.value = config.apiKey;
-    elements.inputWahaUrl.value = config.wahaUrl;
-    elements.inputSession.value = config.session;
-    elements.inputBackgroundImage.value = config.bgImg;
-    elements.inputBackgroundOpacity.value = config.bgOpacity;
-    elements.activeChatContainer.style.setProperty('--background-image', `URL("${config.bgImg}")`);
-    elements.activeChatContainer.style.setProperty('--background-opacity', `${config.bgOpacity}`);
+    if (elements.inputApiKey) elements.inputApiKey.value = config.apiKey;
+    if (elements.inputWahaUrl) elements.inputWahaUrl.value = config.wahaUrl;
+    if (elements.inputSession) elements.inputSession.value = config.session;
+    if (elements.inputBackgroundImage) elements.inputBackgroundImage.value = config.bgImg;
+    if (elements.inputBackgroundOpacity) elements.inputBackgroundOpacity.value = config.bgOpacity;
+    if (elements.activeChatContainer) {
+        elements.activeChatContainer.style.setProperty('--background-image', `URL("${config.bgImg}")`);
+        elements.activeChatContainer.style.setProperty('--background-opacity', `${config.bgOpacity}`);
+    }
     await updateOnlineStatus();
     setupEventListeners();
     try {
@@ -62,12 +68,21 @@ async function setupElementsData() {
     }
 }
 
+function purgeDatabase(ask: boolean = true) {
+    if (ask) {
+        if (!(confirm("Are you sure you want to delete all cached messages?") && confirm("This cannot be undone. Proceed?"))) return;
+    }
+    localStorage.clear();
+    deleteDatabase();
+    location.reload();
+}
+
 function loadChats() {
     elements.chatsLoader.classList.remove('hidden');
     try {
         fetchChats().then(async () => {
             ui.renderChatList(getChats(), activeChatState, selectChat);
-
+            
             const hash = window.location.hash;
             if (hash && hash.startsWith('#chat-')) {
                 const chatId = hash.replace('#chat-', '');
@@ -115,10 +130,12 @@ function scrollToList(smooth = true) {
 }
 
 function setupEventListeners() {
+    window.addEventListener('resize', updateSidebarPosition);
+
     if (!window.location.hash) {
         window.location.hash = '';
     }
-
+    
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash;
         if (hash && hash.startsWith('#chat-')) {
@@ -131,16 +148,16 @@ function setupEventListeners() {
             closeActiveChat(true);
         }
     });
-
+    
     elements.appContainer.addEventListener('scroll', () => {
         if (window.innerWidth > 768) return;
         if (isScrollingProgrammatically) return;
-
+        
         if (scrollTimeout) clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
             const scrollLeft = elements.appContainer.scrollLeft;
             const width = elements.appContainer.clientWidth;
-
+            
             if (scrollLeft < width * 0.2) {
                 // User swiped back to the list view
                 if (activeChatState) {
@@ -149,14 +166,22 @@ function setupEventListeners() {
             }
         }, 100);
     });
-
+    
+    elements.appContainer.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            elements.desktopAside.after(elements.sidebar);
+        } else {
+            mainViewEl?.insertBefore(elements.sidebar, mainViewEl.firstChild);
+        }
+    })
+    
     document.addEventListener('keydown', (e) => {
         if (e.code == "Escape") {
             e.preventDefault();
             closeActiveChat(false);
         }
     });
-
+    
     elements.chatSearch.addEventListener('input', (e: Event) => {
         const query = (e.target as HTMLInputElement).value.toLowerCase();
         const filtered = getChats().filter(chat =>
@@ -164,24 +189,24 @@ function setupEventListeners() {
         );
         ui.renderChatList(filtered, activeChatState, selectChat);
     });
-
+    
     elements.messageForm.addEventListener('submit', (e) => {
         e.preventDefault();
         sendMessage();
     });
-
+    
     elements.chatBottomBar.style.height = `${elements.chatInputPanel.offsetHeight}px`;
     const observer = new ResizeObserver(() => {
         elements.chatBottomBar.style.height =
         `${elements.chatInputPanel.offsetHeight}px`;
     });
-
+    
     observer.observe(elements.chatInputPanel);
     elements.chatBottomBarBtn.addEventListener('click', ui.toggleChatBottomBar);
     elements.chatBottomBar.addEventListener('click', (e) => {
         if (e.target == e.currentTarget) ui.toggleChatBottomBar();
     });
-
+    
     elements.markreadBtn.addEventListener('click', async () => {
         if (activeChatState) {
             const result = await markRead(activeChatState.id);
@@ -195,20 +220,25 @@ function setupEventListeners() {
         const firstFile = this.files?.[0];
         if (firstFile) sendFileMessage(firstFile);
     })
-
+    
     elements.backToSidebarBtn.addEventListener('click', () => {
         closeActiveChat(false);
     });
-
+    
     elements.desktopSidebarButtons.forEach(sidebarBtn => {
         sidebarBtn.addEventListener('click', () => {
             const page = sidebarBtn.dataset.page;
-            if (page) ui.showExtraPage(page);
+            if (!page) return;
+            const pageEl = document.getElementById(page);
+            if (!pageEl) return;
+            if (page) mainView?.scrollTo(pageEl);
         })
     })
-
+    
     elements.saveSettingsBtn.addEventListener('click', saveSettings);
-
+    
+    elements.purgeDatabaseButton.addEventListener('click', () => purgeDatabase(true));
+    
     elements.inputUserStatus.addEventListener('input', debounce(async function() {
         const result = await sendStatus(elements.inputUserStatus.value);
         if (result?.success) {
@@ -218,30 +248,44 @@ function setupEventListeners() {
         }
         console.log(result);
     }, 2000))
-
+    
     elements.selectable.forEach(e => {
         let timerId: ReturnType<typeof setTimeout>, longPressed: boolean;
-
+        
         e.addEventListener('mousedown', () => {
             longPressed = false;
-
+            
             timerId = setTimeout(() => {
                 longPressed = true;
                 e.dispatchEvent(longPressEvent);
             }, 500); // 500ms for long press
         })
-
+        
         e.addEventListener('click', (event) => {
             if (longPressed) {
                 event.preventDefault();
                 clearTimeout(timerId);
             }
         })
-
+        
         e.addEventListener('mouseleave', () => {
             clearTimeout(timerId);
         })
     })
+}
+
+function updateSidebarPosition() {                                                                                      
+    if (!mainViewEl || !elements.sidebar || !elements.desktopAside) return;
+    
+    if (window.innerWidth > 768) {                                                                                                                                                         
+        if (elements.sidebar.parentElement !== elements.appContainer) {
+            elements.desktopAside.after(elements.sidebar);
+        }
+    } else {
+        if (elements.sidebar.parentElement !== mainViewEl) {
+            mainViewEl.insertBefore(elements.sidebar, mainViewEl.firstChild);
+        }
+    }
 }
 
 function initWebSocket() {
@@ -257,23 +301,23 @@ function initWebSocket() {
 
 async function handleIncomingMessage(msg: Message) {
     if (!msg) return;
-
+    
     ui.updateChatInChatList(msg);
-
+    
     const rawChatId = msg.chatId || (typeof msg.from === 'string' ? msg.from : (msg.from as any)?._serialized) || (msg.chat && msg.chat.id);
     const msgChatId = normalizeId(rawChatId);
     if (!msgChatId) {
         console.warn('[WS] Could not resolve chatId from payload:', msg);
         return;
     }
-
+    
     if (!msg.fromMe) {
         messageTone.play();
     }
     if (notificationAuthorization === "granted") {
         new Notification("New message", { body: msg.body || msg.text });
     }
-
+    
     if (activeChatState && activeChatState.id === msgChatId) {
         const msgId = normalizeId(msg.id as any) || (msg.id as string);
         const exists = document.getElementById(msgId);
@@ -290,16 +334,16 @@ async function handleIncomingMessage(msg: Message) {
 
 async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
     if (isLoadingChat) return;
-
+    
     isLoadingChat = true;
-    activeChatState = chat;
-
+    setActiveChatState(chat);
+    
     chat.unreadCount = 0;
-
+    
     ui.toggleChatState(true);
     elements.activeChatName.textContent = chat.name.toUpperCase();
     elements.activeChatAvatar.textContent = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
-
+    
     elements.messagesContainer.innerHTML = `
     <div class='loading-animation-wrapper'>
         <div class="animation">
@@ -311,18 +355,18 @@ async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
             <div class="dot"></div>
         </div>
     </div>`;
-
+    
     elements.appContainer.classList.remove('no-active-chat');
-
+    
     if (window.innerWidth <= 768) {
         scrollToChat(smoothScroll);
     }
-
+    
     if (!isPopState && window.location.hash !== `#chat-${chat.id}`) {
         window.location.hash = ``;
         window.location.hash = `chat-${chat.id}`;
     }
-
+    
     try {
         const rawMessages = await getChatMessages(chat.id);
         const processedMessages = compensateMessageOrdering(rawMessages);
@@ -331,20 +375,20 @@ async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
         console.error('Failed to load messages:', error);
         elements.messagesContainer.innerHTML = '<div class="loading-chats">Error loading messages</div>';
     }
-
+    
     isLoadingChat = false;
 }
 
 async function closeActiveChat(isPopState = false) {
-    activeChatState = null;
-
+    setActiveChatState(null);
+    
     if (window.innerWidth <= 768) {
         scrollToList();
     } else {
         ui.toggleChatState(false);
     }
-
-
+    
+    
     if (!isPopState) {
         if (window.location.hash.startsWith('#chat-')) {
             history.back();
@@ -355,9 +399,9 @@ async function closeActiveChat(isPopState = false) {
 async function sendMessage() {
     const text = elements.messageInput.value.trim();
     if (!text || !activeChatState) return;
-
+    
     elements.messageInput.value = '';
-
+    
     const tempMsg = {
         id: 'temp-' + Date.now(),
         body: text,
@@ -366,10 +410,10 @@ async function sendMessage() {
         timestamp: new Date().toISOString(),
         status: 'sending'
     } as any;
-
+    
     ui.appendSingleMessage(tempMsg, activeChatState.name, (await getAppUser()).id);
     ui.scrollToBottom();
-
+    
     try {
         try {
             await waha.startTyping(activeChatState.id);
@@ -378,13 +422,13 @@ async function sendMessage() {
         } catch (e) {
             console.warn('Presence start failed:', e);
         }
-
+        
         try {
             await waha.stopTyping(activeChatState.id);
         } catch (e) {
             console.warn('Presence stop failed:', e);
         }
-
+        
         try {
             if (!activeChatState.id.endsWith('@lid')) {
                 await waha.readChat(activeChatState.id);
@@ -392,9 +436,9 @@ async function sendMessage() {
         } catch (e: any) {
             console.warn('readChat failed (non-fatal):', e.message);
         }
-
+        
         const responseData = await waha.sendTextMessage(activeChatState.id, text);
-
+        
         const tempBubble = document.getElementById(tempMsg.id);
         if (tempBubble) {
             if (responseData && responseData.id) {
@@ -403,7 +447,7 @@ async function sendMessage() {
             const meta = tempBubble.querySelector('.message-meta');
             if (meta) meta.innerHTML = `<span>${formatTime(new Date())}</span><span style="width:14px; height:14px;" class="mif-done">`;
         }
-
+        
         activeChatState.lastMessage = text;
         activeChatState.timestamp = new Date().toISOString();
     } catch (error) {
@@ -436,10 +480,10 @@ async function sendFileMessage(file: File) {
                 filename: file.name
             }
         } as any;
-
+        
         ui.appendSingleMessage(tempMsg, activeChatState.name, (await getAppUser()).id, true);
         ui.scrollToBottom();
-
+        
         const result = await waha.sendFileMessage(activeChatState.id, file);
         ui.removeChatMessage(tempId);
         ui.appendSingleMessage(result, activeChatState.name, (await getAppUser()).id);
