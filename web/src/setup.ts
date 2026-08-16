@@ -1,5 +1,5 @@
 import { config } from "./config";
-import { elements, ScrollableView, ui, views } from "./ui";
+import { elements, views } from "./ui";
 import { waha } from "./waha";
 
 const page = views.get(elements.appContainer);
