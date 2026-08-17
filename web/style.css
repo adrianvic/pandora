@@ -1054,6 +1054,7 @@ input:focus {
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow-x: hidden;
 }
 
 .modal-body h3 {
