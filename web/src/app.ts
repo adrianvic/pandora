@@ -9,6 +9,8 @@ import { showNotification } from "./notification";
 import type { Chat, Message, WebSocketEvent } from "./types";
 import { activeChatState, setActiveChatState } from "./states";
 
+if (localStorage.getItem('setupComplete') !== "true") window.location.href = "index.html";
+
 const messageTone = new Audio("./message.ogg");
 const longPressEvent = new CustomEvent("longpress");
 export let isLoadingChat = false;

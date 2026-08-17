@@ -30,6 +30,7 @@
 
 :root {
     --bg-main: black;
+    --bg-primary: black;
     --bg-secondary: #242424;
     --sidebar-bg: black;
     --chat-bg: black;
@@ -807,7 +808,13 @@ li {
     background-color: transparent;
 }
 
-.alternate-panel button:hover, .alternate-panel input:hover {
+.alternate-panel button:hover {
+    filter: invert(1);
+    background-color: var(--bg-primary);
+}
+
+
+.alternate-panel input:hover {
     border-color: var(--bg-primary);
     background-color: var(--text-primary);
     color: var(--bg-primary);
