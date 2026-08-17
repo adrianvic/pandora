@@ -20,6 +20,7 @@
                 <button id="profile-sidebar-btn" class="icon-btn mif-person mif-2x" data-page="profile-page"></button>
                 <button id="chats-sidebar-btn" class="icon-btn mif-qa mif-2x" data-page="chat-page"></button>
                 <button id="settings-sidebar-btn" class="icon-btn mif-cog mif-2x" data-page="settings-page"></button>
+                <img data-resource="app-user-image">
             </aside>
             
             <!-- Sidebar -->
@@ -94,11 +95,11 @@
                             <!-- Input Panel -->
                             <footer id="chat-input-panel" class="chat-input-panel">
                                 <div class="input-actions-left">
-                                    <button id="chat-bottom-bar-btn" class="icon-btn mif-expand-less mif-3x" title="Expand"></button>
+                                    <button id="chat-bottom-bar-btn" class="chat-footer-btn icon-btn mif-expand-less mif-3x" title="Expand"></button>
                                 </div>
                                 <form class="input-form" id="message-form">
-                                    <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                                    <button type="submit" class="send-btn mif-paper-plane mif-3x" id="send-button">
+                                    <textarea type="text" id="message-input" rows="1" placeholder="Type a message..." autocomplete="off"></textarea>
+                                    <button type="submit" class="chat-footer-btn send-btn mif-paper-plane mif-3x" id="send-button">
                                     </button>
                                 </form>
                             </footer>

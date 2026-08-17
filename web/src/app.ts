@@ -189,6 +189,8 @@ function setupEventListeners() {
         );
         ui.renderChatList(filtered, activeChatState, selectChat);
     });
+
+    ui.autoResizeTextArea(elements.messageInput);
     
     elements.messageForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -313,9 +315,9 @@ async function handleIncomingMessage(msg: Message) {
     
     if (!msg.fromMe) {
         messageTone.play();
-    }
-    if (notificationAuthorization === "granted") {
-        new Notification("New message", { body: msg.body || msg.text });
+        if (notificationAuthorization === "granted") {
+            new Notification("New message", { body: msg.body || msg.text });
+        }
     }
     
     if (activeChatState && activeChatState.id === msgChatId) {

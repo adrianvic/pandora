@@ -470,7 +470,19 @@ li {
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    padding: .2em;
+    padding: .6em .2em;
+    width: 60px;
+    align-items: center;
+}
+
+#desktop-aside * {
+    width: 38px;
+    height: 38px;
+}
+
+#desktop-aside img {
+    margin: .2rem;
+    margin-top: auto;
 }
 
 /* Sidebar Footer */
@@ -764,7 +776,7 @@ li {
 .chat-input-panel {
     padding: .8rem;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 16px;
     background-color: var(--bg-main);
 }
@@ -814,19 +826,24 @@ li {
     flex: 1;
     display: flex;
     gap: 12px;
-    align-items: center;
+    align-items: flex-end;
     min-width: 0;
 }
 
 #message-input {
     flex: 1;
+    overflow-y: scroll;
     padding: 12px 18px;
     background-color: var(--text-primary);
     border: medium solid var(--border-color);
     color: var(--bg-main);
     font-size: 0.95rem;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     min-width: 0;
+    resize: none;
+    line-height: 1.3;
+    max-height: 6rem;
+    box-sizing: border-box;
 }
 
 #message-input:focus {
@@ -834,6 +851,15 @@ li {
     outline: none;
     border-color: var(--accent);
     background: rgba(255, 255, 255, 0.06);
+}
+
+#chat-bottom-bar-btn {
+    margin-bottom: 6px;
+}
+
+#send-button {
+    margin-bottom: 4px;
+    margin-right: 6px;
 }
 
 .send-btn {
@@ -1008,6 +1034,11 @@ li {
         z-index: 1;
         scroll-snap-align: start;
         scroll-snap-stop: always;
+    }
+
+    #message-input {
+        padding: 8px 12px;
+        max-height: 10rem;
     }
     
     .extra-page {

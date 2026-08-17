@@ -10,7 +10,7 @@ export class Parser {
         
         const regex = new RegExp(`(^|\\s)${esc}(.+?)${esc}(?=\\s|$)`, "gs");
         
-        this.input = this.input.replace(regex, (match, pre, inner) => {
+        this.input = this.input.replace(regex, (_match, pre, inner) => {
             return `${pre}${to.replace("$1", inner)}`;
         });
         

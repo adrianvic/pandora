@@ -16,7 +16,7 @@ export const elements = {
     activeChatAvatar: document.getElementById('active-chat-avatar') as HTMLDivElement,
     messagesContainer: document.getElementById('messages-container') as HTMLDivElement,
     messageForm: document.getElementById('message-form') as HTMLFormElement,
-    messageInput: document.getElementById('message-input') as HTMLInputElement,
+    messageInput: document.getElementById('message-input') as HTMLTextAreaElement,
     backToSidebarBtn: document.querySelector('.chat-header') as HTMLElement,
     sidebar: document.querySelector('.sidebar') as HTMLElement,
     appContainer: document.querySelector('.app-container') as HTMLElement,
@@ -464,6 +464,27 @@ export const ui = {
     removeChatMessage(msgId: string) {
         const message = document.getElementById(msgId);
         if (message) message.remove();
+    },
+
+    autoResizeTextArea(element: HTMLTextAreaElement) {
+        const resize = () => {
+            element.style.height = 'auto';
+            const offset = element.offsetHeight - element.clientHeight;
+            const newHeight = element.scrollHeight + offset;
+
+            if (element.scrollHeight > 0) {
+                element.style.height = `${newHeight}px`;
+            }
+        };
+
+        element.addEventListener('input', resize);
+        
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting) {
+                resize();
+            }
+        });
+        observer.observe(element);
     },
 };
 
