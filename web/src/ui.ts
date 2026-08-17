@@ -2,6 +2,7 @@ import { formatTime, normalizeId } from "./utils";
 import { getChatPicture, getMessage, getMedia, getMoreChatMessages } from "./storage";
 import type { Chat, Message } from "./types";
 import { activeChatState } from "./states";
+import { Parser } from "./parser";
 
 export const elements = {
     chatList: document.getElementById('chat-list') as HTMLUListElement,
@@ -237,7 +238,10 @@ export const ui = {
         msgs.shift();
         
         msgs.forEach(async msg => {
-            loadMoreButton.after(this.generateMessage(msg, userId, chatId));
+            const message = this.generateMessage(msg, userId, chatId);
+            if (message) {
+                loadMoreButton.after();
+            }
         });
     },
     
@@ -245,7 +249,10 @@ export const ui = {
     * Append a single message (used for optimistic updates immediately upon sending)
     */
     appendSingleMessage(msg: Message, userID: string, chatId: string, isLocal: boolean = false) {
-        elements.messagesContainer.appendChild(this.generateMessage(msg, userID, chatId, isLocal))
+        const message = this.generateMessage(msg, userID, chatId, isLocal);
+        if (message) {
+            elements.messagesContainer.appendChild(message)
+        }
     },
     
     generateTempMessageLink(msg: Message) {
@@ -269,6 +276,7 @@ export const ui = {
     },
     
     generateMessage(msg: Message, userID: string, chatId: string, isLocal: boolean = false) {
+        if (msg._data && msg._data.type == "gp2") return;
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         function getPrevMessageElem() {
@@ -320,7 +328,17 @@ export const ui = {
         const contentEl = document.createElement('div');
         contentEl.classList.add('message-content');
         const textEl = document.createElement('div');
-        textEl.innerHTML = msg.body || msg.text || "";
+        const parsed = new Parser(msg.body || msg.text || "")
+            .parse('_', '<i>$1</i>')
+            .parse('*', '<b>$1</b>')
+            .parse('~', '<s>$1</s>')
+            .parse('```', '<span style="font-family: monospace;">$1</span>')
+            .parse('`', '<code>$1</code>')
+            .replace("\n", "<br>")
+            .input;
+
+        textEl.innerHTML = parsed;
+        console.log(msg);
         contentEl.appendChild(textEl);
         bubble.appendChild(contentEl);
         
@@ -354,6 +372,7 @@ export const ui = {
                     (e.target as HTMLAnchorElement).href = objectUrl;
                     
                     if (media.blob.type.startsWith('image/')) {
+                        groupDiv.classList.add('image');
                         a.textContent = "";
                         const img = document.createElement('img');
                         img.classList.add('message-image-attachement');

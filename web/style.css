@@ -50,6 +50,9 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
     --glass-blur: blur(20px);
     --high-box-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3), 0px -4px 10px rgba(0, 0, 0, 0.3);
+    --page-padding: 1.6rem;
+    --page-padding-small: 1rem;
+    --container-padding: .4rem;
 }
 
 body.light {
@@ -124,6 +127,10 @@ input:focus {
     outline: none;
 }
 
+li {
+    margin-inline-start: 1em;
+}
+
 .app-container {
     display: flex;
     flex-direction: row;
@@ -179,7 +186,8 @@ input:focus {
 }
 
 .sidebar-header {
-    padding: 20px 20px 0px 20px;
+    padding: var(--page-padding);
+    padding-bottom: 0;
     display: flex;
     flex-direction: column;
     align-items: self-start;
@@ -295,7 +303,6 @@ input:focus {
 
 #chat-search {
     width: 100%;
-    padding: 12px;
     border: none;
     font-size: 0.9rem;
     transition: all 0.25s ease;
@@ -316,7 +323,8 @@ input:focus {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    padding: 0 10px 10px 10px;
+    padding: var(--container-padding);
+    padding-top: 0;
 }
 
 .chat-list-header {
@@ -357,7 +365,7 @@ input:focus {
     border: 1px solid transparent;
 }
 
-.selected {
+.chat-item.selected {
   background: rgba(255, 255, 255, 0.04);
   transform: scale(0.98) skewX(10deg);
   filter: blur(.1px);
@@ -365,7 +373,7 @@ input:focus {
 }
 
 
-.selectable:active {
+.chat-item.selectable:active {
   background: rgba(255, 255, 255, 0.04);
   transform: scale(0.98) skewX(10deg);
   filter: blur(.1px);
@@ -666,6 +674,10 @@ input:focus {
     transition: .1s;
 }
 
+.message-group.image {
+    max-width: 30%;
+}
+
 .message-group.incoming {
     align-self: flex-start;
 }
@@ -745,7 +757,6 @@ input:focus {
 
 .message-image-attachement {
     max-width: 100%;
-    max-height: 10em;
 }
 
 /* Chat Input Panel */
@@ -898,7 +909,7 @@ input:focus {
 }
 
 #profile-page .content {
-    padding: 1.4rem;
+    padding: var(--page-padding);
     display: flex;
     gap: 1em;
 }
@@ -908,7 +919,6 @@ input:focus {
 }
 
 .big-title {
-    padding: 1.4rem;
     font-size: 5rem;
     text-wrap-mode: nowrap;
     overflow: hidden;
@@ -1066,10 +1076,10 @@ input:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1em 2em 0em 2em;
+    padding: var(--page-padding) var(--page-padding) 0em var(--page-padding);
 }
 
-.modal-header h2 {
+h2.modal-title {
     font-size: xx-large;
     font-weight: 600;
 }
@@ -1082,7 +1092,7 @@ input:focus {
     overflow-y: auto;
     flex: 1;
     overflow-x: hidden;
-    padding: 0 2rem 0 2rem;
+    padding: 0 var(--page-padding) 0 var(--page-padding);
 }
 
 .form-group {
@@ -1107,7 +1117,7 @@ input:focus {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    padding: 1rem 2rem;
+    padding: var(--page-padding-small) var(--page-padding);
 }
 
 .btn {

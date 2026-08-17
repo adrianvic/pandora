@@ -48,32 +48,6 @@ export function compensateMessageOrdering(messages: Message[]): Message[] {
 
     msgs.sort((a, b) => a._time - b._time);
 
-    let changed = true;
-    while (changed) {
-        changed = false;
-        for (let i = 0; i < msgs.length - 1; i++) {
-            const current = msgs[i];
-            const next = msgs[i + 1];
-            const timeDiff = next._time - current._time;
-            
-            // swap if outgoing message is sorted before incoming message within 30-sec window
-            if (current.fromMe && !next.fromMe && timeDiff >= 0 && timeDiff <= 30000) {
-                msgs[i] = next;
-                msgs[i + 1] = current;
-                
-                // advance the outgoing message timestamp to exactly 1 sec after the incoming
-                current._time = next._time + 1000;
-                if (typeof current.timestamp === 'number') {
-                    current.timestamp = Math.floor(current._time / 1000);
-                } else {
-                    current.timestamp = new Date(current._time).toISOString();
-                }
-                
-                changed = true;
-            }
-        }
-    }
-
     // clean temp property
     return msgs.map(({ _time, ...m }) => m);
 }
