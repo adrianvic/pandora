@@ -335,6 +335,10 @@ async function handleIncomingMessage(msg: Message) {
 async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
     if (isLoadingChat) return;
     
+    const pageEl = document.getElementById("chat-page");
+    if (!pageEl) return;
+    mainView?.scrollTo(pageEl);
+
     isLoadingChat = true;
     setActiveChatState(chat);
     

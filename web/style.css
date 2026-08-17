@@ -363,6 +363,7 @@ li {
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid transparent;
+    margin-left: 0px;
 }
 
 .chat-item.selected {
@@ -1031,6 +1032,10 @@ li {
     
     .message-group {
         max-width: 90%;
+    }
+
+    .message-group.image {
+        max-width: 60%;
     }
     
     .message-image-attachement {

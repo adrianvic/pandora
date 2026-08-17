@@ -338,7 +338,6 @@ export const ui = {
             .input;
 
         textEl.innerHTML = parsed;
-        console.log(msg);
         contentEl.appendChild(textEl);
         bubble.appendChild(contentEl);
         
