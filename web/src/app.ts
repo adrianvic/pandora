@@ -349,7 +349,7 @@ async function handleIncomingMessage(msg: Message) {
             const container = elements.messagesContainer;
             const scrolled = container.scrollTop === (container.scrollHeight - container.clientHeight);
             ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name, (await getAppUser()).id);
-            if (scrolled) {
+            if (scrolled && window.innerWidth > 768) {
                 ui.scrollToBottom();
             }
         }
