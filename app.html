@@ -9,17 +9,31 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="./manifest.json">
-  <script type="module" crossorigin src="/pandora/assets/app-CqjH0YOu.js"></script>
-  <link rel="modulepreload" crossorigin href="/pandora/assets/ui-64T9zsvr.js">
-  <link rel="stylesheet" crossorigin href="/pandora/assets/ui-Dlof_K3z.css">
+  <script type="module" crossorigin src="/pandora/assets/app-ClkLC0qm.js"></script>
+  <link rel="modulepreload" crossorigin href="/pandora/assets/ui-DW9Ow1bM.js">
+  <link rel="stylesheet" crossorigin href="/pandora/assets/ui-DiU9fgjY.css">
 </head>
 <body>
+    <div id="loading-screen">
+        <h1>Pandora</h1>
+        <p id="loading-screen-status">Please wait...</p>
+        <div class='loading-animation-wrapper'>
+            <div class="animation">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+    </div>
     <div class="app-container no-active-chat">
         <div class="main-holder">
             <aside id="desktop-aside">
-                <button id="profile-sidebar-btn" class="icon-btn mif-person mif-2x" data-page="profile-page"></button>
-                <button id="chats-sidebar-btn" class="icon-btn mif-qa mif-2x" data-page="chat-page"></button>
-                <button id="settings-sidebar-btn" class="icon-btn mif-cog mif-2x" data-page="settings-page"></button>
+                <button id="profile-sidebar-btn" class="icon-btn mif-person mif-2x" data-page="profile-page" title="Profile"></button>
+                <button id="chats-sidebar-btn" class="icon-btn mif-qa mif-2x" data-page="chat-page" title="Chat"></button>
+                <button id="settings-sidebar-btn" class="icon-btn mif-cog mif-2x" data-page="settings-page" title="Settings"></button>
+                <img data-resource="app-user-image">
             </aside>
             
             <!-- Sidebar -->
@@ -92,13 +106,15 @@
                             </div>
                             
                             <!-- Input Panel -->
+                            <div id="mentioning-indicator" class="collapsed">
+                            </div>
                             <footer id="chat-input-panel" class="chat-input-panel">
                                 <div class="input-actions-left">
-                                    <button id="chat-bottom-bar-btn" class="icon-btn mif-expand-less mif-3x" title="Expand"></button>
+                                    <button id="chat-bottom-bar-btn" class="chat-footer-btn icon-btn mif-expand-less mif-3x" title="Expand"></button>
                                 </div>
                                 <form class="input-form" id="message-form">
-                                    <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
-                                    <button type="submit" class="send-btn mif-paper-plane mif-3x" id="send-button">
+                                    <textarea type="text" id="message-input" rows="1" placeholder="Type a message..." autocomplete="off"></textarea>
+                                    <button type="submit" class="chat-footer-btn send-btn mif-paper-plane mif-3x" id="send-button">
                                     </button>
                                 </form>
                             </footer>
@@ -113,7 +129,9 @@
                 </div>
                 
                 <section class="extra-page" id="profile-page">
-                    <h2 class="big-title" data-content="app-user">Pandora User</h2>
+                    <div class="modal-header">
+                        <h2 class="big-title" data-content="app-user">Pandora User</h2>
+                    </div>
                     <div class="content">
                         <img id="profile-page-picture" data-resource="app-user-image">
                         <div id="profile-page-user-info">
