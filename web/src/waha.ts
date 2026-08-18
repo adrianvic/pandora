@@ -1,7 +1,7 @@
 import { config } from "./config";
 import { showNotification } from "./notification";
 import { getBase64 } from "./utils";
-import type { Message, VersionResponse, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse, GroupUser, Chat, Contact } from "./types";
+import type { Message, VersionResponse, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse, GroupUser, Contact } from "./types";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const url = `${config.wahaUrl}${path}`;
