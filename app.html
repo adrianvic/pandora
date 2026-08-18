@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="./manifest.json">
-  <script type="module" crossorigin src="/pandora/assets/app-Ba5_4bFJ.js"></script>
-  <link rel="modulepreload" crossorigin href="/pandora/assets/ui-DW9Ow1bM.js">
-  <link rel="stylesheet" crossorigin href="/pandora/assets/ui-DiU9fgjY.css">
+  <script type="module" crossorigin src="/pandora/assets/app-CS5hNP5y.js"></script>
+  <link rel="modulepreload" crossorigin href="/pandora/assets/ui-DrhlLzMp.js">
+  <link rel="stylesheet" crossorigin href="/pandora/assets/ui-LXu12Ahm.css">
 </head>
 <body>
     <div id="loading-screen">
@@ -106,7 +106,11 @@
                             </div>
                             
                             <!-- Input Panel -->
+                            <div id="mentioning-suggestion" class="collapsed">
+                                <div id="mention-suggestions"></div>
+                            </div>
                             <div id="mentioning-indicator" class="collapsed">
+                                <span></span>
                             </div>
                             <footer id="chat-input-panel" class="chat-input-panel">
                                 <div class="input-actions-left">
@@ -123,6 +127,7 @@
                                 <button id="markread-btn" class="icon-btn send-btn mif-done_all mif-2x" title="Mark read"></button>
                                 <input id="attachment-input" style="display: none;" type="file">
                                 <button id="attachment-btn" class="icon-btn send-btn mif-attachment mif-2x" title="Attach file"></button>
+                                <button id="mention-btn" class="icon-btn send-btn mif-face mif-2x" title="Mention user"></button>
                             </footer>
                         </div>
                     </main>
