@@ -138,13 +138,14 @@ export const waha = {
         });
     },
 
-    async sendTextMessage(chatId: string, text: string): Promise<Message> {
+    async sendTextMessage(chatId: string, text: string, replyTo: string | null = null): Promise<Message> {
         return request<Message>('/api/sendText', {
             method: 'POST',
             body: JSON.stringify({
                 chatId,
                 text,
-                session: config.session
+                session: config.session,
+                replyTo: replyTo
             })
         });
     },

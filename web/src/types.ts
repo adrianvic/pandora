@@ -52,6 +52,7 @@ export interface Message {
   chatId?: string;
   chat?: { id: string };
   participant?: string;
+  replyTo?: Message;
 }
 
 /** Temporary message used for optimistic UI updates */

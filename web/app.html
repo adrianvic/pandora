@@ -14,6 +14,19 @@
     <link rel="manifest" href="./manifest.json">
 </head>
 <body>
+    <div id="loading-screen">
+        <h1>Pandora</h1>
+        <p id="loading-screen-status">Please wait...</p>
+        <div class='loading-animation-wrapper'>
+            <div class="animation">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+    </div>
     <div class="app-container no-active-chat">
         <div class="main-holder">
             <aside id="desktop-aside">
@@ -93,6 +106,8 @@
                             </div>
                             
                             <!-- Input Panel -->
+                            <div id="mentioning-indicator" class="collapsed">
+                            </div>
                             <footer id="chat-input-panel" class="chat-input-panel">
                                 <div class="input-actions-left">
                                     <button id="chat-bottom-bar-btn" class="chat-footer-btn icon-btn mif-expand-less mif-3x" title="Expand"></button>

@@ -1,10 +1,5 @@
 import type { Message, MessageWithTime } from "./types";
 
-/**
- * Format timestamps (supports Unix epoch seconds/ms, strings and ISO dates)
- * @param {string|number|Date} dateVal 
- * @returns {string} Formatted HH:MM AM/PM string
- */
 export function formatTime(dateVal: string | number | Date): string {
     if (!dateVal) return '';
     let date: Date;
@@ -26,12 +21,6 @@ export function formatTime(dateVal: string | number | Date): string {
     return `${hours}:${minutesStr} ${ampm}`;
 }
 
-/**
- * Adjust outgoing messages backdated behind incoming messages due to clock drift.
- * Uses a 30-second sliding bubble-sort window.
- * @param {Array} messages List of raw messages from WAHA
- * @returns {Array} Compensated chronological message array
- */
 export function compensateMessageOrdering(messages: Message[]): Message[] {
     if (!Array.isArray(messages)) return [];
 
@@ -73,11 +62,6 @@ export function getBase64(file: File): Promise<string> {
     });
 }
 
-/**
- * Normalize a WhatsApp ID (chatId, messageId, etc.) to its string representation
- * @param {string|object} raw
- * @returns {string|null}
- */
 export function normalizeId(raw: string | { _serialized?: string; user?: string } | null | undefined): string | null {
     if (!raw) return null;
     if (typeof raw === 'object') {

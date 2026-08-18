@@ -1,7 +1,7 @@
 import { formatTime, normalizeId } from "./utils";
 import { getChatPicture, getMessage, getMedia, getMoreChatMessages } from "./storage";
 import type { Chat, Message } from "./types";
-import { activeChatState } from "./states";
+import { activeChatState, prepareMention } from "./states";
 import { Parser } from "./parser";
 
 export const elements = {
@@ -46,7 +46,10 @@ export const elements = {
     inputUserStatus: document.getElementById('profile-page-status-input') as HTMLInputElement,
     selectable: document.querySelectorAll('.selectable') as NodeListOf<HTMLElement>,
     nextPageButtons: document.querySelectorAll('.next-page-btn') as NodeListOf<HTMLElement>,
-    scrollableViews: document.querySelectorAll('._scrollableView') as NodeListOf<HTMLElement>
+    scrollableViews: document.querySelectorAll('._scrollableView') as NodeListOf<HTMLElement>,
+    loadingScreen: document.querySelector('#loading-screen') as HTMLElement,
+    loadingScreenStatus: document.querySelector('#loading-screen-status') as HTMLElement,
+    mentioningIndicator: document.querySelector('#mentioning-indicator') as HTMLElement
 };
 
 export const views = new Map<HTMLElement, ScrollableView>;
@@ -276,7 +279,7 @@ export const ui = {
     },
     
     generateMessage(msg: Message, userID: string, chatId: string, isLocal: boolean = false) {
-        if (msg._data && msg._data.type == "gp2") return;
+        if (msg._data && msg._data.type == "gp2") return; // probably group description edit
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         function getPrevMessageElem() {
@@ -288,6 +291,7 @@ export const ui = {
         const groupDiv = document.createElement('div');
         groupDiv.className = `message-group selectable ${isOutgoing ? 'outgoing' : 'incoming'}`;
         groupDiv.id = normalizeId(msg._serialized ? (msg._serialized as any) : msg.id) || "msg-id";
+        groupDiv.dataset.id = msg.id.toString();
         groupDiv.dataset.timestamp = msg.timestamp?.toString();
         groupDiv.dataset.from = msg.participant || (msg.from as string);
         
@@ -327,6 +331,31 @@ export const ui = {
         
         const contentEl = document.createElement('div');
         contentEl.classList.add('message-content');
+
+        if (msg.replyTo) {
+            const replyTo = msg.replyTo;
+            const replyIndicatorEl = document.createElement("div");
+            replyIndicatorEl.classList.add('reply-indicator');
+            replyIndicatorEl.textContent = new Parser(replyTo.body || replyTo.text || "")
+                .parse('_', '<i>$1</i>')
+                .parse('*', '<b>$1</b>')
+                .parse('~', '<s>$1</s>')
+                .parse('```', '<span style="font-family: monospace;">$1</span>')
+                .parse('`', '<code>$1</code>')
+                .replace("\n", "<br>")
+                .input;
+
+            replyIndicatorEl.addEventListener('click', () => {
+                const _msg = document.querySelector(`[id*="${replyTo.id}"]`) as HTMLElement;
+                if (_msg) {
+                    _msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    this.tempClass(_msg, "mentioned-highlight", 1000);
+                }
+            });
+
+            bubble.appendChild(replyIndicatorEl);
+        }
+
         const textEl = document.createElement('div');
         const parsed = new Parser(msg.body || msg.text || "")
             .parse('_', '<i>$1</i>')
@@ -388,7 +417,7 @@ export const ui = {
                 
                 a.addEventListener('click', clickListener);
             }
-            
+
             this.ensureScroll(elements.messagesContainer, () => {
                 contentEl.appendChild(a);
             });
@@ -397,7 +426,6 @@ export const ui = {
                 a.click();
             }
         }
-        
         
         const meta = document.createElement('div');
         meta.className = 'message-meta';
@@ -426,6 +454,10 @@ export const ui = {
                 groupDiv.appendChild(indicator);
             } else groupDiv.classList.add('same-sender');
         }
+
+        bubble.addEventListener('dblclick', () => {
+            prepareMention(msg.id.toString(), parsed);
+        });
         
         groupDiv.appendChild(bubble);
         return groupDiv;
@@ -486,6 +518,25 @@ export const ui = {
         });
         observer.observe(element);
     },
+
+    async load(fn: Function) {
+        this.loadingMessage("Please wait...");
+        elements.loadingScreen.classList.remove('collapsed');
+        await fn();
+        elements.loadingScreen.classList.add('collapsed');
+        this.loadingMessage("Done!");
+    },
+
+    loadingMessage(message: string) {
+        elements.loadingScreenStatus.innerText = message;
+    },
+
+    tempClass(element: HTMLElement, clazz: string, time: number) {
+        element.classList.add(clazz);
+        setTimeout(() => {
+            element.classList.remove(clazz);
+        }, time)
+    }
 };
 
 export class ScrollableView {

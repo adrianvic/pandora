@@ -7,8 +7,7 @@ import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getU
 import { deleteDatabase, upsertMessages } from "./db";
 import { showNotification } from "./notification";
 import type { Chat, Message, WebSocketEvent } from "./types";
-import { activeChatState, setActiveChatState } from "./states";
-
+import { activeChatState, clearMentionCache, mentionCacheID, mentionCacheText, setActiveChatState } from "./states";
 if (localStorage.getItem('setupComplete') !== "true") window.location.href = "index.html";
 
 const messageTone = new Audio("./message.ogg");
@@ -20,28 +19,40 @@ if (!mainViewEl) throw console.error();
 const mainView = views.get(mainViewEl);
 
 document.addEventListener('DOMContentLoaded', async () => {
-    updateSidebarPosition();
-    askForNotificationPermission();
-    if (elements.inputApiKey) elements.inputApiKey.value = config.apiKey;
-    if (elements.inputWahaUrl) elements.inputWahaUrl.value = config.wahaUrl;
-    if (elements.inputSession) elements.inputSession.value = config.session;
-    if (elements.inputBackgroundImage) elements.inputBackgroundImage.value = config.bgImg;
-    if (elements.inputBackgroundOpacity) elements.inputBackgroundOpacity.value = config.bgOpacity;
-    if (elements.activeChatContainer) {
-        elements.activeChatContainer.style.setProperty('--background-image', `URL("${config.bgImg}")`);
-        elements.activeChatContainer.style.setProperty('--background-opacity', `${config.bgOpacity}`);
-    }
-    await updateOnlineStatus();
-    setupEventListeners();
-    try {
-        setupElementsData();
-        loadChats();
-        checkWahaStatus();
-        initWebSocket();
-    } finally {
-        elements.chatsLoader.classList.add('hidden');
-    }
+    ui.load(async () => {      
+        ui.loadingMessage("Drawing sidebar...");
+        updateSidebarPosition();
+        ui.loadingMessage("Asking for notification permission...");
+        askForNotificationPermission();
+        ui.loadingMessage("Loading configuration...");
+        if (elements.inputApiKey) elements.inputApiKey.value = config.apiKey;
+        if (elements.inputWahaUrl) elements.inputWahaUrl.value = config.wahaUrl;
+        if (elements.inputSession) elements.inputSession.value = config.session;
+        if (elements.inputBackgroundImage) elements.inputBackgroundImage.value = config.bgImg;
+        if (elements.inputBackgroundOpacity) elements.inputBackgroundOpacity.value = config.bgOpacity;
+        if (elements.activeChatContainer) {
+            elements.activeChatContainer.style.setProperty('--background-image', `URL("${config.bgImg}")`);
+            elements.activeChatContainer.style.setProperty('--background-opacity', `${config.bgOpacity}`);
+        }
+        ui.loadingMessage("Getting server version...");
+        await updateOnlineStatus();
+        ui.loadingMessage("Setting up event listeners...");
+        setupEventListeners();
+        try {
+            ui.loadingMessage("Replacing placeholders...");
+            await setupElementsData();
+            ui.loadingMessage("Loading chats...");
+            await loadChats();
+            ui.loadingMessage("Checking server status...");
+            await checkWahaStatus();
+            ui.loadingMessage("Telling server to send new messages...");
+            await initWebSocket();
+        } finally {
+            elements.chatsLoader.classList.add('hidden');
+        }
+    })
 });
+
 
 async function askForNotificationPermission() {
     notificationAuthorization = await Notification.requestPermission();
@@ -133,7 +144,7 @@ function scrollToList(smooth = true) {
 
 function setupEventListeners() {
     window.addEventListener('resize', updateSidebarPosition);
-
+    
     if (!window.location.hash) {
         window.location.hash = '';
     }
@@ -191,7 +202,7 @@ function setupEventListeners() {
         );
         ui.renderChatList(filtered, activeChatState, selectChat);
     });
-
+    
     ui.autoResizeTextArea(elements.messageInput);
     
     elements.messageForm.addEventListener('submit', (e) => {
@@ -199,11 +210,20 @@ function setupEventListeners() {
         sendMessage();
     });
     
+    elements.messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
     elements.chatBottomBar.style.height = `${elements.chatInputPanel.offsetHeight}px`;
     const observer = new ResizeObserver(() => {
         elements.chatBottomBar.style.height =
         `${elements.chatInputPanel.offsetHeight}px`;
     });
+
+    elements.mentioningIndicator.addEventListener('click', clearMentionCache);
     
     observer.observe(elements.chatInputPanel);
     elements.chatBottomBarBtn.addEventListener('click', ui.toggleChatBottomBar);
@@ -338,11 +358,13 @@ async function handleIncomingMessage(msg: Message) {
 
 async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
     if (isLoadingChat) return;
+
+    clearMentionCache();
     
     const pageEl = document.getElementById("chat-page");
     if (!pageEl) return;
     mainView?.scrollTo(pageEl);
-
+    
     isLoadingChat = true;
     setActiveChatState(chat);
     
@@ -416,7 +438,10 @@ async function sendMessage() {
         fromMe: true,
         sender: 'me',
         timestamp: new Date().toISOString(),
-        status: 'sending'
+        status: 'sending',
+        replyTo: mentionCacheID ? {
+            body: mentionCacheText || "Mention (no text)"
+        } : null
     } as any;
     
     ui.appendSingleMessage(tempMsg, activeChatState.name, (await getAppUser()).id);
@@ -445,7 +470,7 @@ async function sendMessage() {
             console.warn('readChat failed (non-fatal):', e.message);
         }
         
-        const responseData = await waha.sendTextMessage(activeChatState.id, text);
+        const responseData = await waha.sendTextMessage(activeChatState.id, text, mentionCacheID);
         
         const tempBubble = document.getElementById(tempMsg.id);
         if (tempBubble) {
@@ -466,6 +491,8 @@ async function sendMessage() {
             if (meta) meta.innerHTML = `<span style="color: #ef4444;">Failed to send</span>`;
         }
     }
+
+    clearMentionCache();
 }
 
 async function sendFileMessage(file: File) {
