@@ -1,7 +1,7 @@
 import { config } from "./config";
 import { showNotification } from "./notification";
 import { getBase64 } from "./utils";
-import type { Message, VersionResponse, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse } from "./types";
+import type { Message, VersionResponse, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse, GroupUser, Chat, Contact } from "./types";
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const url = `${config.wahaUrl}${path}`;
@@ -88,6 +88,10 @@ export const waha = {
         });
     },
 
+    async getContact(id: string) : Promise<Contact | undefined> {
+        return request<Contact>(`/api/${config.session}/contacts/${id}`);
+    },
+
     async getChatMessages(chatId: string, beforeTimestamp?: any): Promise<Message[]> {
         return request<Message[]>(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40${beforeTimestamp ? `&filter.timestamp.lte=${beforeTimestamp}` : "" }`);
     },
@@ -138,14 +142,15 @@ export const waha = {
         });
     },
 
-    async sendTextMessage(chatId: string, text: string, replyTo: string | null = null): Promise<Message> {
+    async sendTextMessage(chatId: string, text: string, mentions: string[] = [], replyTo: string | null = null): Promise<Message> {
         return request<Message>('/api/sendText', {
             method: 'POST',
             body: JSON.stringify({
                 chatId,
                 text,
                 session: config.session,
-                replyTo: replyTo
+                replyTo: replyTo,
+                mentions: mentions
             })
         });
     },
@@ -181,5 +186,9 @@ export const waha = {
 
         const result = await request<Message>(endpoint, body);
         return result;
+    },
+
+    async getGroupUsers(groupId: string): Promise<GroupUser[]> {
+        return request<GroupUser[]>(`/api/${config.session}/groups/${groupId}/participants`);
     }
 };

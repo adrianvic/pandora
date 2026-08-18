@@ -1,6 +1,6 @@
 import { loadChat, loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db";
 import { waha } from "./waha";
-import type { Chat, Message, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse, DownloadedMedia } from "./types";
+import type { Chat, Message, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse, DownloadedMedia, GroupUser, Contact } from "./types";
 
 let online = false;
 let chats: Chat[] = [];
@@ -55,6 +55,14 @@ export async function getUser(number: string): Promise<ContactInfo | undefined> 
 export async function getUserAbout(userId: string): Promise<UserAboutResponse | undefined> {
   if (online) {
     return await waha.getUserAbout(userId);
+  } else {
+    return;
+  }
+}
+
+export async function getContact(id: string): Promise<Contact | undefined> {
+  if (online) {
+    return await waha.getContact(id);
   } else {
     return;
   }
@@ -164,4 +172,28 @@ export async function markRead(chatId: string): Promise<Chat | undefined> {
       await upsertChats([chat]);
   }
   return chat;
+}
+
+export async function getGroupUsers(groupId: string): Promise<GroupUser[] | undefined> {
+  if (online) {
+    return await waha.getGroupUsers(groupId);
+  }
+
+  return undefined;
+}
+
+export async function getUsersFromGroup(users: (GroupUser | undefined)[]): Promise<(Contact | undefined)[]> {
+    if (!online) {
+        return users.map(() => undefined);
+    }
+
+    return Promise.all(
+        users.map(async u => {
+            if (u?.id._serialized) {
+                return await getContact(u.id._serialized);
+            }
+
+            return undefined;
+        })
+    );
 }

@@ -35,6 +35,7 @@ export const elements = {
     chatInputPanel: document.getElementById('chat-input-panel') as HTMLElement,
     attachmentInput: document.getElementById('attachment-input') as HTMLInputElement,
     attachmentBtn: document.getElementById('attachment-btn') as HTMLButtonElement,
+    mentionBtn: document.getElementById('mention-btn') as HTMLButtonElement,
     markreadBtn: document.getElementById('markread-btn') as HTMLButtonElement,
     extraPages: document.querySelectorAll('.extra-page') as NodeListOf<HTMLElement>,
     desktopSidebarButtons: document.querySelectorAll("#desktop-aside button") as NodeListOf<HTMLButtonElement>,
@@ -49,7 +50,9 @@ export const elements = {
     scrollableViews: document.querySelectorAll('._scrollableView') as NodeListOf<HTMLElement>,
     loadingScreen: document.querySelector('#loading-screen') as HTMLElement,
     loadingScreenStatus: document.querySelector('#loading-screen-status') as HTMLElement,
-    mentioningIndicator: document.querySelector('#mentioning-indicator') as HTMLElement
+    mentioningIndicator: document.querySelector('#mentioning-indicator') as HTMLElement,
+    mentioningSuggestion: document.querySelector('#mentioning-suggestion') as HTMLElement,
+    mentionSuggestions: document.querySelector('#mention-suggestions') as HTMLElement
 };
 
 export const views = new Map<HTMLElement, ScrollableView>;
@@ -348,7 +351,7 @@ export const ui = {
             replyIndicatorEl.addEventListener('click', () => {
                 const _msg = document.querySelector(`[id*="${replyTo.id}"]`) as HTMLElement;
                 if (_msg) {
-                    _msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    _msg.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     this.tempClass(_msg, "mentioned-highlight", 1000);
                 }
             });
@@ -457,6 +460,7 @@ export const ui = {
 
         bubble.addEventListener('dblclick', () => {
             prepareMention(msg.id.toString(), parsed);
+            elements.messageInput?.focus();
         });
         
         groupDiv.appendChild(bubble);

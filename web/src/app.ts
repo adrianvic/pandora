@@ -3,11 +3,11 @@ import { waha } from "./waha";
 import { ui, elements, views } from "./ui";
 import { websocket } from "./websocket";
 import { compensateMessageOrdering, debounce, formatTime, normalizeId } from "./utils";
-import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getUser, getUserAbout, markRead, sendStatus, updateOnlineStatus } from "./storage";
+import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getGroupUsers, getUser, getUserAbout, getUsersFromGroup, markRead, sendStatus, updateOnlineStatus } from "./storage";
 import { deleteDatabase, upsertMessages } from "./db";
 import { showNotification } from "./notification";
-import type { Chat, Message, WebSocketEvent } from "./types";
-import { activeChatState, clearMentionCache, mentionCacheID, mentionCacheText, setActiveChatState } from "./states";
+import type { Chat, GroupUser, Message, WebSocketEvent } from "./types";
+import { activeChatState, clearMentionCache, clearMentionedContacts, getMentionedIDs, mentionCacheID, mentionCacheText, mentionedContact, mentionedContacts, removeMentionedContact, setActiveChatState } from "./states";
 if (localStorage.getItem('setupComplete') !== "true") window.location.href = "index.html";
 
 const messageTone = new Audio("./message.ogg");
@@ -135,7 +135,7 @@ function scrollToChat(smooth = true) {
 
 function scrollToList(smooth = true) {
     isScrollingProgrammatically = true;
-    elements.appContainer.scrollTo({
+    mainViewEl?.scrollTo({
         left: 0,
         behavior: smooth ? 'smooth' : 'auto'
     });
@@ -172,7 +172,6 @@ function setupEventListeners() {
             const width = elements.appContainer.clientWidth;
             
             if (scrollLeft < width * 0.2) {
-                // User swiped back to the list view
                 if (activeChatState) {
                     closeActiveChat(false);
                 }
@@ -217,12 +216,28 @@ function setupEventListeners() {
         }
     });
     
+    elements.messageInput.addEventListener('input', (e) => {
+        const inputEvent = e as InputEvent;
+
+        mentionedContacts.forEach(c => {
+            if (!elements.messageInput.value.includes(`@${c.number}`)) {
+                removeMentionedContact(c);
+            }
+        })
+
+        if (inputEvent.data === "@") {
+            suggestMention();
+        } else {
+            elements.mentioningSuggestion.classList.add('collapsed');
+        }
+    });
+    
     elements.chatBottomBar.style.height = `${elements.chatInputPanel.offsetHeight}px`;
     const observer = new ResizeObserver(() => {
         elements.chatBottomBar.style.height =
         `${elements.chatInputPanel.offsetHeight}px`;
     });
-
+    
     elements.mentioningIndicator.addEventListener('click', clearMentionCache);
     
     observer.observe(elements.chatInputPanel);
@@ -236,14 +251,20 @@ function setupEventListeners() {
             const result = await markRead(activeChatState.id);
             if (result) ui.updateChatInChatList2(result);
         }
-    })
+    });
+    
     elements.attachmentBtn.addEventListener('click', () => {
         elements.attachmentInput.click();
-    })
+    });
     elements.attachmentInput.addEventListener('change', function (this: HTMLInputElement) {
         const firstFile = this.files?.[0];
         if (firstFile) sendFileMessage(firstFile);
-    })
+    });
+    
+    elements.mentionBtn.addEventListener('click', async () => {
+        suggestMention();
+        ui.toggleChatBottomBar();
+    });
     
     elements.backToSidebarBtn.addEventListener('click', () => {
         closeActiveChat(false);
@@ -270,7 +291,6 @@ function setupEventListeners() {
         } else {
             showNotification("Failed to update status...", "", 2000);
         }
-        console.log(result);
     }, 2000))
     
     elements.selectable.forEach(e => {
@@ -358,8 +378,9 @@ async function handleIncomingMessage(msg: Message) {
 
 async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
     if (isLoadingChat) return;
-
+    
     clearMentionCache();
+    clearMentionedContacts();
     
     const pageEl = document.getElementById("chat-page");
     if (!pageEl) return;
@@ -429,8 +450,12 @@ async function closeActiveChat(isPopState = false) {
 async function sendMessage() {
     const text = elements.messageInput.value.trim();
     if (!text || !activeChatState) return;
+    const _mentionCacheID = mentionCacheID;
+    const _mentionCacheText = mentionCacheText;
+    clearMentionCache();
     
     elements.messageInput.value = '';
+    elements.messageInput.dispatchEvent(new Event("input", { bubbles: true }));
     
     const tempMsg = {
         id: 'temp-' + Date.now(),
@@ -439,8 +464,8 @@ async function sendMessage() {
         sender: 'me',
         timestamp: new Date().toISOString(),
         status: 'sending',
-        replyTo: mentionCacheID ? {
-            body: mentionCacheText || "Mention (no text)"
+        replyTo: _mentionCacheID ? {
+            body: _mentionCacheText || "Mention (no text)"
         } : null
     } as any;
     
@@ -448,6 +473,14 @@ async function sendMessage() {
     ui.scrollToBottom();
     
     try {
+        try {
+            if (!activeChatState.id.endsWith('@lid')) {
+                await waha.readChat(activeChatState.id);
+            }
+        } catch (e: any) {
+            console.warn('readChat failed (non-fatal):', e.message);
+        }
+
         try {
             await waha.startTyping(activeChatState.id);
             const delay = Math.min(4000, Math.max(1000, text.length * 50));
@@ -462,15 +495,7 @@ async function sendMessage() {
             console.warn('Presence stop failed:', e);
         }
         
-        try {
-            if (!activeChatState.id.endsWith('@lid')) {
-                await waha.readChat(activeChatState.id);
-            }
-        } catch (e: any) {
-            console.warn('readChat failed (non-fatal):', e.message);
-        }
-        
-        const responseData = await waha.sendTextMessage(activeChatState.id, text, mentionCacheID);
+        const responseData = await waha.sendTextMessage(activeChatState.id, text, getMentionedIDs(), _mentionCacheID);
         
         const tempBubble = document.getElementById(tempMsg.id);
         if (tempBubble) {
@@ -491,8 +516,6 @@ async function sendMessage() {
             if (meta) meta.innerHTML = `<span style="color: #ef4444;">Failed to send</span>`;
         }
     }
-
-    clearMentionCache();
 }
 
 async function sendFileMessage(file: File) {
@@ -539,6 +562,39 @@ function saveSettings() {
     loadChats();
     checkWahaStatus();
     initWebSocket();
+}
+
+async function suggestMention() {
+    elements.mentionSuggestions.innerHTML = "";
+    if (activeChatState) {
+        const gpUsrs: GroupUser[] | undefined = await getGroupUsers(activeChatState.id);
+        if (!gpUsrs) return;
+        const usrs = await getUsersFromGroup(gpUsrs);
+        if (!usrs) return;
+
+        elements.mentioningSuggestion.classList.remove('collapsed');
+
+        usrs.forEach(u => {
+            if (!u) return;
+            const contact = document.createElement('div');
+            contact.classList = "mention-suggestion";
+
+            const name = u.name ?? u.pushname;
+            if (!name) return;
+
+            contact.innerText = name;
+            contact.addEventListener('click', () => {
+                mentionedContact(u);
+                elements.messageInput.value = elements.messageInput.value.substring(0, elements.messageInput.value.length - 1);
+                elements.messageInput.value += `@${u.number} `;
+                elements.messageInput.dispatchEvent(new Event("input", { bubbles: true }));
+                elements.mentioningSuggestion.classList.add("collapsed");
+                elements.messageInput?.focus();
+            });
+
+            elements.mentionSuggestions.appendChild(contact);
+        })
+    }
 }
 
 async function checkWahaStatus() {

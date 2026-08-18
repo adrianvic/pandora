@@ -123,3 +123,31 @@ export interface DownloadedMedia {
 export interface MessageWithTime extends Message {
   _time: number;
 }
+
+export interface GroupUser {
+  id: {
+    server: string | null,
+    user: string | null,
+    _serialized: string | null
+  },
+  isAdmin: boolean | null,
+  isSuperAdmin: boolean | null
+}
+
+export interface Contact {
+  id: string | null,
+  number: string | null,
+  isBusiness: boolean | null,
+  isEnterprise: boolean | null,
+  name: string | null,
+  pushname: string | null,
+  shortName: string | null,
+  statusMute: boolean | null,
+  type: string | null,
+  isMe: boolean | null,
+  isUser: boolean | null,
+  isGroup: boolean | null,
+  isWAContact: boolean | null,
+  isMyContact: boolean | null,
+  isBlocked: boolean | null
+}
