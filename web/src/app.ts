@@ -6,7 +6,7 @@ import { compensateMessageOrdering, debounce, formatTime, normalizeId } from "./
 import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getGroupUsers, getUser, getUserAbout, getUsersFromGroup, markRead, sendStatus, updateOnlineStatus } from "./storage";
 import { deleteDatabase, upsertMessages } from "./db";
 import { showNotification } from "./notification";
-import type { Chat, GroupUser, Message, WebSocketEvent } from "./types";
+import type { Chat, Message, WebSocketEvent } from "./types";
 import { activeChatState, clearMentionCache, clearMentionedContacts, getMentionedIDs, mentionCacheID, mentionCacheText, mentionedContact, mentionedContacts, removeMentionedContact, setActiveChatState } from "./states";
 if (localStorage.getItem('setupComplete') !== "true") window.location.href = "index.html";
 
