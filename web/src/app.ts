@@ -3,7 +3,7 @@ import { waha } from "./waha";
 import { ui, elements, views } from "./ui";
 import { websocket } from "./websocket";
 import { compensateMessageOrdering, debounce, formatTime, normalizeId } from "./utils";
-import { fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getGroupUsers, getUser, getUserAbout, getUsersFromGroup, markRead, sendStatus, updateOnlineStatus } from "./storage";
+import { deleteChat, fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getGroupUsers, getUser, getUserAbout, getUsersFromGroup, markRead, sendStatus, updateOnlineStatus } from "./storage";
 import { deleteDatabase, upsertMessages } from "./db";
 import { showNotification } from "./notification";
 import type { Chat, Message, WebSocketEvent } from "./types";
@@ -249,9 +249,19 @@ function setupEventListeners() {
     
     elements.markreadBtn.addEventListener('click', async () => {
         if (activeChatState) {
-            const result = await markRead(activeChatState.id);
-            if (result) ui.updateChatInChatList2(result);
+            await markRead(activeChatState.id);
+            ui.updateChatBadge(activeChatState.id, 0);
         }
+    });
+
+    elements.clearChatBtn.addEventListener('click', () => {
+       if (!activeChatState) return;
+       if (confirm('Do you want to delete this chat?')) {
+           const chat = document.querySelector(`.chat-item[data-foo='${activeChatState.id}']`)
+           chat?.remove();
+           deleteChat(activeChatState.id);
+           closeActiveChat();
+       }
     });
     
     elements.attachmentBtn.addEventListener('click', () => {
@@ -439,11 +449,12 @@ async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
     isLoadingChat = false;
 }
 
-async function closeActiveChat(isPopState = false) {
+async function closeActiveChat(isPopState = false, forceClose = false) {
     setActiveChatState(null);
     
     if (window.innerWidth <= 768) {
         scrollToList();
+        if (forceClose) ui.toggleChatState(false);
     } else {
         ui.toggleChatState(false);
     }

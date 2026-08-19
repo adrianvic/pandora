@@ -36,6 +36,7 @@ export const elements = {
     attachmentInput: document.getElementById('attachment-input') as HTMLInputElement,
     attachmentBtn: document.getElementById('attachment-btn') as HTMLButtonElement,
     mentionBtn: document.getElementById('mention-btn') as HTMLButtonElement,
+    clearChatBtn: document.getElementById('clear-chat-btn') as HTMLButtonElement,
     markreadBtn: document.getElementById('markread-btn') as HTMLButtonElement,
     extraPages: document.querySelectorAll('.extra-page') as NodeListOf<HTMLElement>,
     desktopSidebarButtons: document.querySelectorAll("#desktop-aside button") as NodeListOf<HTMLButtonElement>,
@@ -133,26 +134,26 @@ export const ui = {
             const timeStr = formatTime(chat.timestamp || new Date());
             
             li.innerHTML = `
-      <div class="avatar">
-        <img
-          src=""
-          alt="${initials}"
-          data-chat-avatar="${chat.id}"
-        />
-      </div>
-      <div class="chat-item-info">
-        <div class="chat-item-meta">
-          <span class="chat-item-name">${chat.name}</span>
-          <span class="chat-item-time">${timeStr}</span>
-        </div>
-        <div class="chat-item-preview">
-          <span class="chat-item-msg${chat.lastMessage == null ? ' text-accent' : ''}" data-chatid="${chat.id}">
-            ${chat.lastMessage || '...'}
-          </span>
-          ${hasUnread ? `<span class="unread-badge">${chat.unreadCount}</span>` : ''}
-        </div>
-      </div>
-    `;
+              <div class="avatar">
+                <img
+                  src=""
+                  alt="${initials}"
+                  data-chat-avatar="${chat.id}"
+                />
+              </div>
+              <div class="chat-item-info">
+                <div class="chat-item-meta">
+                  <span class="chat-item-name">${chat.name}</span>
+                  <span class="chat-item-time">${timeStr}</span>
+                </div>
+                <div class="chat-item-preview">
+                  <span class="chat-item-msg${chat.lastMessage == null ? ' text-accent' : ''}" data-chatid="${chat.id}">
+                    ${chat.lastMessage || '...'}
+                  </span>
+                  ${hasUnread ? `${this.generateChatBadge(chat.unreadCount).outerHTML}` : ''}
+                </div>
+              </div>
+            `;
             
             li.addEventListener('click', () => onChatSelect(chat));
             elements.chatList.appendChild(li);
@@ -165,6 +166,32 @@ export const ui = {
                 } catch (e) {
                 }
             })();
+        }
+    },
+
+    generateChatBadge(count: number): HTMLSpanElement {
+        const badge = document.createElement('span') as HTMLSpanElement;
+        badge.classList.add('unread-badge');
+
+        badge.innerText = count.toString();
+
+        return badge;
+    },
+
+    updateChatBadge(chatId: string, count: number) {
+        const li = document.querySelector(`li[data-id='${chatId}']`);
+        const newBadge = this.generateChatBadge(count);
+        const badge = li?.querySelector('.unread-badge');
+        if (badge) {
+            if (count == 0) {
+                badge.remove();
+                return
+            }
+
+            badge.outerHTML = newBadge.outerHTML;
+        } else {
+            const preview = li?.querySelector('chat-item-preview');
+            if (preview) preview.innerHTML += count;
         }
     },
     
@@ -260,7 +287,16 @@ export const ui = {
     * Append a single message (used for optimistic updates immediately upon sending)
     */
     appendSingleMessage(msg: Message, userID: string, chatId: string, isLocal: boolean = false) {
+        const uninplemented: string[] = [
+            "e2e_notification",
+            "call_log",
+            "gp2"
+        ]
+        
+        if (msg._data?.type && uninplemented.indexOf(msg._data?.type) !== -1) return;
+        
         const message = this.generateMessage(msg, userID, chatId, isLocal);
+        
         if (message) {
             elements.messagesContainer.appendChild(message)
         }
@@ -287,7 +323,6 @@ export const ui = {
     },
     
     generateMessage(msg: Message, userID: string, chatId: string, isLocal: boolean = false) {
-        if (msg._data && msg._data.type == "gp2") return; // probably group description edit
         const isOutgoing = msg.fromMe || msg.sender === 'me';
         
         function getPrevMessageElem() {

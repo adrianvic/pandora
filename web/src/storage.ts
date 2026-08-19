@@ -1,4 +1,4 @@
-import { loadChat, loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db";
+import { deleteChatFromDatabase, loadChat, loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db";
 import { waha } from "./waha";
 import type { Chat, Message, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse, DownloadedMedia, GroupUser, Contact } from "./types";
 
@@ -199,4 +199,9 @@ export async function getUsersFromGroup(users: (GroupUser | undefined)[]): Promi
             return undefined;
         })
     );
+}
+
+export async function deleteChat(chatId:string) {
+  deleteChatFromDatabase(chatId)
+  waha.deleteChat(chatId);
 }

@@ -191,5 +191,11 @@ export const waha = {
 
     async getGroupUsers(groupId: string): Promise<GroupUser[]> {
         return request<GroupUser[]>(`/api/${config.session}/groups/${groupId}/participants`);
+    },
+
+    async deleteChat(chatId: string): Promise<StatusResponse> {
+        return request<StatusResponse>(`/api/${config.session}/chats/${chatId}`, {
+            method: "delete"
+        });
     }
 };

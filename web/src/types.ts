@@ -25,6 +25,7 @@ export interface WahaChat {
 export interface MessageData {
   notifyName?: string;
   mimetype?: string;
+  type?: string;
   [key: string]: unknown;
 }
 

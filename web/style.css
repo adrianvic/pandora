@@ -34,7 +34,7 @@
     --bg-secondary: #242424;
     --sidebar-bg: black;
     --chat-bg: black;
-    --border-color: rgba(255, 255, 255, 0.08);
+    --border-color: rgba(255, 255, 255, 0.2);
     --border-hover: rgba(255, 255, 255, 0.15);
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
@@ -719,7 +719,7 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 .load-more-btn {
-    margin: auto;
+    margin: 0 auto auto auto;
     color: var(--bg-primary);
     background-color: var(--text-primary);
     padding: .4em;
@@ -728,8 +728,8 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 .load-more-btn:hover {
-    background-color: var(--text-primary);
-    color: var(--bg-main);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
 }
 
 .message-group {
@@ -824,6 +824,14 @@ fieldset label:has(input[type="radio"]:checked) {
 
 .message-image-attachement {
     max-width: 100%;
+}
+
+.incoming .message-image-attachement {
+    border-top: 1em solid var(--bubble-incoming);
+}
+
+.outgoing .message-image-attachement {
+    border-top: 1em solid var(--bubble-outgoing);
 }
 
 /* Chat Input Panel */
