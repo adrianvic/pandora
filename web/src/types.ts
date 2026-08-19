@@ -5,6 +5,7 @@ export interface Chat {
   lastMessage: string;
   timestamp: number | string | Date;
   unreadCount: number;
+  archived: boolean;
 }
 
 /** Raw chat object returned from the WAHA API */

@@ -404,6 +404,19 @@ fieldset label:has(input[type="radio"]:checked) {
     margin-left: 0px;
 }
 
+.chat-item.archived {
+    opacity: .5;
+}
+
+.chat-item.archived:hover {
+    opacity: 1;
+}
+
+.chat-item.archived .chat-item-time::before {
+    content: "📂 ";
+    filter: saturate(0);
+}
+
 .chat-item.selected {
     background: rgba(255, 255, 255, 0.04);
     transform: scale(0.98) skewX(10deg);

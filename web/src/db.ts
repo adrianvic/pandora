@@ -75,7 +75,8 @@ export async function upsertChats(chats: Chat[]): Promise<void> {
         name: c.name,
         lastMessage: c.lastMessage,
         timestamp: c.timestamp,
-        unreadCount: c.unreadCount ?? 0
+        unreadCount: c.unreadCount ?? 0,
+        archived: c.archived
       });
     }
 

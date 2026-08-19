@@ -25,12 +25,15 @@ export async function fetchChats(): Promise<void> {
 export async function getRemoteChats(): Promise<void> {
   const u = await waha.getChats();
 
+  console.log(u)
+
   const mapped: Chat[] = u.map(chat => ({
     id: chat.id,
     name: chat.name,
     lastMessage: chat.lastMessage,
     timestamp: chat.timestamp,
-    unreadCount: chat.unreadCount ?? 0
+    unreadCount: chat.unreadCount ?? 0,
+    archived: chat.archived
   }));
 
   await upsertChats(mapped);

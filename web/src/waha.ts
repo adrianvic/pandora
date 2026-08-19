@@ -83,7 +83,8 @@ export const waha = {
                 name: chat.name || null,
                 unreadCount: chat.unreadCount || 0,
                 lastMessage: chat.lastMessage?.body || chat.lastMessageText || null,
-                timestamp: chat.lastMessage?.timestamp || null
+                timestamp: chat.lastMessage?.timestamp || null,
+                archived: chat.archived || null
             };
         });
     },

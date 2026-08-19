@@ -110,6 +110,9 @@ export const ui = {
         chats.sort((a, b) => {
             const timeA = new Date(a.timestamp).getTime();
             const timeB = new Date(b.timestamp).getTime();
+            if (a.archived !== b.archived) {
+                return a.archived ? 1 : -1;
+            }
             return timeB - timeA;
         });
         
@@ -123,6 +126,7 @@ export const ui = {
             const li = document.createElement('li');
             li.className = `chat-item selectable ${activeChat && activeChat.id === chat.id ? 'active' : ''}`;
             li.dataset.id = chat.id;
+            if (chat.archived) li.classList.add('archived'); 
             
             const initials = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
             const hasUnread = chat.unreadCount && chat.unreadCount > 0;
@@ -335,33 +339,12 @@ export const ui = {
         
         const contentEl = document.createElement('div');
         contentEl.classList.add('message-content');
-
+        
         if (msg.replyTo) {
             const replyTo = msg.replyTo;
             const replyIndicatorEl = document.createElement("div");
             replyIndicatorEl.classList.add('reply-indicator');
             replyIndicatorEl.textContent = new Parser(replyTo.body || replyTo.text || "")
-                .parse('_', '<i>$1</i>')
-                .parse('*', '<b>$1</b>')
-                .parse('~', '<s>$1</s>')
-                .parse('```', '<span style="font-family: monospace;">$1</span>')
-                .parse('`', '<code>$1</code>')
-                .replace("\n", "<br>")
-                .input;
-
-            replyIndicatorEl.addEventListener('click', () => {
-                const _msg = document.querySelector(`[id*="${replyTo.id}"]`) as HTMLElement;
-                if (_msg) {
-                    _msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    this.tempClass(_msg, "mentioned-highlight", 1000);
-                }
-            });
-
-            bubble.appendChild(replyIndicatorEl);
-        }
-
-        const textEl = document.createElement('div');
-        const parsed = new Parser(msg.body || msg.text || "")
             .parse('_', '<i>$1</i>')
             .parse('*', '<b>$1</b>')
             .parse('~', '<s>$1</s>')
@@ -369,7 +352,28 @@ export const ui = {
             .parse('`', '<code>$1</code>')
             .replace("\n", "<br>")
             .input;
-
+            
+            replyIndicatorEl.addEventListener('click', () => {
+                const _msg = document.querySelector(`[id*="${replyTo.id}"]`) as HTMLElement;
+                if (_msg) {
+                    _msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    this.tempClass(_msg, "mentioned-highlight", 1000);
+                }
+            });
+            
+            bubble.appendChild(replyIndicatorEl);
+        }
+        
+        const textEl = document.createElement('div');
+        const parsed = new Parser(msg.body || msg.text || "")
+        .parse('_', '<i>$1</i>')
+        .parse('*', '<b>$1</b>')
+        .parse('~', '<s>$1</s>')
+        .parse('```', '<span style="font-family: monospace;">$1</span>')
+        .parse('`', '<code>$1</code>')
+        .replace("\n", "<br>")
+        .input;
+        
         textEl.innerHTML = parsed;
         contentEl.appendChild(textEl);
         bubble.appendChild(contentEl);
@@ -421,7 +425,7 @@ export const ui = {
                 
                 a.addEventListener('click', clickListener);
             }
-
+            
             this.ensureScroll(elements.messagesContainer, () => {
                 contentEl.appendChild(a);
             });
@@ -458,7 +462,7 @@ export const ui = {
                 groupDiv.appendChild(indicator);
             } else groupDiv.classList.add('same-sender');
         }
-
+        
         bubble.addEventListener('dblclick', () => {
             prepareMention(msg.id.toString(), parsed);
             elements.messageInput?.focus();
@@ -502,18 +506,18 @@ export const ui = {
         const message = document.getElementById(msgId);
         if (message) message.remove();
     },
-
+    
     autoResizeTextArea(element: HTMLTextAreaElement) {
         const resize = () => {
             element.style.height = 'auto';
             const offset = element.offsetHeight - element.clientHeight;
             const newHeight = element.scrollHeight + offset;
-
+            
             if (element.scrollHeight > 0) {
                 element.style.height = `${newHeight}px`;
             }
         };
-
+        
         element.addEventListener('input', resize);
         
         const observer = new IntersectionObserver((entries) => {
@@ -523,7 +527,7 @@ export const ui = {
         });
         observer.observe(element);
     },
-
+    
     async load(fn: Function) {
         this.loadingMessage("Please wait...");
         elements.loadingScreen.classList.remove('collapsed');
@@ -531,11 +535,11 @@ export const ui = {
         elements.loadingScreen.classList.add('collapsed');
         this.loadingMessage("Done!");
     },
-
+    
     loadingMessage(message: string) {
         elements.loadingScreenStatus.innerText = message;
     },
-
+    
     tempClass(element: HTMLElement, clazz: string, time: number) {
         element.classList.add(clazz);
         setTimeout(() => {
