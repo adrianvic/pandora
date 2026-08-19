@@ -218,13 +218,13 @@ function setupEventListeners() {
     
     elements.messageInput.addEventListener('input', (e) => {
         const inputEvent = e as InputEvent;
-
+        
         mentionedContacts.forEach(c => {
             if (!elements.messageInput.value.includes(`@${c.number}`)) {
                 removeMentionedContact(c);
             }
         })
-
+        
         if (inputEvent.data === "@") {
             suggestMention();
         } else {
@@ -381,6 +381,7 @@ async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
     
     clearMentionCache();
     clearMentionedContacts();
+    elements.mentioningSuggestion.classList.add('collapsed');
     
     const pageEl = document.getElementById("chat-page");
     if (!pageEl) return;
@@ -453,6 +454,7 @@ async function sendMessage() {
     const _mentionCacheID = mentionCacheID;
     const _mentionCacheText = mentionCacheText;
     clearMentionCache();
+    clearMentionedContacts();
     
     elements.messageInput.value = '';
     elements.messageInput.dispatchEvent(new Event("input", { bubbles: true }));
@@ -480,7 +482,7 @@ async function sendMessage() {
         } catch (e: any) {
             console.warn('readChat failed (non-fatal):', e.message);
         }
-
+        
         try {
             await waha.startTyping(activeChatState.id);
             const delay = Math.min(4000, Math.max(1000, text.length * 50));
@@ -566,34 +568,55 @@ function saveSettings() {
 
 async function suggestMention() {
     elements.mentionSuggestions.innerHTML = "";
-    if (activeChatState) {
-        const gpUsrs: GroupUser[] | undefined = await getGroupUsers(activeChatState.id);
+    elements.mentioningSuggestion.classList.remove("collapsed");
+    elements.mentioningSuggestion.classList.add("loading");
+    
+    try {
+        // if (!activeChatState?.id.endsWith("@g.us")) {
+        //     elements.mentioningSuggestion.innerHTML = "<p>Cannot mention outside groups.</p>"
+        //     return
+        // };
+
+        if (!activeChatState) throw Error;
+        
+        const gpUsrs = await getGroupUsers(activeChatState.id);
         if (!gpUsrs) return;
+        
         const usrs = await getUsersFromGroup(gpUsrs);
         if (!usrs) return;
-
-        elements.mentioningSuggestion.classList.remove('collapsed');
-
+        
         usrs.forEach(u => {
             if (!u) return;
-            const contact = document.createElement('div');
-            contact.classList = "mention-suggestion";
-
+            
             const name = u.name ?? u.pushname;
             if (!name) return;
-
+            
+            const contact = document.createElement("div");
+            contact.classList.add("mention-suggestion");
             contact.innerText = name;
-            contact.addEventListener('click', () => {
+            
+            contact.addEventListener("click", () => {
                 mentionedContact(u);
-                elements.messageInput.value = elements.messageInput.value.substring(0, elements.messageInput.value.length - 1);
-                elements.messageInput.value += `@${u.number} `;
-                elements.messageInput.dispatchEvent(new Event("input", { bubbles: true }));
+                
+                elements.messageInput.value =
+                elements.messageInput.value.slice(0, -1) + `@${u.number} `;
+                
+                elements.messageInput.dispatchEvent(
+                    new Event("input", { bubbles: true })
+                );
+                
                 elements.mentioningSuggestion.classList.add("collapsed");
-                elements.messageInput?.focus();
+                elements.messageInput.focus();
             });
-
+            
             elements.mentionSuggestions.appendChild(contact);
-        })
+        });
+        
+    } catch (error) {
+        elements.mentionSuggestions.innerHTML = "<p>No user was found.</p>";
+        
+    } finally {
+        elements.mentioningSuggestion.classList.remove("loading");
     }
 }
 
