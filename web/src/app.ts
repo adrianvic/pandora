@@ -19,6 +19,7 @@ if (!mainViewEl) throw console.error();
 const mainView = views.get(mainViewEl);
 
 document.addEventListener('DOMContentLoaded', async () => {
+    reloadTheme();
     ui.load(async () => {      
         ui.loadingMessage("Drawing sidebar...");
         updateSidebarPosition();
@@ -316,6 +317,13 @@ function setupEventListeners() {
             clearTimeout(timerId);
         })
     })
+    
+    elements.settingTheme.addEventListener('change', () => {
+        const element = elements.settingTheme.querySelector('input[name="plan"]:checked') as HTMLInputElement;
+        const value = element?.value ?? '';
+        localStorage.setItem("pandora_theme", value);
+        reloadTheme();
+    })
 }
 
 function updateSidebarPosition() {                                                                                      
@@ -576,7 +584,7 @@ async function suggestMention() {
         //     elements.mentioningSuggestion.innerHTML = "<p>Cannot mention outside groups.</p>"
         //     return
         // };
-
+        
         if (!activeChatState) throw Error;
         
         const gpUsrs = await getGroupUsers(activeChatState.id);
@@ -631,4 +639,12 @@ async function checkWahaStatus() {
 
 export function getCurrentChat() {
     return activeChatState;
+}
+
+export function reloadTheme() {
+    const body = document.querySelector('body');
+    const loadedTheme = localStorage.getItem('pandora_theme') ?? '';
+    if (body) body.classList = loadedTheme;
+    const loadedThemeEl = elements.settingTheme.querySelector(`input[value="${loadedTheme}"]`) as HTMLInputElement;
+    if (loadedThemeEl) loadedThemeEl.checked = true;
 }

@@ -52,7 +52,8 @@ export const elements = {
     loadingScreenStatus: document.querySelector('#loading-screen-status') as HTMLElement,
     mentioningIndicator: document.querySelector('#mentioning-indicator') as HTMLElement,
     mentioningSuggestion: document.querySelector('#mentioning-suggestion') as HTMLElement,
-    mentionSuggestions: document.querySelector('#mention-suggestions') as HTMLElement
+    mentionSuggestions: document.querySelector('#mention-suggestions') as HTMLElement,
+    settingTheme: document.querySelector('#settings-theme') as HTMLFieldSetElement
 };
 
 export const views = new Map<HTMLElement, ScrollableView>;
@@ -351,7 +352,7 @@ export const ui = {
             replyIndicatorEl.addEventListener('click', () => {
                 const _msg = document.querySelector(`[id*="${replyTo.id}"]`) as HTMLElement;
                 if (_msg) {
-                    _msg.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    _msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     this.tempClass(_msg, "mentioned-highlight", 1000);
                 }
             });

@@ -30,7 +30,7 @@
 
 :root {
     --bg-main: black;
-    --bg-primary: black;
+    --bg-primary: var(--bg-main);
     --bg-secondary: #242424;
     --sidebar-bg: black;
     --chat-bg: black;
@@ -54,14 +54,17 @@
     --page-padding: 1.6rem;
     --page-padding-small: 1rem;
     --container-padding: .4rem;
+    --chat-header-gradient-1: rgba(0, 0, 0, 0.75);
+    --chat-header-gradient-2: rgba(0, 0, 0, 0.35);
 }
 
 body.light {
     --bg-main: white;
+    --bg-primary: white;
     --bg-secondary: #F0F0F0;
     --sidebar-bg: white;
     --chat-bg: white;
-    --border-color: rgba(255, 255, 255, 0.08);
+    --border-color: rgba(0, 0, 0, 0.1);
     --border-hover: rgba(255, 255, 255, 0.15);
     --text-primary: black;
     --text-secondary: black;
@@ -70,12 +73,14 @@ body.light {
     --accent-gradient: white;
     --accent-hover: #4f46e5;
     --online-color: rgba(0, 0, 000, 0.6);
-    --bubble-incoming: #01abaa;
-    --bubble-outgoing: #016f6e;
+    --bubble-incoming: #02bfbf;
+    --bubble-outgoing: #03c4c1;
     --input-bg: white;
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);                                                                                   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);                                                                                  --glass-blur: blur(20px);
     --high-box-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3), 0px -4px 10px rgba(0, 0, 0, 0.3);
+    --chat-header-gradient-1: rgba(255, 255, 255, 0.75);
+    --chat-header-gradient-2: rgba(255, 255, 255, 0.35);
 }
 
 * {
@@ -134,6 +139,10 @@ input:focus {
 
 li {
     margin-inline-start: 1em;
+}
+
+.light .loading-animation-wrapper {
+    filter: invert(1);
 }
 
 .app-container {
@@ -198,6 +207,30 @@ li {
     align-items: self-start;
 }
 
+fieldset {
+    border: none;
+    display: flex;
+    background-color: var(--bg-secondary);
+}
+
+fieldset label {
+    transition: .3s;
+    flex: 1;
+    padding: .4em;
+}
+
+fieldset input[type="radio"] {
+    opacity: 0;
+    height: 0;
+    width: 0;
+    position: absolute;
+}
+
+fieldset label:has(input[type="radio"]:checked) {
+    background-color: var(--text-primary);
+    color: var(--bg-secondary);
+}
+
 #pandora-username {
     font-size: xx-large;
 }
@@ -216,11 +249,10 @@ li {
     justify-content: center;
     font-weight: 700;
     font-size: 1.1rem;
-    color: white;
+    color: var(--text-primary);
     background: var(--accent-gradient);
-    box-shadow: var(--shadow-md);
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid var(--border-color);
 }
 
 .avatar img {
@@ -471,7 +503,7 @@ li {
 /* Desktop aside */
 #desktop-aside {
     height: 100%;
-    background-color: black;
+    background-color: var(--bg-primary);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -498,6 +530,7 @@ li {
     gap: 8px;
     font-size: 0.75rem;
     color: var(--text-secondary);
+    margin-top: 1em;
 }
 
 .pulse-dot {
@@ -542,7 +575,6 @@ li {
     justify-content: center;
     padding: 40px;
     text-align: center;
-    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.2) 0%, transparent 70%);
 }
 
 .empty-state-content {
@@ -619,8 +651,8 @@ li {
     
     background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.75),
-    rgba(0, 0, 0, 0.35),
+    var(--chat-header-gradient-1),
+    var(--chat-header-gradient-2),
     transparent
     );
 }
@@ -673,7 +705,8 @@ li {
 
 .load-more-btn {
     margin: auto;
-    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--bg-primary);
+    background-color: var(--text-primary);
     padding: .4em;
     cursor: pointer;
     box-shadow: var(--high-box-shadow);
@@ -731,6 +764,7 @@ li {
     position: relative;
     word-break: break-word;
     box-shadow: var(--shadow-sm);
+    transition: .4s;
 }
 
 .message-group.incoming .message-bubble {
@@ -741,7 +775,7 @@ li {
 
 .message-group.outgoing .message-bubble {
     background: var(--bubble-outgoing);
-    color: white;
+    color: var(--text-primary);
 }
 
 .message-group.outgoing .message-indicator {
@@ -869,12 +903,11 @@ li {
     height: 44px;
     background: var(--accent-gradient);
     border: none;
-    color: white;
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: var(--shadow-md);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1000,8 +1033,8 @@ li {
 }
 
 .mentioned-highlight .message-bubble {
-    background-color: var(--text-primary);
-    color: var(--bg-primary);
+    background-color: var(--text-primary)!important;
+    color: var(--bg-primary)!important;
 }
 
 .outgoing.mentioned-highlight {
