@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="./manifest.json">
-  <script type="module" crossorigin src="/pandora/assets/app-D66qLon3.js"></script>
-  <link rel="modulepreload" crossorigin href="/pandora/assets/ui-B1UuDGol.js">
-  <link rel="stylesheet" crossorigin href="/pandora/assets/ui-B4hodtvF.css">
+  <script type="module" crossorigin src="/pandora/assets/app-uZZMSVWT.js"></script>
+  <link rel="modulepreload" crossorigin href="/pandora/assets/ui-wLDJlgSO.js">
+  <link rel="stylesheet" crossorigin href="/pandora/assets/ui-BOxi0MjQ.css">
 </head>
 <body>
     <div id="loading-screen">
@@ -76,6 +76,13 @@
                 <div class="extra-page" id="chat-page">
                     <!-- Main Chat Area -->
                     <main class="chat-area">
+                        <div class="collapsed" id="image-preview" onclick="if (event.currentTarget == this) this.classList.add('collapsed');">
+                            <div class="image-holder">
+                                <img id="image-preview-img" src="https://i.postimg.cc/gJgp34HQ/image.png" alt="">
+                            </div>
+                            <p id="image-preview-subtitle">Imagem auruda (descrição)</p>
+                        </div>
+
                         <!-- No Chat Selected State -->
                         <div class="no-chat-state" id="no-chat-state">
                             <div class="empty-state-content">
@@ -137,6 +144,7 @@
                                 <input id="attachment-input" style="display: none;" type="file">
                                 <button id="attachment-btn" class="icon-btn send-btn mif-attachment mif-2x" title="Attach file"></button>
                                 <button id="mention-btn" class="icon-btn send-btn mif-face mif-2x" title="Mention user"></button>
+                                <button id="clear-chat-btn" class="icon-btn send-btn mif-bin mif-2x" title="Delete chat"></button>
                             </footer>
                         </div>
                     </main>
