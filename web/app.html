@@ -76,6 +76,13 @@
                 <div class="extra-page" id="chat-page">
                     <!-- Main Chat Area -->
                     <main class="chat-area">
+                        <div class="collapsed" id="image-preview" onclick="if (event.currentTarget == this) this.classList.add('collapsed');">
+                            <div class="image-holder">
+                                <img id="image-preview-img" src="https://i.postimg.cc/gJgp34HQ/image.png" alt="">
+                            </div>
+                            <p id="image-preview-subtitle">Imagem auruda (descrição)</p>
+                        </div>
+
                         <!-- No Chat Selected State -->
                         <div class="no-chat-state" id="no-chat-state">
                             <div class="empty-state-content">

@@ -54,7 +54,10 @@ export const elements = {
     mentioningIndicator: document.querySelector('#mentioning-indicator') as HTMLElement,
     mentioningSuggestion: document.querySelector('#mentioning-suggestion') as HTMLElement,
     mentionSuggestions: document.querySelector('#mention-suggestions') as HTMLElement,
-    settingTheme: document.querySelector('#settings-theme') as HTMLFieldSetElement
+    settingTheme: document.querySelector('#settings-theme') as HTMLFieldSetElement,
+    previewImage: document.querySelector('#image-preview-img') as HTMLImageElement,
+    previewSubtitle: document.querySelector('#image-preview-subtitle') as HTMLParagraphElement,
+    imagePreview: document.querySelector('#image-preview') as HTMLDivElement,
 };
 
 export const views = new Map<HTMLElement, ScrollableView>;
@@ -190,13 +193,17 @@ export const ui = {
 
             badge.outerHTML = newBadge.outerHTML;
         } else {
-            const preview = li?.querySelector('chat-item-preview');
-            if (preview) preview.innerHTML += count;
+            const preview = li?.querySelector(`li[data-id='${chatId}'] .chat-item-preview`);
+            if (preview) {
+                preview.innerHTML += count;
+            } else {
+                console.log("[updateChatBadge] Didn't find chat with id " + chatId);
+            }
         }
     },
     
     async updateChatInChatList(msg: Message) {
-        const chatNode = document.querySelector(`.chat-item[data-id="${msg.fromMe ? msg.to : msg.from}"]`) as HTMLElement;
+        const chatNode = document.querySelector(`.chat-item[data-id="${msg.fromMe ? msg.to : msg.chatId}"]`) as HTMLElement;
         
         if (chatNode) {
             const messageItem = chatNode.querySelector('.chat-item-msg') as HTMLElement;
@@ -206,14 +213,11 @@ export const ui = {
             
             if (!msg.fromMe && (!activeChatState || activeChatState.id !== (msg.fromMe ? msg.to : msg.from))) {
                 const unreadBadge = chatNode.querySelector('.unread-badge') as HTMLElement;
-                if (unreadBadge) {
-                    unreadBadge.innerText = (Number(unreadBadge.innerHTML) || 0) + 1 + "";
-                } else {
-                    const preview = chatNode.querySelector('.chat-item-preview') as HTMLElement;
-                    const badge = document.createElement('span');
-                    badge.className = 'unread-badge';
-                    badge.innerText = '1';
-                    preview.appendChild(badge);
+                let count = 0;
+                if (unreadBadge) count = parseFloat(unreadBadge.innerText);
+                if (Number.isNaN(count)) count = 0;
+                if (msg.chatId) {
+                    this.updateChatBadge(msg.chatId, count + 1);
                 }
             }
         }
@@ -448,6 +452,11 @@ export const ui = {
                         const img = document.createElement('img');
                         img.classList.add('message-image-attachement');
                         img.src = objectUrl;
+                        img.addEventListener('click', () => {
+                            elements.previewImage.src = objectUrl;
+                            elements.previewSubtitle.innerText = parsed;
+                            elements.imagePreview.classList.remove('collapsed');
+                        })
                         this.ensureScroll(elements.messagesContainer, () => {
                             bubble.before(img);
                         })

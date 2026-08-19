@@ -56,6 +56,7 @@
     --container-padding: .4rem;
     --chat-header-gradient-1: rgba(0, 0, 0, 0.75);
     --chat-header-gradient-2: rgba(0, 0, 0, 0.35);
+    --bg-transparent: rgba(0, 0, 0, 0.75);
 }
 
 body.light {
@@ -741,7 +742,7 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 .message-group.image {
-    max-width: 30%;
+    max-width: min(50vh, 30%);
 }
 
 .message-group.incoming {
@@ -824,6 +825,7 @@ fieldset label:has(input[type="radio"]:checked) {
 
 .message-image-attachement {
     max-width: 100%;
+    max-height: 50vh;
 }
 
 .incoming .message-image-attachement {
@@ -1175,6 +1177,35 @@ fieldset label:has(input[type="radio"]:checked) {
 
 #mention-suggestions > * {
     flex-shrink: 0;
+}
+
+#image-preview {
+    transition: .6s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-transparent);
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    overflow: auto;
+    text-align: center;
+    gap: 1em;
+}
+
+#image-preview .image-holder {
+    margin: 0 auto;
+    border: medium solid var(--border-color);
+    max-height: 50%;
+}
+
+.image-holder img {
+    max-height: 100%;
+}
+
+#image-preview.collapsed {
+    transform: translateY(100%);
 }
 
 @media (max-width: 768px) {

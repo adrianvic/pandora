@@ -497,6 +497,7 @@ async function sendMessage() {
         try {
             if (!activeChatState.id.endsWith('@lid')) {
                 await waha.readChat(activeChatState.id);
+                ui.updateChatBadge(activeChatState.id, 0);
             }
         } catch (e: any) {
             console.warn('readChat failed (non-fatal):', e.message);
@@ -529,6 +530,7 @@ async function sendMessage() {
         
         activeChatState.lastMessage = text;
         activeChatState.timestamp = new Date().toISOString();
+
     } catch (error) {
         console.error('Failed to send message:', error);
         const tempBubble = document.getElementById(tempMsg.id);
