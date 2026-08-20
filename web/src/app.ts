@@ -2,13 +2,19 @@ import { config } from "./config";
 import { waha } from "./waha";
 import { ui, elements, views } from "./ui";
 import { websocket } from "./websocket";
-import { compensateMessageOrdering, debounce, formatTime, normalizeId } from "./utils";
+import { compensateMessageOrdering, debounce, formatTime, normalizeId, requireEl } from "./utils";
 import { deleteChat, fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getGroupUsers, getUser, getUserAbout, getUsersFromGroup, markRead, sendStatus, updateOnlineStatus } from "./storage";
 import { deleteDatabase, upsertMessages } from "./db";
 import { showNotification } from "./notification";
 import type { Chat, Message, WebSocketEvent } from "./types";
 import { activeChatState, clearMentionCache, clearMentionedContacts, getMentionedIDs, mentionCacheID, mentionCacheText, mentionedContact, mentionedContacts, removeMentionedContact, setActiveChatState } from "./states";
+import { Sidebar } from "./element/Sidebar";
+
 if (localStorage.getItem('setupComplete') !== "true") window.location.href = "index.html";
+
+// Elements
+let sidebar: Sidebar;
+hydrate();
 
 const messageTone = new Audio("./message.ogg");
 const longPressEvent = new CustomEvent("longpress");
@@ -17,6 +23,7 @@ export let notificationAuthorization: NotificationPermission = "default";
 const mainViewEl = document.getElementById("main-view");
 if (!mainViewEl) throw console.error();
 const mainView = views.get(mainViewEl);
+
 
 document.addEventListener('DOMContentLoaded', async () => {
     reloadTheme();
@@ -54,6 +61,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     })
 });
 
+
+function hydrate() {
+    sidebar = new Sidebar(requireEl<HTMLElement>('.sidebar'));
+}
 
 async function askForNotificationPermission() {
     notificationAuthorization = await Notification.requestPermission();
@@ -94,8 +105,8 @@ function purgeDatabase(ask: boolean = true) {
 function loadChats() {
     elements.chatsLoader.classList.remove('hidden');
     try {
-        fetchChats().then(async () => {
-            ui.renderChatList(getChats(), activeChatState, selectChat);
+        fetchChats(async () => {
+            sidebar.chatList.renderChatList(getChats(), selectChat);
             
             const hash = window.location.hash;
             if (hash && hash.startsWith('#chat-')) {
@@ -182,9 +193,9 @@ function setupEventListeners() {
     
     elements.appContainer.addEventListener('resize', () => {
         if (window.innerWidth > 768) {
-            elements.desktopAside.after(elements.sidebar);
+            elements.desktopAside.after(sidebar.element);
         } else {
-            mainViewEl?.insertBefore(elements.sidebar, mainViewEl.firstChild);
+            mainViewEl?.insertBefore(sidebar.element, mainViewEl.firstChild);
         }
     })
     
@@ -200,7 +211,7 @@ function setupEventListeners() {
         const filtered = getChats().filter(chat =>
             chat.name.toLowerCase().includes(query)
         );
-        ui.renderChatList(filtered, activeChatState, selectChat);
+        sidebar.chatList.renderChatList(filtered, selectChat);
     });
     
     ui.autoResizeTextArea(elements.messageInput);
@@ -250,7 +261,7 @@ function setupEventListeners() {
     elements.markreadBtn.addEventListener('click', async () => {
         if (activeChatState) {
             await markRead(activeChatState.id);
-            ui.updateChatBadge(activeChatState.id, 0);
+            sidebar.chatList.updateChatBadge(activeChatState.id, 0);
         }
     });
 
@@ -337,15 +348,15 @@ function setupEventListeners() {
 }
 
 function updateSidebarPosition() {                                                                                      
-    if (!mainViewEl || !elements.sidebar || !elements.desktopAside) return;
+    if (!mainViewEl || !elements.desktopAside) return;
     
     if (window.innerWidth > 768) {                                                                                                                                                         
-        if (elements.sidebar.parentElement !== elements.appContainer) {
-            elements.desktopAside.after(elements.sidebar);
+        if (sidebar.element.parentElement !== elements.appContainer) {
+            elements.desktopAside.after(sidebar.element);
         }
     } else {
-        if (elements.sidebar.parentElement !== mainViewEl) {
-            mainViewEl.insertBefore(elements.sidebar, mainViewEl.firstChild);
+        if (sidebar.element.parentElement !== mainViewEl) {
+            mainViewEl.insertBefore(sidebar.element, mainViewEl.firstChild);
         }
     }
 }
@@ -364,7 +375,7 @@ function initWebSocket() {
 async function handleIncomingMessage(msg: Message) {
     if (!msg) return;
     
-    ui.updateChatInChatList(msg);
+    sidebar.chatList.updateItemFromMessage(msg);
     
     const rawChatId = msg.chatId || (typeof msg.from === 'string' ? msg.from : (msg.from as any)?._serialized) || (msg.chat && msg.chat.id);
     const msgChatId = normalizeId(rawChatId);
@@ -497,7 +508,7 @@ async function sendMessage() {
         try {
             if (!activeChatState.id.endsWith('@lid')) {
                 await waha.readChat(activeChatState.id);
-                ui.updateChatBadge(activeChatState.id, 0);
+                sidebar.chatList.updateChatBadge(activeChatState.id, 0);
             }
         } catch (e: any) {
             console.warn('readChat failed (non-fatal):', e.message);

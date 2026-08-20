@@ -23,7 +23,7 @@ export function formatTime(dateVal: string | number | Date): string {
 
 export function compensateMessageOrdering(messages: Message[]): Message[] {
     if (!Array.isArray(messages)) return [];
-
+    
     // convert to ms
     const msgs: MessageWithTime[] = messages.map(m => {
         let t: number;
@@ -34,9 +34,9 @@ export function compensateMessageOrdering(messages: Message[]): Message[] {
         }
         return { ...m, _time: t };
     });
-
+    
     msgs.sort((a, b) => a._time - b._time);
-
+    
     // clean temp property
     return msgs.map(({ _time, ...m }) => m);
 }
@@ -44,20 +44,20 @@ export function compensateMessageOrdering(messages: Message[]): Message[] {
 export function getBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-
+        
         reader.onload = () => {
             resolve((reader.result as string).split(",")[1]);
         };
-
+        
         reader.onerror = (e) => {
             console.error("Error", e);
             reject(e);
         };
-
+        
         reader.onabort = () => {
             reject(new Error("Aborted"));
         };
-
+        
         reader.readAsDataURL(file);
     });
 }
@@ -76,4 +76,10 @@ export function debounce(func: () => void, delay: number): () => void {
         clearTimeout(timeoutId);
         timeoutId = setTimeout(func, delay);
     };
+}
+
+export function requireEl<T extends Element>(selector: string): T {
+    const el = document.querySelector(selector);
+    if (!el) throw new Error(`Missing element: ${selector}`);
+    return el as T;
 }

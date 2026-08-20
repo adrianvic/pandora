@@ -139,8 +139,8 @@ input:focus {
     outline: none;
 }
 
-li {
-    margin-inline-start: 1em;
+.message-content li {
+    margin-inline-start: 1.5em;
 }
 
 .light .loading-animation-wrapper {
@@ -402,7 +402,7 @@ fieldset label:has(input[type="radio"]:checked) {
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid transparent;
-    margin-left: 0px;
+    margin-inline-start: 0;
 }
 
 .chat-item.archived {
