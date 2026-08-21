@@ -1,4 +1,4 @@
-export abstract class BaseComponent<T extends HTMLElement = HTMLElement> {
+export class BaseComponent<T extends HTMLElement = HTMLElement> {
     public readonly element: T;
 
     constructor(elementOrTag: T | string) {

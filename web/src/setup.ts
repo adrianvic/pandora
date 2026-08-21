@@ -1,8 +1,9 @@
 import { config } from "./config";
-import { elements, views } from "./ui";
+import { ScrollableView } from "./element/ScrollableView";
+import { requireEl } from "./utils";
 import { waha } from "./waha";
 
-const page = views.get(elements.appContainer);
+const page = new ScrollableView(requireEl<HTMLElement>('.app-container'));
 page?.scrollToIndex(0);
 const statusConnection = document.getElementById("connecting-status");
 const connectingPage = document.getElementById("connecting-page");

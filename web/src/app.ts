@@ -1,29 +1,30 @@
+if (localStorage.getItem('setupComplete') !== "true") window.location.href = "index.html";
+
 import { config } from "./config";
 import { waha } from "./waha";
-import { ui, elements, views } from "./ui";
+import { ui, elements } from "./ui";
 import { websocket } from "./websocket";
-import { compensateMessageOrdering, debounce, formatTime, normalizeId, requireEl } from "./utils";
-import { deleteChat, fetchChats, getAppUser, getChatMessages, getChatPicture, getChats, getGroupUsers, getUser, getUserAbout, getUsersFromGroup, markRead, sendStatus, updateOnlineStatus } from "./storage";
+import { debounce, normalizeId, requireEl } from "./utils";
+import { deleteChat, getAppUser, getChatPicture, getChats, getUser, getUserAbout, markRead, sendStatus, updateOnlineStatus } from "./storage";
 import { deleteDatabase, upsertMessages } from "./db";
 import { showNotification } from "./notification";
 import type { Chat, Message, WebSocketEvent } from "./types";
-import { activeChatState, clearMentionCache, clearMentionedContacts, getMentionedIDs, mentionCacheID, mentionCacheText, mentionedContact, mentionedContacts, removeMentionedContact, setActiveChatState } from "./states";
-import { Sidebar } from "./element/Sidebar";
-
-if (localStorage.getItem('setupComplete') !== "true") window.location.href = "index.html";
 
 // Elements
+import { Sidebar } from "./element/Sidebar";
+import { ScrollableView } from "./element/ScrollableView";
+import { ChatPage } from "./element/ChatPage";
+
 let sidebar: Sidebar;
+let mainView: ScrollableView;
+let chatPage: ChatPage;
+
 hydrate();
 
 const messageTone = new Audio("./message.ogg");
 const longPressEvent = new CustomEvent("longpress");
 export let isLoadingChat = false;
 export let notificationAuthorization: NotificationPermission = "default";
-const mainViewEl = document.getElementById("main-view");
-if (!mainViewEl) throw console.error();
-const mainView = views.get(mainViewEl);
-
 
 document.addEventListener('DOMContentLoaded', async () => {
     reloadTheme();
@@ -50,11 +51,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             ui.loadingMessage("Replacing placeholders...");
             await setupElementsData();
             ui.loadingMessage("Loading chats...");
-            await loadChats();
+            await sidebar.loadChats(async (chat) => {
+                chatPage.loadChat(chat, (await getAppUser()).id);
+            });
             ui.loadingMessage("Checking server status...");
             await checkWahaStatus();
             ui.loadingMessage("Telling server to send new messages...");
-            await initWebSocket();
+            initWebSocket();
         } finally {
             elements.chatsLoader.classList.add('hidden');
         }
@@ -64,6 +67,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 function hydrate() {
     sidebar = new Sidebar(requireEl<HTMLElement>('.sidebar'));
+    mainView = new ScrollableView(requireEl<HTMLElement>('#main-view'));
+    chatPage = new ChatPage(requireEl<HTMLElement>('.chat-area'));
 }
 
 async function askForNotificationPermission() {
@@ -102,37 +107,6 @@ function purgeDatabase(ask: boolean = true) {
     location.reload();
 }
 
-function loadChats() {
-    elements.chatsLoader.classList.remove('hidden');
-    try {
-        fetchChats(async () => {
-            sidebar.chatList.renderChatList(getChats(), selectChat);
-            
-            const hash = window.location.hash;
-            if (hash && hash.startsWith('#chat-')) {
-                const chatId = hash.replace('#chat-', '');
-                const chat = getChats().find(c => c.id === chatId);
-                if (chat) {
-                    selectChat(chat, true, false);
-                }
-            }
-        });
-    } catch (error: any) {
-        console.error('Failed to load chats:', error);
-        elements.chatList.innerHTML = `
-            <li class="loading-chats" style="color: var(--text-primary); text-align: center; padding: 20px;">
-                <p>Connection to WAHA failed.</p>
-                <p style="font-size: 0.75rem; color: var(--text-primary); margin-top: 8px;">
-                    Ensure WAHA server is running and CORS is enabled, or click Settings to configure.
-                </p>
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">${error.message}</p>
-            </li>
-        `;
-    } finally {
-        elements.chatsLoader.classList.add('hidden');
-    }
-}
-
 let isScrollingProgrammatically = false;
 let scrollTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -147,7 +121,7 @@ function scrollToChat(smooth = true) {
 
 function scrollToList(smooth = true) {
     isScrollingProgrammatically = true;
-    mainViewEl?.scrollTo({
+    mainView.element.scrollTo({
         left: 0,
         behavior: smooth ? 'smooth' : 'auto'
     });
@@ -173,6 +147,15 @@ function setupEventListeners() {
             closeActiveChat(true);
         }
     });
+
+    // update sidebar when sending message
+    chatPage.element.addEventListener('message-dispatch', (e) => {
+        const cev = e as CustomEvent;
+
+        if (!cev.detail.to.endsWith('@lid')) {
+            sidebar.chatList.updateChatBadge(cev.detail.to, 0);
+        }
+    });
     
     elements.appContainer.addEventListener('scroll', () => {
         if (window.innerWidth > 768) return;
@@ -184,7 +167,7 @@ function setupEventListeners() {
             const width = elements.appContainer.clientWidth;
             
             if (scrollLeft < width * 0.2) {
-                if (activeChatState) {
+                if (chatPage.messagesContainer) {
                     closeActiveChat(false);
                 }
             }
@@ -195,7 +178,7 @@ function setupEventListeners() {
         if (window.innerWidth > 768) {
             elements.desktopAside.after(sidebar.element);
         } else {
-            mainViewEl?.insertBefore(sidebar.element, mainViewEl.firstChild);
+            mainView.element.insertBefore(sidebar.element, mainView.element.firstChild);
         }
     })
     
@@ -214,78 +197,25 @@ function setupEventListeners() {
         sidebar.chatList.renderChatList(filtered, selectChat);
     });
     
-    ui.autoResizeTextArea(elements.messageInput);
-    
-    elements.messageForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        sendMessage();
-    });
-    
-    elements.messageInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-    
-    elements.messageInput.addEventListener('input', (e) => {
-        const inputEvent = e as InputEvent;
-        
-        mentionedContacts.forEach(c => {
-            if (!elements.messageInput.value.includes(`@${c.number}`)) {
-                removeMentionedContact(c);
-            }
-        })
-        
-        if (inputEvent.data === "@") {
-            suggestMention();
-        } else {
-            elements.mentioningSuggestion.classList.add('collapsed');
-        }
-    });
-    
-    elements.chatBottomBar.style.height = `${elements.chatInputPanel.offsetHeight}px`;
-    const observer = new ResizeObserver(() => {
-        elements.chatBottomBar.style.height =
-        `${elements.chatInputPanel.offsetHeight}px`;
-    });
-    
-    elements.mentioningIndicator.addEventListener('click', clearMentionCache);
-    
-    observer.observe(elements.chatInputPanel);
-    elements.chatBottomBarBtn.addEventListener('click', ui.toggleChatBottomBar);
-    elements.chatBottomBar.addEventListener('click', (e) => {
-        if (e.target == e.currentTarget) ui.toggleChatBottomBar();
-    });
-    
     elements.markreadBtn.addEventListener('click', async () => {
-        if (activeChatState) {
-            await markRead(activeChatState.id);
-            sidebar.chatList.updateChatBadge(activeChatState.id, 0);
+        if (chatPage.messagesContainer) {
+            await markRead(chatPage.messagesContainer.chatID);
+            sidebar.chatList.updateChatBadge(chatPage.messagesContainer?.chatID, 0);
         }
     });
-
+    
     elements.clearChatBtn.addEventListener('click', () => {
-       if (!activeChatState) return;
-       if (confirm('Do you want to delete this chat?')) {
-           const chat = document.querySelector(`.chat-item[data-foo='${activeChatState.id}']`)
-           chat?.remove();
-           deleteChat(activeChatState.id);
-           closeActiveChat();
-       }
+        if (!chatPage.messagesContainer) return;
+        if (confirm('Do you want to delete this chat?')) {
+            const chat = document.querySelector(`.chat-item[data-foo='${chatPage.messagesContainer?.chatID}']`)
+            chat?.remove();
+            deleteChat(chatPage.messagesContainer?.chatID);
+            closeActiveChat();
+        }
     });
     
     elements.attachmentBtn.addEventListener('click', () => {
         elements.attachmentInput.click();
-    });
-    elements.attachmentInput.addEventListener('change', function (this: HTMLInputElement) {
-        const firstFile = this.files?.[0];
-        if (firstFile) sendFileMessage(firstFile);
-    });
-    
-    elements.mentionBtn.addEventListener('click', async () => {
-        suggestMention();
-        ui.toggleChatBottomBar();
     });
     
     elements.backToSidebarBtn.addEventListener('click', () => {
@@ -348,15 +278,15 @@ function setupEventListeners() {
 }
 
 function updateSidebarPosition() {                                                                                      
-    if (!mainViewEl || !elements.desktopAside) return;
+    if (!elements.desktopAside) return;
     
     if (window.innerWidth > 768) {                                                                                                                                                         
         if (sidebar.element.parentElement !== elements.appContainer) {
             elements.desktopAside.after(sidebar.element);
         }
     } else {
-        if (sidebar.element.parentElement !== mainViewEl) {
-            mainViewEl.insertBefore(sidebar.element, mainViewEl.firstChild);
+        if (sidebar.element.parentElement !== mainView.element) {
+            mainView.element.insertBefore(sidebar.element, mainView.element.firstChild);
         }
     }
 }
@@ -391,15 +321,15 @@ async function handleIncomingMessage(msg: Message) {
         }
     }
     
-    if (activeChatState && activeChatState.id === msgChatId) {
+    if (chatPage.messagesContainer?.chatID === msgChatId) {
         const msgId = normalizeId(msg.id as any) || (msg.id as string);
-        const exists = document.getElementById(msgId);
+        const exists = chatPage.messagesContainer.getMessage(msgId);
         if (!exists) {
             const container = elements.messagesContainer;
             const scrolled = container.scrollTop === (container.scrollHeight - container.clientHeight);
-            ui.appendSingleMessage({ ...msg, chatId: msgChatId }, activeChatState.name, (await getAppUser()).id);
-            if (scrolled && window.innerWidth > 768) {
-                ui.scrollToBottom();
+            chatPage.messagesContainer?.appendMessage({ ...msg, chatId: msgChatId });
+            if (scrolled && window.innerWidth > 768 && chatPage.messagesContainer) {
+                ui.scrollToBottom(chatPage.messagesContainer.element);
             }
         }
     }
@@ -408,36 +338,21 @@ async function handleIncomingMessage(msg: Message) {
 async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
     if (isLoadingChat) return;
     
-    clearMentionCache();
-    clearMentionedContacts();
-    elements.mentioningSuggestion.classList.add('collapsed');
+    const messagesContainer = chatPage.loadChat(chat, (await getAppUser()).id);
+
+    mainView?.scrollTo(messagesContainer.element);
     
-    const pageEl = document.getElementById("chat-page");
-    if (!pageEl) return;
-    mainView?.scrollTo(pageEl);
-    
-    isLoadingChat = true;
-    setActiveChatState(chat);
-    
-    chat.unreadCount = 0;
-    
-    ui.toggleChatState(true);
-    elements.activeChatName.textContent = chat.name.toUpperCase();
-    elements.activeChatAvatar.textContent = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
-    
-    elements.messagesContainer.innerHTML = `
-    <div class='loading-animation-wrapper'>
-        <div class="animation">
-            <p class="animation"></p>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
-    </div>`;
-    
-    elements.appContainer.classList.remove('no-active-chat');
+    // elements.messagesContainer.innerHTML = `
+    // <div class='loading-animation-wrapper'>
+    //     <div class="animation">
+    //         <p class="animation"></p>
+    //         <div class="dot"></div>
+    //         <div class="dot"></div>
+    //         <div class="dot"></div>
+    //         <div class="dot"></div>
+    //         <div class="dot"></div>
+    //     </div>
+    // </div>`;
     
     if (window.innerWidth <= 768) {
         scrollToChat(smoothScroll);
@@ -447,140 +362,19 @@ async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
         window.location.hash = ``;
         window.location.hash = `chat-${chat.id}`;
     }
-    
-    try {
-        const rawMessages = await getChatMessages(chat.id);
-        const processedMessages = compensateMessageOrdering(rawMessages);
-        ui.renderMessages(processedMessages, chat.name, (await getAppUser()).id, chat.id);
-    } catch (error) {
-        console.error('Failed to load messages:', error);
-        elements.messagesContainer.innerHTML = '<div class="loading-chats">Error loading messages</div>';
-    }
-    
-    isLoadingChat = false;
 }
 
 async function closeActiveChat(isPopState = false, forceClose = false) {
-    setActiveChatState(null);
-    
     if (window.innerWidth <= 768) {
-        scrollToList();
-        if (forceClose) ui.toggleChatState(false);
+        scrollToList(true);
     } else {
-        ui.toggleChatState(false);
+        chatPage.closeChat(forceClose);
     }
-    
     
     if (!isPopState) {
         if (window.location.hash.startsWith('#chat-')) {
             history.back();
         }
-    }
-}
-
-async function sendMessage() {
-    const text = elements.messageInput.value.trim();
-    if (!text || !activeChatState) return;
-    const _mentionCacheID = mentionCacheID;
-    const _mentionCacheText = mentionCacheText;
-    clearMentionCache();
-    clearMentionedContacts();
-    
-    elements.messageInput.value = '';
-    elements.messageInput.dispatchEvent(new Event("input", { bubbles: true }));
-    
-    const tempMsg = {
-        id: 'temp-' + Date.now(),
-        body: text,
-        fromMe: true,
-        sender: 'me',
-        timestamp: new Date().toISOString(),
-        status: 'sending',
-        replyTo: _mentionCacheID ? {
-            body: _mentionCacheText || "Mention (no text)"
-        } : null
-    } as any;
-    
-    ui.appendSingleMessage(tempMsg, activeChatState.name, (await getAppUser()).id);
-    ui.scrollToBottom();
-    
-    try {
-        try {
-            if (!activeChatState.id.endsWith('@lid')) {
-                await waha.readChat(activeChatState.id);
-                sidebar.chatList.updateChatBadge(activeChatState.id, 0);
-            }
-        } catch (e: any) {
-            console.warn('readChat failed (non-fatal):', e.message);
-        }
-        
-        try {
-            await waha.startTyping(activeChatState.id);
-            const delay = Math.min(4000, Math.max(1000, text.length * 50));
-            await new Promise(resolve => setTimeout(resolve, delay));
-        } catch (e) {
-            console.warn('Presence start failed:', e);
-        }
-        
-        try {
-            await waha.stopTyping(activeChatState.id);
-        } catch (e) {
-            console.warn('Presence stop failed:', e);
-        }
-        
-        const responseData = await waha.sendTextMessage(activeChatState.id, text, getMentionedIDs(), _mentionCacheID);
-        
-        const tempBubble = document.getElementById(tempMsg.id);
-        if (tempBubble) {
-            if (responseData && responseData.id) {
-                tempBubble.id = normalizeId(responseData.id as any) || tempBubble.id;
-            }
-            const meta = tempBubble.querySelector('.message-meta');
-            if (meta) meta.innerHTML = `<span>${formatTime(new Date())}</span><span style="width:14px; height:14px;" class="mif-done">`;
-        }
-        
-        activeChatState.lastMessage = text;
-        activeChatState.timestamp = new Date().toISOString();
-
-    } catch (error) {
-        console.error('Failed to send message:', error);
-        const tempBubble = document.getElementById(tempMsg.id);
-        if (tempBubble) {
-            const meta = tempBubble.querySelector('.message-meta');
-            if (meta) meta.innerHTML = `<span style="color: #ef4444;">Failed to send</span>`;
-        }
-    }
-}
-
-async function sendFileMessage(file: File) {
-    if (!activeChatState) return;
-    try {
-        const tempId = 'temp-' + Date.now();
-        const tempMsg = {
-            _data: {
-                mimetype: file.type
-            },
-            id: tempId,
-            body: "",
-            fromMe: true,
-            sender: 'me',
-            timestamp: new Date().toISOString(),
-            status: 'sending',
-            hasMedia: true,
-            media: {
-                url: URL.createObjectURL(file),
-                filename: file.name
-            }
-        } as any;
-        
-        ui.appendSingleMessage(tempMsg, activeChatState.name, (await getAppUser()).id, true);
-        ui.scrollToBottom();
-        
-        const result = await waha.sendFileMessage(activeChatState.id, file);
-        ui.removeChatMessage(tempId);
-        ui.appendSingleMessage(result, activeChatState.name, (await getAppUser()).id);
-    } catch (error: any) {
-        console.error(error.message);
     }
 }
 
@@ -593,63 +387,6 @@ function saveSettings() {
         elements.inputBackgroundOpacity.value
     );
     location.reload();
-    loadChats();
-    checkWahaStatus();
-    initWebSocket();
-}
-
-async function suggestMention() {
-    elements.mentionSuggestions.innerHTML = "";
-    elements.mentioningSuggestion.classList.remove("collapsed");
-    elements.mentioningSuggestion.classList.add("loading");
-    
-    try {
-        // if (!activeChatState?.id.endsWith("@g.us")) {
-        //     elements.mentioningSuggestion.innerHTML = "<p>Cannot mention outside groups.</p>"
-        //     return
-        // };
-        
-        if (!activeChatState) throw Error;
-        
-        const gpUsrs = await getGroupUsers(activeChatState.id);
-        if (!gpUsrs) return;
-        
-        const usrs = await getUsersFromGroup(gpUsrs);
-        if (!usrs) return;
-        
-        usrs.forEach(u => {
-            if (!u) return;
-            
-            const name = u.name ?? u.pushname;
-            if (!name) return;
-            
-            const contact = document.createElement("div");
-            contact.classList.add("mention-suggestion");
-            contact.innerText = name;
-            
-            contact.addEventListener("click", () => {
-                mentionedContact(u);
-                
-                elements.messageInput.value =
-                elements.messageInput.value.slice(0, -1) + `@${u.number} `;
-                
-                elements.messageInput.dispatchEvent(
-                    new Event("input", { bubbles: true })
-                );
-                
-                elements.mentioningSuggestion.classList.add("collapsed");
-                elements.messageInput.focus();
-            });
-            
-            elements.mentionSuggestions.appendChild(contact);
-        });
-        
-    } catch (error) {
-        elements.mentionSuggestions.innerHTML = "<p>No user was found.</p>";
-        
-    } finally {
-        elements.mentioningSuggestion.classList.remove("loading");
-    }
 }
 
 async function checkWahaStatus() {
@@ -659,10 +396,6 @@ async function checkWahaStatus() {
     } catch (e) {
         ui.updateConnectionStatus(false, 'WAHA Server Offline');
     }
-}
-
-export function getCurrentChat() {
-    return activeChatState;
 }
 
 export function reloadTheme() {
