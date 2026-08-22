@@ -54,8 +54,11 @@ export class MessagesContainer extends BaseComponent {
 
             for (let i = 0; i <= filtered.length - 1; i++) {
                 const msg = filtered[i];
-                const unimplemented = ["e2e_notification", "call_log", "gp2"];
-                if (msg._data?.type && unimplemented.indexOf(msg._data?.type) !== -1) continue;
+                const unimplemented: string[] = [];
+                if (msg._data?.type && unimplemented.indexOf(msg._data?.type) !== -1) {
+                    console.log('Uninplemented message:\n', msg);
+                    continue;
+                }
 
                 const cmsg = new ChatMessage(msg, this, this.chatID, this.userID, false, messages[messages.length - 1]);
                 messages.push(cmsg);
@@ -75,14 +78,12 @@ export class MessagesContainer extends BaseComponent {
     }
     
     public appendMessage(msg: Message, isLocal = false) {
-        const unimplemented: string[] = [
-            "e2e_notification",
-            "call_log",
-            "gp2"
-        ]
+        const unimplemented: string[] = []
         
-        console.log(msg._data?.type)
-        if (msg._data?.type && unimplemented.indexOf(msg._data?.type) !== -1) return;
+        if (msg._data?.type && unimplemented.indexOf(msg._data?.type) !== -1) {
+            console.log(`Uninplemented message type '${msg._data?.type}':\n`, msg);
+            return;
+        }
         
         const prev = this.messages[this.messages.length - 1] || null;
         const cmsg = new ChatMessage(msg, this, this.chatID, this.userID, isLocal, prev);

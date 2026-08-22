@@ -18,8 +18,7 @@ export class ChatMessage extends BaseComponent {
         this.id = (msg.id as string); // true blind cast I don't know if it works!!
         
         const isOutgoing = msg.fromMe || msg.sender === 'me';
-                
-        this.element.className = `message-group selectable ${isOutgoing ? 'outgoing' : 'incoming'}`;
+
         this.element.id = normalizeId(msg._serialized ? (msg._serialized as any) : msg.id) || "msg-id";
         this.element.dataset.id = msg.id.toString();
         this.element.dataset.timestamp = msg.timestamp?.toString();
@@ -29,12 +28,12 @@ export class ChatMessage extends BaseComponent {
         const timeStr = formatTime(msg.timestamp || new Date());
         
         this.tick = document.createElement('span');
-	this.tick.classList.add('message-tick');
+	    this.tick.classList.add('message-tick');
         this.updateMessageTick(isOutgoing, msg.status);
         
         this.bubble = document.createElement('div');
         this.bubble.className = 'message-bubble';
-	if (msg.body == "" || msg.text == "") this.bubble.classList.add("no-text");
+	    if (msg.body == "" || msg.text == "") this.bubble.classList.add("no-text");
         
         let prevUid: string | undefined;
         
@@ -77,17 +76,47 @@ export class ChatMessage extends BaseComponent {
             
             this.bubble.appendChild(replyIndicatorEl);
         }
-        
+
         const textEl = document.createElement('div');
-        const parsed = new Parser(msg.body || msg.text || "")
-        .parse('_', '<i>$1</i>')
-        .parse('*', '<b>$1</b>')
-        .parse('~', '<s>$1</s>')
-        .parse('```', '<span style="font-family: monospace;">$1</span>')
-        .parse('`', '<code>$1</code>')
-        .replace("\n", "<br>")
-        .input;
-        
+        let parsed = new Parser(msg.body || msg.text || "")
+            .parse('_', '<i>$1</i>')
+            .parse('*', '<b>$1</b>')
+            .parse('~', '<s>$1</s>')
+            .parse('```', '<span style="font-family: monospace;">$1</span>')
+            .parse('`', '<code>$1</code>')
+            .replace("\n", "<br>")
+            .input;
+
+        const neutral: string[] = [
+            "e2e_notification",
+            "call_log",
+            "gp2" // TODO this is also when a user gets removed
+        ]
+
+        if (msg._data?.type) {
+            this.element.className = `message-group selectable neutral`;
+
+            switch (neutral.indexOf(msg._data?.type)) {
+                case 0:
+                    parsed = 'This chat encryption key has changed';
+                    break;
+                case 1:
+                    parsed = 'A call was made';
+                    break
+                case 2:
+                    parsed = 'This group description was changed';
+                    break
+                    
+                default:
+                    this.element.className = `message-group selectable ${isOutgoing ? 'outgoing' : 'incoming'}`
+                    break;
+            }
+        } else {
+            return; // message without type??
+        }
+
+        if (msg._data?.type === 'sticker') this.element.classList.add('sticker');
+        if (msg._data?.type === 'revoked') parsed = '<i>This message was deleted</i>';
         
         textEl.innerHTML = parsed;
         

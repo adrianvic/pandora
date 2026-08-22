@@ -748,6 +748,15 @@ fieldset label:has(input[type="radio"]:checked) {
     transition: .1s;
 }
 
+.message-group.neutral {
+    margin: auto;
+    margin-top: 1em;
+}
+
+.neutral .message-sender {
+    display: none;
+}
+
 .message-group.image {
     max-width: min(50vh, 30%);
 }
@@ -839,7 +848,7 @@ fieldset label:has(input[type="radio"]:checked) {
     flex-direction: column;
     gap: .4em;
     min-width: 0;
-    flex: 1;
+    /* Removed flex: 1 to prevent empty column on wrap */
 }
 
 .message-content-and-time {
@@ -860,9 +869,10 @@ fieldset label:has(input[type="radio"]:checked) {
     justify-content: flex-end;
     gap: 4px;
     font-size: 0.7rem;
+    margin-left: auto; /* Pushes time to the right when wrapped */
 }
 
-.incoming .message-tick {
+.incoming .message-tick, .message-group.neutral .message-tick {
     display: none;
 }
 
@@ -871,6 +881,17 @@ fieldset label:has(input[type="radio"]:checked) {
     max-height: 50vh;
     min-height: 100px;
     background-color: var(--bg-secondary);
+}
+
+.sticker .message-image-attachement {
+    border: none!important;
+    max-height: 20vh;
+    background-color: transparent!important;
+}
+
+.sticker .message-bubble {
+    background: none!important;
+    border: none!important;
 }
 
 .incoming .message-image-attachement {

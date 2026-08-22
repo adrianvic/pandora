@@ -49,11 +49,12 @@ export class ChatList extends BaseComponent {
         // in this case the user probably deleted the chat, but wpp still includes that pesky e2e notification
         if (retrievedLastMesssage[0]._data?.type === 'e2e_notification' && !retrievedLastMesssage[1]) return;
 
-        if (retrievedLastMesssage[0]._data?.type === 'sticker') lastMessage = "Sticker";
-        if (retrievedLastMesssage[0]._data?.type === 'call_log') lastMessage = "Call log";
-        if (retrievedLastMesssage[0]._data?.type === 'image') lastMessage = "Image";
-        if (retrievedLastMesssage[0]._data?.type === 'video') lastMessage = "Video";
-        if (retrievedLastMesssage[0]._data?.type === 'e2e_notification') lastMessage = "Encryption key has changed.";
+        if (retrievedLastMesssage[0]._data?.type === 'sticker') lastMessage = "<i>Sticker</i>";
+        if (retrievedLastMesssage[0]._data?.type === 'call_log') lastMessage = "<i>A call was made</i>";
+        if (retrievedLastMesssage[0]._data?.type === 'image') lastMessage = "<i>Image</i>";
+        if (retrievedLastMesssage[0]._data?.type === 'video') lastMessage = "</i>Video</i>";
+        if (retrievedLastMesssage[0]._data?.type === 'e2e_notification') lastMessage = "</i>Encryption key has changed</i>";
+        if (retrievedLastMesssage[0]._data?.type === 'gp2') lastMessage = "<i>Group changed</i>";
         
         li.innerHTML = `
               <div class="avatar">
@@ -69,7 +70,7 @@ export class ChatList extends BaseComponent {
                   <span class="chat-item-time">${timeStr}</span>
                 </div>
                 <div class="chat-item-preview">
-                  <span class="chat-item-msg${chat.lastMessage == null ? ' text-accent' : ''}" data-chatid="${chat.id}">
+                  <span class="chat-item-msg" data-chatid="${chat.id}">
                     ${lastMessage}
                   </span>
                   ${hasUnread ? `${this.generateChatBadge(chat.unreadCount).outerHTML}` : ''}
