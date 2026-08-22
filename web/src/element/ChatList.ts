@@ -31,7 +31,7 @@ export class ChatList extends BaseComponent {
     public renderSingleEntry(chat: Chat, onChatSelect: (chat: Chat) => void) {
         if (chat.timestamp == null) return;
         const li = document.createElement('li');
-        li.classList = "chat-item selectable"
+        li.className = "chat-item selectable";
         li.dataset.id = chat.id;
         if (chat.archived) li.classList.add('archived'); 
         
@@ -88,16 +88,15 @@ export class ChatList extends BaseComponent {
         const newBadge = this.generateChatBadge(count);
         const badge = li?.querySelector('.unread-badge');
         if (badge) {
-            if (count == 0) {
+            if (count === 0) {
                 badge.remove();
-                return
+            } else {
+                badge.textContent = count.toString();
             }
-            
-            badge.outerHTML = newBadge.outerHTML;
-        } else {
+        } else if (count > 0) {
             const preview = this.element.querySelector(`li[data-id='${chatId}'] .chat-item-preview`);
             if (preview) {
-                preview.innerHTML += count;
+                preview.appendChild(newBadge);
             } else {
                 console.log("[ChatList#updateBadge] Didn't find chat with id " + chatId);
             }

@@ -1,20 +1,9 @@
 import type { Message } from "./types";
 
 export const elements = {
-    chatList: document.getElementById('chat-list') as HTMLUListElement,
-    chatsLoader: document.getElementById('chats-loader') as HTMLDivElement,
     chatSearch: document.getElementById('chat-search') as HTMLInputElement,
     backendStatusText: document.getElementById('backend-status-text') as HTMLSpanElement,
     apiStatusIndicator: document.querySelector('.pulse-dot') as HTMLSpanElement,
-    noChatState: document.getElementById('no-chat-state') as HTMLDivElement,
-    activeChatContainer: document.getElementById('active-chat-container') as HTMLDivElement,
-    activeChatName: document.getElementById('active-chat-name') as HTMLHeadingElement,
-    activeChatAvatar: document.getElementById('active-chat-avatar') as HTMLDivElement,
-    messagesContainer: document.getElementById('messages-container') as HTMLDivElement,
-    messageForm: document.getElementById('message-form') as HTMLFormElement,
-    messageInput: document.getElementById('message-input') as HTMLTextAreaElement,
-    backToSidebarBtn: document.querySelector('.chat-header') as HTMLElement,
-    sidebar: document.querySelector('.sidebar') as HTMLElement,
     appContainer: document.querySelector('.app-container') as HTMLElement,
     settingsModal: document.getElementById('settings-page') as HTMLElement,
     settingsIconBtn: document.getElementById('settings-sidebar-btn') as HTMLButtonElement,
@@ -26,15 +15,6 @@ export const elements = {
     inputBackgroundImage: document.getElementById('settings-background-image') as HTMLInputElement,
     inputBackgroundOpacity: document.getElementById('settings-background-opacity') as HTMLInputElement,
     loggedUserName: document.getElementById('pandora-username') as HTMLHeadingElement,
-    chatBottomBar: document.getElementById('chat-bottom-bar') as HTMLElement,
-    chatBottomBarBtn: document.getElementById('chat-bottom-bar-btn') as HTMLButtonElement,
-    chatInputPanel: document.getElementById('chat-input-panel') as HTMLElement,
-    attachmentInput: document.getElementById('attachment-input') as HTMLInputElement,
-    attachmentBtn: document.getElementById('attachment-btn') as HTMLButtonElement,
-    mentionBtn: document.getElementById('mention-btn') as HTMLButtonElement,
-    clearChatBtn: document.getElementById('clear-chat-btn') as HTMLButtonElement,
-    markreadBtn: document.getElementById('markread-btn') as HTMLButtonElement,
-    extraPages: document.querySelectorAll('.extra-page') as NodeListOf<HTMLElement>,
     desktopSidebarButtons: document.querySelectorAll("#desktop-aside button") as NodeListOf<HTMLButtonElement>,
     desktopAside: document.getElementById('desktop-aside') as HTMLElement,
     contentUserName: document.querySelectorAll('[data-content="app-user"]') as NodeListOf<HTMLElement>,
@@ -69,10 +49,15 @@ export const ui = {
     },
     
     ensureScroll(container: HTMLElement, after: Function) {
-        const scrolled = container.scrollTop === (container.scrollHeight - container.clientHeight);
+        const threshold = 10;
+        const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
+
         after();
-        if (scrolled) {
-            container.scrollTop = container.scrollHeight;
+
+        if (isAtBottom) {
+            requestAnimationFrame(() => {
+                container.scrollTop = container.scrollHeight;
+            });
         }
     },
     
@@ -135,10 +120,6 @@ export const ui = {
         if (originalMsg) {
             originalMsg.replaceWith(generatedMsg)
         }
-    },
-    
-    toggleChatBottomBar() {
-        elements.chatBottomBar.classList.toggle("collapsed");
     },
     
     removeChatMessage(msgId: string) {

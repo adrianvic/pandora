@@ -59,6 +59,11 @@
     --bg-transparent: rgba(0, 0, 0, 0.75);
 }
 
+::selection {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
 body.light {
     --bg-main: white;
     --bg-primary: white;
@@ -254,7 +259,7 @@ fieldset label:has(input[type="radio"]:checked) {
     color: var(--text-primary);
     background: var(--accent-gradient);
     position: relative;
-    border: 2px solid var(--border-color);
+    border: thin solid var(--border-color);
 }
 
 .avatar img {
@@ -716,6 +721,7 @@ fieldset label:has(input[type="radio"]:checked) {
     background-image: 
     radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.03) 0%, transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 40%);
+    overflow-anchor: auto;
 
 }
 
@@ -726,6 +732,7 @@ fieldset label:has(input[type="radio"]:checked) {
     padding: .4em;
     cursor: pointer;
     box-shadow: var(--high-box-shadow);
+    overflow-anchor: none;
 }
 
 .load-more-btn:hover {
@@ -743,6 +750,18 @@ fieldset label:has(input[type="radio"]:checked) {
 
 .message-group.image {
     max-width: min(50vh, 30%);
+}
+
+.message-audio-attachement {
+    border-radius: 0;
+}
+
+.incoming .message-audio-attachement {
+    background-color: var(--bubble-incoming);
+}
+
+.outgoing .message-audio-attachement {
+    background-color: var(--bubble-incoming);
 }
 
 .message-group.incoming {
@@ -809,6 +828,15 @@ fieldset label:has(input[type="radio"]:checked) {
     display: flex;
     flex-direction: column;
     gap: .4em;
+    min-width: 0;
+}
+
+.message-content-and-time {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 4px 8px;
 }
 
 .message-content * {
@@ -826,6 +854,8 @@ fieldset label:has(input[type="radio"]:checked) {
 .message-image-attachement {
     max-width: 100%;
     max-height: 50vh;
+    min-height: 100px;
+    background-color: var(--bg-secondary);
 }
 
 .incoming .message-image-attachement {
@@ -834,6 +864,14 @@ fieldset label:has(input[type="radio"]:checked) {
 
 .outgoing .message-image-attachement {
     border-top: 1em solid var(--bubble-outgoing);
+}
+
+.incoming .message-audio-attachement {
+    border-top: .4em solid var(--bubble-incoming);
+}
+
+.outgoing .message-audio-attachement {
+    border-top: .4em solid var(--bubble-outgoing);
 }
 
 /* Chat Input Panel */
@@ -1180,7 +1218,7 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 #image-preview {
-    transition: .6s cubic-bezier(0.165, 0.84, 0.44, 1);
+    /* transition: .6s cubic-bezier(0.165, 0.84, 0.44, 1); now in ImagePreview.ts */
     position: absolute;
     z-index: 10;
     width: 100%;
@@ -1196,8 +1234,10 @@ fieldset label:has(input[type="radio"]:checked) {
 
 #image-preview .image-holder {
     margin: 0 auto;
-    border: medium solid var(--border-color);
+    border: thin solid var(--border-color);
     max-height: 50%;
+    box-sizing: var(--shadow-lg);
+    background-color: var(--bg-secondary);
 }
 
 .image-holder img {
@@ -1278,6 +1318,14 @@ fieldset label:has(input[type="radio"]:checked) {
     
     .message-group {
         max-width: 90%;
+    }
+    
+    .message-group.preview {
+        max-width: 60%;
+    }
+
+    .message-group.audio {
+
     }
     
     .message-group.image {

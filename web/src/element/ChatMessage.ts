@@ -1,9 +1,10 @@
 import { Parser } from "../parser";
 import { getMedia, getMessage } from "../storage";
 import { Message } from "../types";
-import { elements, ui } from "../ui";
+import { ui } from "../ui";
 import { formatTime, normalizeId } from "../utils";
 import { BaseComponent } from "./BaseComponent";
+import { ImagePreview } from "./ImagePreview";
 import { MessagesContainer } from "./MessagesContainer";
 
 export class ChatMessage extends BaseComponent {
@@ -11,15 +12,13 @@ export class ChatMessage extends BaseComponent {
     readonly bubble: HTMLElement;
     public readonly id: string;
 
-    constructor(msg: Message, container: MessagesContainer | null, chatID: string, userID: string, isLocal = false) {
+    constructor(msg: Message, container: MessagesContainer | null, chatID: string, userID: string, isLocal = false, prevMsg: ChatMessage | null = null) {
         super('div');
 
         this.id = (msg.id as string); // true blind cast I don't know if it works!!
         
         const isOutgoing = msg.fromMe || msg.sender === 'me';
-        
-        const prevMsg = container?.getMessageFromRelativeIndex(this, -1);
-        
+                
         this.element.className = `message-group selectable ${isOutgoing ? 'outgoing' : 'incoming'}`;
         this.element.id = normalizeId(msg._serialized ? (msg._serialized as any) : msg.id) || "msg-id";
         this.element.dataset.id = msg.id.toString();
@@ -87,9 +86,15 @@ export class ChatMessage extends BaseComponent {
         .replace("\n", "<br>")
         .input;
         
+        
         textEl.innerHTML = parsed;
+        
+        const contentAndTime = document.createElement('div');
+        contentAndTime.classList.add('message-content-and-time');
+        
         contentEl.appendChild(textEl);
-        this.bubble.appendChild(contentEl);
+
+        contentAndTime.appendChild(contentEl);
         
         if (msg.hasMedia) {
             let a: HTMLAnchorElement;
@@ -119,20 +124,35 @@ export class ChatMessage extends BaseComponent {
                     
                     const objectUrl = URL.createObjectURL(media.blob);
                     (e.target as HTMLAnchorElement).href = objectUrl;
-                    
+                                        
                     if (media.blob.type.startsWith('image/')) {
+                        this.element.classList.add('preview');
                         this.element.classList.add('image');
                         a.textContent = "";
                         const img = document.createElement('img');
                         img.classList.add('message-image-attachement');
                         img.src = objectUrl;
+                        img.onload = () => {
+                            if (container) ui.ensureScroll(container.element, () => {});
+                        };
                         img.addEventListener('click', () => {
-                            elements.previewImage.src = objectUrl;
-                            elements.previewSubtitle.innerText = parsed;
-                            elements.imagePreview.classList.remove('collapsed');
+                            const p = new ImagePreview(objectUrl, parsed);
+                            container?.chatPage?.element.appendChild(p.element);
+                            p.show();
                         })
-                        ui.ensureScroll(elements.messagesContainer, () => {
+                        if (container) ui.ensureScroll(container.element, () => {
                             this.bubble.before(img);
+                        })
+                    } else if (media.blob.type.startsWith('audio')) {
+                        this.element.classList.add('preview');
+                        this.element.classList.add('audio');
+                        a.textContent = "";
+                        const audio = document.createElement('audio');
+                        audio.classList.add('message-audio-attachement');
+                        audio.controls = true;
+                        audio.src = objectUrl;
+                        if (container) ui.ensureScroll(container.element, () => {
+                            this.bubble.before(audio);
                         })
                     } else {
                         (e.target as HTMLAnchorElement).textContent = media.filename || `Download ${mediaMsg.media.filename}`;
@@ -142,11 +162,14 @@ export class ChatMessage extends BaseComponent {
                 a.addEventListener('click', clickListener);
             }
             
-            ui.ensureScroll(elements.messagesContainer, () => {
+            if (container) ui.ensureScroll(container.element, () => {
                 contentEl.appendChild(a);
             });
             
-            if (!isLocal && msg._data?.mimetype?.startsWith('image/')) {
+            if (!isLocal && (
+                msg._data?.mimetype?.startsWith('image/') ||
+                msg._data?.mimetype?.startsWith('audio/')
+            ) ) {
                 a.click();
             }
         }
@@ -156,7 +179,9 @@ export class ChatMessage extends BaseComponent {
         meta.innerHTML = `<span>${timeStr}</span>`;
         meta.appendChild(this.tick);
         
-        this.bubble.appendChild(meta);
+        contentAndTime.appendChild(meta);
+
+        this.bubble.appendChild(contentAndTime);
         
         if (isOutgoing) {
             if (prevMsg && prevMsg.element.classList.contains('outgoing')) {
@@ -181,6 +206,13 @@ export class ChatMessage extends BaseComponent {
         }
         
         this.element.appendChild(this.bubble);
+
+        this.bubble.addEventListener('dblclick', () => {
+            if (container?.chatPage) {
+                container.chatPage.setReply(msg.id.toString(), parsed);
+                container.chatPage.messageTextArea?.focus();
+            }
+        });
     }
     
     updateMessageTick(isOutgoing: boolean, status: string | undefined) {

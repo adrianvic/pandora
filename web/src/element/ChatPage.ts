@@ -1,9 +1,10 @@
-import { getChatMessages, getGroupUsers, getUsersFromGroup } from "../storage";
+import { deleteChat, getChatMessages, getGroupUsers, getUsersFromGroup, markRead } from "../storage";
 import { Chat, Contact } from "../types";
-import { elements, ui } from "../ui";
+import { ui } from "../ui";
 import { compensateMessageOrdering } from "../utils";
 import { waha } from "../waha";
 import { BaseComponent } from "./BaseComponent";
+import { LoadingDots } from "./LoadingDots";
 import { MessagesContainer } from "./MessagesContainer";
 
 export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent {
@@ -26,6 +27,9 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
     replyID: string | null = null;
     replyText: string | null = null;
     mentioned: Contact[] = [];
+    typing = false;
+    typingTimer: number | undefined;
+    typingEndedResolve: ((value: unknown) => void) | null = null;
     
     constructor(elementOrTag: T | string) {
         super(elementOrTag);
@@ -46,16 +50,25 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             </div>
             `;
         
-        this.chatTitle = this.header.querySelector('.contact-status') as HTMLElement;
+        this.chatTitle = this.header.querySelector('#active-chat-name') as HTMLElement;
         
         this.noChatState = document.createElement('div');
         this.noChatState.classList.add('no-chat-state');
         this.noChatState.id = "no-chat-state";
-        
-        this.replyIndicator = document.createElement('div');
-        this.replyIndicator.classList.add('collapsed');
-        this.replyIndicator.id = "mentioning-indicator";
-        this.replyIndicator.addEventListener('click', this.clearReply);
+        this.noChatState.innerHTML = `
+            <div class="empty-state-content">
+                <div class="empty-state-icon mif-qa mif-3x">
+                </div>
+                <p>Select a contact to view the conversation or start a new chat.</p>
+            </div>
+        `;
+
+        const indicator = document.createElement('div');
+        indicator.classList.add('collapsed');
+        indicator.id = "mentioning-indicator";
+        indicator.innerHTML = '<span></span>';
+        indicator.addEventListener('click', () => this.clearReply());
+        this.replyIndicator = indicator;
         
         this.mentionSuggestion = document.createElement('div');
         this.mentionSuggestion.id = "mentioning-suggestion";
@@ -67,16 +80,14 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
                     <div class="dot"></div>
                     <div class="dot"></div>
                     <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>f')
                 </div>
             </div>
             <div id="mention-suggestions"></div>
             `;
         
         this.bottomBar = document.createElement('footer');
-        this.bottomBar.classList.add('input-form');
-        this.bottomBar.id = "message-form";
+        this.bottomBar.classList.add('chat-input-panel');
+        this.bottomBar.id = "chat-input-panel";
         this.bottomBar.innerHTML =
         `
             <div class="input-actions-left">
@@ -87,13 +98,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.messageForm = document.createElement('form');
         this.messageForm.classList.add('input-form');
         this.messageForm.id = 'message-form';
-        
-        this.messageForm.innerHTML =
-        `
-            <textarea type="text" id="message-input" rows="1" placeholder="Type a message..." autocomplete="off"></textarea>
-            <button type="submit" class="chat-footer-btn send-btn mif-paper-plane mif-3x" id="send-button"></button>
-            `;
-        
+
         this.messageTextArea = document.createElement('textarea');
         this.messageTextArea.id = 'message-input';
         this.messageTextArea.rows = 1;
@@ -102,7 +107,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         
         this.sendButton = document.createElement('button');
         this.sendButton.type = 'submit';
-        this.sendButton.classList = 'chat-footer-btn send-btn mif-paper-plane mif 3x';
+        this.sendButton.className = 'chat-footer-btn send-btn mif-paper-plane mif-3x';
         this.sendButton.id = 'send-button';
         
         this.messageForm.appendChild(this.messageTextArea);
@@ -113,7 +118,6 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         
         this.messageTextArea.addEventListener('input', (e) => {
             const inputEvent = e as InputEvent;
-            
             this.mentioned.forEach(c => {
                 if (!this.messageTextArea.value.includes(`@${c.number}`)) {
                     this.removeMention(c);
@@ -125,6 +129,17 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             } else {
                 this.mentionSuggestion.classList.add('collapsed');
             }
+
+            if (!this.typing && this.messagesContainer) {
+                this.typing = true;
+                waha.startTyping(this.messagesContainer.chatID);
+            }
+
+            clearTimeout(this.typingTimer);
+
+            this.typingTimer = setTimeout(() => {
+                this.stopTyping();
+            }, 2000)
         });
         
         this.messageForm.addEventListener('submit', (e) => {
@@ -138,18 +153,10 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
                 this.sendMessage();
             }
         });
-        
-        this.bottomBar.style.height = `${this.messageForm.offsetHeight}px`;
-        const observer = new ResizeObserver(() => {
-            this.bottomBar.style.height = `${this.messageForm.offsetHeight}px`;
-        });
-        
-        
-        observer.observe(this.messageForm);
 
         this.bottomBarButton = this.bottomBar.querySelector('#chat-bottom-bar-btn') as HTMLButtonElement;
 
-        this.bottomBarButton.addEventListener('click', ui.toggleChatBottomBar);
+        this.bottomBarButton.addEventListener('click', () => this.bottomExtraBar.classList.toggle('collapsed'));
         this.bottomBar.addEventListener('click', (e) => {
             if (e.target == e.currentTarget) this.bottomBar.classList.toggle("collapsed");
         });
@@ -165,6 +172,10 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             <button id="mention-btn" class="icon-btn send-btn mif-face mif-2x" title="Mention user"></button>
             <button id="clear-chat-btn" class="icon-btn send-btn mif-bin mif-2x" title="Delete chat"></button>
             `;
+
+        this.bottomExtraBar.addEventListener('click', function (this: HTMLElement) {
+            this.classList.add('collapsed');
+        })
         
         this.attachmentInput = this.bottomExtraBar.querySelector('#attachment-input') as HTMLInputElement;
         this.attachmentButton = this.bottomExtraBar.querySelector('#attachment-btn') as HTMLButtonElement;
@@ -173,13 +184,46 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             const firstFile = (e.target as HTMLInputElement).files?.[0];
             if (firstFile) this.sendFileMessage(firstFile);
         });
+
+        this.attachmentButton.addEventListener('click', () => {
+            this.attachmentInput.click();
+        });
+
+        this.bottomExtraBar.querySelector('#markread-btn')?.addEventListener('click', async () => {
+            if (this.messagesContainer) {
+                await markRead(this.messagesContainer.chatID);
+                this.element.dispatchEvent(new CustomEvent('mark-read', {
+                    detail: { chatID: this.messagesContainer.chatID }
+                }));
+            }
+        });
+
+        this.bottomExtraBar.querySelector('#clear-chat-btn')?.addEventListener('click', () => {
+            if (!this.messagesContainer) return;
+            if (confirm('Do you want to delete this chat?')) {
+                const chatID = this.messagesContainer.chatID;
+                deleteChat(chatID);
+                this.closeChat();
+                this.element.dispatchEvent(new CustomEvent('chat-deleted', {
+                    detail: { chatID }
+                }));
+            }
+        });
+
+        this.header.addEventListener('click', () => {
+            this.element.dispatchEvent(new CustomEvent('back-click'));
+        });
         
         this.activeChatState = document.createElement('div');
         this.activeChatState.classList = 'active-chat-container hidden';
         this.activeChatState.id = 'active-chat-container';
         
         this.messagesContainerReceptacle = document.createElement('div');
-        
+        this.messagesContainerReceptacle.style.flex = "1";
+        this.messagesContainerReceptacle.style.overflow = "hidden";
+        this.messagesContainerReceptacle.style.display = "flex";
+        this.messagesContainerReceptacle.style.flexDirection = "column";
+
         this.activeChatState.appendChild(this.header);
         this.activeChatState.appendChild(this.messagesContainerReceptacle);
         this.activeChatState.appendChild(this.mentionSuggestion);
@@ -193,22 +237,39 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
     
     public loadChat(chat: Chat, userID: string): MessagesContainer {
         if (this.messagesContainer) this.closeChat(false);
-        
-        this.chatTitle.textContent = chat.name.toUpperCase();
+
+        const loader = new LoadingDots('div');
         this.messagesContainerReceptacle.innerHTML = '';
-        this.messagesContainer = new MessagesContainer(this.messagesContainerReceptacle, chat.id, userID);
+        this.messagesContainerReceptacle.appendChild(loader.element);
+        
+        this.noChatState.classList.add('hidden');
+        this.activeChatState.classList.remove('hidden');
+
+        this.chatTitle.textContent = chat.name.toUpperCase();
+        const container = new MessagesContainer(this.messagesContainerReceptacle, chat.id, userID, this);
+        this.messagesContainer = container;
         this.element.dispatchEvent(new CustomEvent('load-chat'));
         
-        async () => {
+        (async () => {
             try {
                 const rawMessages = await getChatMessages(chat.id);
+                if (this.messagesContainer !== container) return;
                 const processedMessages = compensateMessageOrdering(rawMessages);
                 this.messagesContainer?.loadBulkMessages(processedMessages);
+                if (this.messagesContainer) {
+                    ui.scrollToBottom(this.messagesContainer.element);
+                }
             } catch (error) {
+                if (this.messagesContainer !== container) return;
                 console.error('Failed to load messages:', error);
-                elements.messagesContainer.innerHTML = '<div class="loading-chats">Error loading messages</div>';
+                if (this.messagesContainer) {
+                    this.messagesContainer.element.innerHTML = '<div class="loading-chats">Error loading messages</div>';
+                }
+            } finally {
+                loader.destroy();
+                this.messagesContainer?.loadMore.classList.remove('hidden');
             }
-        }
+        })();
         
         return this.messagesContainer;
     }
@@ -217,6 +278,9 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.clearMentions();
         this.clearReply();
         
+        this.activeChatState.classList.add('hidden');
+        this.noChatState.classList.remove('hidden');
+
         this.element.dispatchEvent(new CustomEvent('close-chat', {
             detail: {
                 force: force
@@ -236,9 +300,10 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.replyIndicator.classList.remove('collapsed');
     }
     
-    clearReply() {
+    clearReply = () => {
         this.replyID = null;
         this.replyText = null;
+        if (!this.replyIndicator) return;
         const span = this.replyIndicator.querySelector('span');
         if (span) span.innerText = '';
         this.replyIndicator.classList.add('collapsed');
@@ -322,16 +387,19 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
     
     async sendMessage() {
         if (!this.messagesContainer) return;
-        const text = elements.messageInput.value.trim();
+        const text = this.messageTextArea.value.trim();
         if (!text || !this.messagesContainer) return;
+
+        this.stopTyping();
+
         const _mentionCacheID = this.replyID;
         const _mentionCacheText = this.replyText;
         const chatID = this.messagesContainer?.chatID;
         this.clearMentions()
         this.clearReply()
         
-        elements.messageInput.value = '';
-        elements.messageInput.dispatchEvent(new Event("input", { bubbles: true }));
+        this.messageTextArea.value = '';
+        this.messageTextArea.dispatchEvent(new Event("input", { bubbles: true }));
         
         const tempMsg = {
             id: 'temp-' + Date.now(),
@@ -362,20 +430,6 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
                 }
             } catch (e: any) {
                 console.warn('readChat failed (non-fatal):', e.message);
-            }
-            
-            try {
-                await waha.startTyping(chatID);
-                const delay = Math.min(4000, Math.max(1000, text.length * 50));
-                await new Promise(resolve => setTimeout(resolve, delay));
-            } catch (e) {
-                console.warn('Presence start failed:', e);
-            }
-            
-            try {
-                await waha.stopTyping(chatID);
-            } catch (e) {
-                console.warn('Presence stop failed:', e);
             }
             
             const responseData = await waha.sendTextMessage(chatID, text, this.getMentionedIDs(), _mentionCacheID);            
@@ -421,6 +475,28 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             
         } catch (error: any) {
             console.error(error.message);
+        }
+    }
+
+    waitForTypingToEnd() {
+      if (!this.typing) {
+        return Promise.resolve();
+      }
+
+      return new Promise((resolve) => {
+        this.typingEndedResolve = resolve;
+      });
+    }
+
+    private stopTyping() {
+        clearTimeout(this.typingTimer);
+        this.typing = false;
+        if (this.messagesContainer) {
+            waha.stopTyping(this.messagesContainer.chatID);
+        }
+        if (this.typingEndedResolve) {
+            this.typingEndedResolve(null);
+            this.typingEndedResolve = null;
         }
     }
 }

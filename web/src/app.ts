@@ -4,20 +4,22 @@ import { config } from "./config";
 import { waha } from "./waha";
 import { ui, elements } from "./ui";
 import { websocket } from "./websocket";
-import { debounce, normalizeId, requireEl } from "./utils";
-import { deleteChat, getAppUser, getChatPicture, getChats, getUser, getUserAbout, markRead, sendStatus, updateOnlineStatus } from "./storage";
-import { deleteDatabase, upsertMessages } from "./db";
-import { showNotification } from "./notification";
+import { normalizeId, requireEl } from "./utils";
+import { getAppUser, getChatPicture, getChats, getUser, getUserAbout, updateOnlineStatus } from "./storage";
+import { upsertMessages } from "./db";
 import type { Chat, Message, WebSocketEvent } from "./types";
 
 // Elements
 import { Sidebar } from "./element/Sidebar";
 import { ScrollableView } from "./element/ScrollableView";
 import { ChatPage } from "./element/ChatPage";
+import { SettingsPage } from "./element/SettingsPage";
+import { ProfilePage } from "./element/ProfilePage";
 
 let sidebar: Sidebar;
 let mainView: ScrollableView;
 let chatPage: ChatPage;
+let settingsPage: SettingsPage;
 
 hydrate();
 
@@ -34,14 +36,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         ui.loadingMessage("Asking for notification permission...");
         askForNotificationPermission();
         ui.loadingMessage("Loading configuration...");
-        if (elements.inputApiKey) elements.inputApiKey.value = config.apiKey;
-        if (elements.inputWahaUrl) elements.inputWahaUrl.value = config.wahaUrl;
-        if (elements.inputSession) elements.inputSession.value = config.session;
-        if (elements.inputBackgroundImage) elements.inputBackgroundImage.value = config.bgImg;
-        if (elements.inputBackgroundOpacity) elements.inputBackgroundOpacity.value = config.bgOpacity;
-        if (elements.activeChatContainer) {
-            elements.activeChatContainer.style.setProperty('--background-image', `URL("${config.bgImg}")`);
-            elements.activeChatContainer.style.setProperty('--background-opacity', `${config.bgOpacity}`);
+        if (chatPage.activeChatState) {
+            chatPage.activeChatState.style.setProperty('--background-image', `URL("${config.bgImg}")`);
+            chatPage.activeChatState.style.setProperty('--background-opacity', `${config.bgOpacity}`);
         }
         ui.loadingMessage("Getting server version...");
         await updateOnlineStatus();
@@ -52,14 +49,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             await setupElementsData();
             ui.loadingMessage("Loading chats...");
             await sidebar.loadChats(async (chat) => {
-                chatPage.loadChat(chat, (await getAppUser()).id);
+                window.location.hash = `#chat-${chat.id}`;
             });
+
+            // Initial chat loading from hash
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#chat-')) {
+                const chatId = hash.replace('#chat-', '');
+                const chat = getChats().find(c => c.id === chatId);
+                if (chat) {
+                    selectChat(chat, true, false);
+                }
+            }
             ui.loadingMessage("Checking server status...");
             await checkWahaStatus();
             ui.loadingMessage("Telling server to send new messages...");
             initWebSocket();
-        } finally {
-            elements.chatsLoader.classList.add('hidden');
+        } catch {
+            
         }
     })
 });
@@ -69,6 +76,8 @@ function hydrate() {
     sidebar = new Sidebar(requireEl<HTMLElement>('.sidebar'));
     mainView = new ScrollableView(requireEl<HTMLElement>('#main-view'));
     chatPage = new ChatPage(requireEl<HTMLElement>('.chat-area'));
+    settingsPage = new SettingsPage(requireEl<HTMLElement>('#settings-page'));
+    new ProfilePage(requireEl<HTMLElement>('#profile-page'));
 }
 
 async function askForNotificationPermission() {
@@ -98,14 +107,6 @@ async function setupElementsData() {
     }
 }
 
-function purgeDatabase(ask: boolean = true) {
-    if (ask) {
-        if (!(confirm("Are you sure you want to delete all cached messages?") && confirm("This cannot be undone. Proceed?"))) return;
-    }
-    localStorage.clear();
-    deleteDatabase();
-    location.reload();
-}
 
 let isScrollingProgrammatically = false;
 let scrollTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -148,13 +149,30 @@ function setupEventListeners() {
         }
     });
 
-    // update sidebar when sending message
     chatPage.element.addEventListener('message-dispatch', (e) => {
-        const cev = e as CustomEvent;
-
-        if (!cev.detail.to.endsWith('@lid')) {
-            sidebar.chatList.updateChatBadge(cev.detail.to, 0);
+        const detail = (e as CustomEvent).detail;
+        if (!detail.to.endsWith('@lid')) {
+            sidebar.chatList.updateChatBadge(detail.to, 0);
         }
+    });
+
+    chatPage.element.addEventListener('mark-read', (e) => {
+        const detail = (e as CustomEvent).detail;
+        sidebar.chatList.updateChatBadge(detail.chatID, 0);
+    });
+
+    chatPage.element.addEventListener('back-click', () => {
+        window.location.hash = '';
+    });
+
+    chatPage.element.addEventListener('chat-deleted', (e) => {
+        const detail = (e as CustomEvent).detail;
+        const chatItem = document.querySelector(`.chat-item[data-id='${detail.chatID}']`);
+        chatItem?.remove();
+    });
+
+    settingsPage.element.addEventListener('theme-change', () => {
+        reloadTheme();
     });
     
     elements.appContainer.addEventListener('scroll', () => {
@@ -189,39 +207,6 @@ function setupEventListeners() {
         }
     });
     
-    elements.chatSearch.addEventListener('input', (e: Event) => {
-        const query = (e.target as HTMLInputElement).value.toLowerCase();
-        const filtered = getChats().filter(chat =>
-            chat.name.toLowerCase().includes(query)
-        );
-        sidebar.chatList.renderChatList(filtered, selectChat);
-    });
-    
-    elements.markreadBtn.addEventListener('click', async () => {
-        if (chatPage.messagesContainer) {
-            await markRead(chatPage.messagesContainer.chatID);
-            sidebar.chatList.updateChatBadge(chatPage.messagesContainer?.chatID, 0);
-        }
-    });
-    
-    elements.clearChatBtn.addEventListener('click', () => {
-        if (!chatPage.messagesContainer) return;
-        if (confirm('Do you want to delete this chat?')) {
-            const chat = document.querySelector(`.chat-item[data-foo='${chatPage.messagesContainer?.chatID}']`)
-            chat?.remove();
-            deleteChat(chatPage.messagesContainer?.chatID);
-            closeActiveChat();
-        }
-    });
-    
-    elements.attachmentBtn.addEventListener('click', () => {
-        elements.attachmentInput.click();
-    });
-    
-    elements.backToSidebarBtn.addEventListener('click', () => {
-        closeActiveChat(false);
-    });
-    
     elements.desktopSidebarButtons.forEach(sidebarBtn => {
         sidebarBtn.addEventListener('click', () => {
             const page = sidebarBtn.dataset.page;
@@ -231,20 +216,7 @@ function setupEventListeners() {
             if (page) mainView?.scrollTo(pageEl);
         })
     })
-    
-    elements.saveSettingsBtn.addEventListener('click', saveSettings);
-    
-    elements.purgeDatabaseButton.addEventListener('click', () => purgeDatabase(true));
-    
-    elements.inputUserStatus.addEventListener('input', debounce(async function() {
-        const result = await sendStatus(elements.inputUserStatus.value);
-        if (result?.success) {
-            showNotification("Status updated successfully!", "", 2000);
-        } else {
-            showNotification("Failed to update status...", "", 2000);
-        }
-    }, 2000))
-    
+
     elements.selectable.forEach(e => {
         let timerId: ReturnType<typeof setTimeout>, longPressed: boolean;
         
@@ -325,68 +297,38 @@ async function handleIncomingMessage(msg: Message) {
         const msgId = normalizeId(msg.id as any) || (msg.id as string);
         const exists = chatPage.messagesContainer.getMessage(msgId);
         if (!exists) {
-            const container = elements.messagesContainer;
-            const scrolled = container.scrollTop === (container.scrollHeight - container.clientHeight);
-            chatPage.messagesContainer?.appendMessage({ ...msg, chatId: msgChatId });
-            if (scrolled && window.innerWidth > 768 && chatPage.messagesContainer) {
-                ui.scrollToBottom(chatPage.messagesContainer.element);
+            const containerEl = chatPage.messagesContainer.element;
+            const scrolled = containerEl.scrollTop === (containerEl.scrollHeight - containerEl.clientHeight);
+            chatPage.messagesContainer.appendMessage({ ...msg, chatId: msgChatId });
+            if (scrolled && window.innerWidth > 768) {
+                ui.scrollToBottom(containerEl);
             }
         }
     }
 }
 
-async function selectChat(chat: Chat, isPopState = false, smoothScroll = true) {
+async function selectChat(chat: Chat, _isPopState = false, smoothScroll = true) {
     if (isLoadingChat) return;
-    
-    const messagesContainer = chatPage.loadChat(chat, (await getAppUser()).id);
+    if (chatPage.messagesContainer?.chatID === chat.id) return; // Already active
 
-    mainView?.scrollTo(messagesContainer.element);
-    
-    // elements.messagesContainer.innerHTML = `
-    // <div class='loading-animation-wrapper'>
-    //     <div class="animation">
-    //         <p class="animation"></p>
-    //         <div class="dot"></div>
-    //         <div class="dot"></div>
-    //         <div class="dot"></div>
-    //         <div class="dot"></div>
-    //         <div class="dot"></div>
-    //     </div>
-    // </div>`;
+    isLoadingChat = true;
+    chatPage.loadChat(chat, (await getAppUser()).id);
+
+    mainView?.scrollTo(chatPage.element);
     
     if (window.innerWidth <= 768) {
         scrollToChat(smoothScroll);
     }
     
-    if (!isPopState && window.location.hash !== `#chat-${chat.id}`) {
-        window.location.hash = ``;
-        window.location.hash = `chat-${chat.id}`;
-    }
+    isLoadingChat = false;
 }
 
-async function closeActiveChat(isPopState = false, forceClose = false) {
+async function closeActiveChat(_isPopState = false, forceClose = false) {
     if (window.innerWidth <= 768) {
         scrollToList(true);
     } else {
         chatPage.closeChat(forceClose);
     }
-    
-    if (!isPopState) {
-        if (window.location.hash.startsWith('#chat-')) {
-            history.back();
-        }
-    }
-}
-
-function saveSettings() {
-    config.save(
-        elements.inputWahaUrl.value,
-        elements.inputSession.value,
-        elements.inputApiKey.value,
-        elements.inputBackgroundImage.value,
-        elements.inputBackgroundOpacity.value
-    );
-    location.reload();
 }
 
 async function checkWahaStatus() {

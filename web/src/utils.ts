@@ -83,3 +83,6 @@ export function requireEl<T extends Element>(selector: string): T {
     if (!el) throw new Error(`Missing element: ${selector}`);
     return el as T;
 }
+
+export const sleep = (ms: number): Promise<void> =>
+  new Promise(resolve => setTimeout(resolve, ms));
