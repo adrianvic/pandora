@@ -136,6 +136,7 @@ function mapMessage(m: Message): any {
     hasMedia: m.hasMedia,
     media: m.media,
     chatId: chatId,
+    participant: m.participant
   }
 }
 

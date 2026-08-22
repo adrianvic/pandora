@@ -25,7 +25,7 @@ export class ChatMessage extends BaseComponent {
         this.element.dataset.timestamp = msg.timestamp?.toString();
         this.element.dataset.from = msg.participant || (msg.from as string);
         
-        const senderName = isOutgoing ? userID : (msg._data?.notifyName || (msg.from as string));
+        const senderName = isOutgoing ? userID : (msg._data?.notifyName || msg.participant || (msg.from as string));
         this.name = senderName;
 
         const timeStr = formatTime(msg.timestamp || new Date());
