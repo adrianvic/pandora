@@ -242,7 +242,7 @@ fieldset label:has(input[type="radio"]:checked) {
     font-size: xx-large;
 }
 
-.form-group label {
+.form-group label, .dim-label {
     opacity: .6;
 }
 
