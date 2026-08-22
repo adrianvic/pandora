@@ -32,13 +32,13 @@ export class Sidebar extends BaseComponent {
         });
     }
 
-    public async loadChats(onSelect: (chat: Chat) => void) {
+    public async loadChats(onSelect: (chat: Chat) => void, onProgress?: (msg: string) => void) {
         this.onChatSelect = onSelect;
         this.chatsLoader.classList.remove('hidden');
         try {
             await fetchChats(async () => {
                 this.chatList.renderChatList(getChats(), onSelect);
-            });
+            }, onProgress);
         } catch (error: any) {
             console.error('Failed to load chats:', error);
             this.element.innerHTML = `

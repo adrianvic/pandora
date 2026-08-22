@@ -93,8 +93,8 @@ export const waha = {
         return request<Contact>(`/api/${config.session}/contacts/${id}`);
     },
 
-    async getChatMessages(chatId: string, beforeTimestamp?: any): Promise<Message[]> {
-        return request<Message[]>(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=40${beforeTimestamp ? `&filter.timestamp.lte=${beforeTimestamp}` : "" }`);
+    async getChatMessages(chatId: string, beforeTimestamp?: any, limit = 40): Promise<Message[]> {
+        return request<Message[]>(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=${limit}${beforeTimestamp ? `&filter.timestamp.lte=${beforeTimestamp}` : "" }`);
     },
 
     async getSingleChatMessage(chatId: string, messageId: string, downloadMedia: boolean): Promise<Message> {

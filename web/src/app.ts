@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             ui.loadingMessage("Loading chats...");
             await sidebar.loadChats(async (chat) => {
                 window.location.hash = `#chat-${chat.id}`;
-            });
+            }, (msg) => ui.loadingMessage(msg));
 
             // Initial chat loading from hash
             const hash = window.location.hash;

@@ -19,7 +19,7 @@ export async function updateOnlineStatus(): Promise<void> {
  * Fetches chats from local DB first, then attempts to sync with remote.
  * Calls onUpdate whenever the internal 'chats' list changes.
  */
-export async function fetchChats(onUpdate?: () => void): Promise<void> {
+export async function fetchChats(onUpdate?: () => void, onProgress?: (msg: string) => void): Promise<void> {
   chats = await loadChatsSorted();
   if (onUpdate) onUpdate();
 
@@ -27,9 +27,49 @@ export async function fetchChats(onUpdate?: () => void): Promise<void> {
     await getRemoteChats();
     chats = await loadChatsSorted();
     if (onUpdate) onUpdate();
+
+    // Sync initial messages for chats that might not have any
+    await syncInitialMessages(onProgress);
+
+    // Refresh chats again as lastMessage/timestamp might have updated
+    chats = await loadChatsSorted();
+    if (onUpdate) onUpdate();
   } catch (error) {
     console.warn("[Storage] Could not sync remote chats:", error);
   }
+}
+
+/**
+ * Fetches the latest 2 messages for each chat to ensure visibility in the sidebar.
+ */
+export async function syncInitialMessages(onProgress?: (msg: string) => void): Promise<void> {
+    const chatList = getChats();
+    let count = 0;
+    const total = chatList.length;
+
+    for (const chat of chatList) {
+        count++;
+        if (onProgress) onProgress(`Syncing messages for ${chat.name || chat.id} (${count}/${total})...`);
+
+        try {
+            // Check if we already have messages to avoid redundant network calls
+            const local = await loadLatestMessages(chat.id, 2);
+            if (local.length >= 1) continue;
+
+            const newMessages = await waha.getChatMessages(chat.id, undefined, 2);
+            if (newMessages.length > 0) {
+                await upsertMessages(newMessages);
+
+                // Also update the chat's last message info if needed
+                const last = newMessages[0];
+                chat.lastMessage = last.body || last.text || chat.lastMessage;
+                chat.timestamp = last.timestamp;
+                await upsertChats([chat]);
+            }
+        } catch (e) {
+            console.warn(`[Storage] Failed to sync initial messages for ${chat.id}:`, e);
+        }
+    }
 }
 
 export async function getRemoteChats(): Promise<void> {
