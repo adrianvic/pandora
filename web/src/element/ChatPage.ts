@@ -156,6 +156,20 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
 
         this.bottomBarButton = this.bottomBar.querySelector('#chat-bottom-bar-btn') as HTMLButtonElement;
 
+        // Prevent focus loss when clicking these buttons (keeps keyboard open on mobile)
+        const preventFocusLoss = (e: MouseEvent | TouchEvent) => {
+            if (document.activeElement === this.messageTextArea) {
+                e.preventDefault();
+                
+                // If it's a touch event, preventing default will also prevent the click.
+                // We manually trigger the click action for these specific buttons if needed,
+                // but usually mousedown preventDefault is enough for Android.
+                // If you use touchstart, you'd need to manually call this.sendMessage() or toggle the bar here.
+            }
+        };
+        this.sendButton.addEventListener('mousedown', preventFocusLoss);
+        this.bottomBarButton.addEventListener('mousedown', preventFocusLoss);
+
         this.bottomBarButton.addEventListener('click', () => this.bottomExtraBar.classList.toggle('collapsed'));
         this.bottomBar.addEventListener('click', (e) => {
             if (e.target == e.currentTarget) this.bottomBar.classList.toggle("collapsed");
@@ -176,6 +190,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.bottomExtraBar.addEventListener('click', function (this: HTMLElement) {
             this.classList.add('collapsed');
         })
+        this.bottomExtraBar.addEventListener('mousedown', preventFocusLoss);
         
         this.attachmentInput = this.bottomExtraBar.querySelector('#attachment-input') as HTMLInputElement;
         this.attachmentButton = this.bottomExtraBar.querySelector('#attachment-btn') as HTMLButtonElement;
@@ -415,7 +430,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         
         
         this.messagesContainer.appendMessage(tempMsg, true);
-        ui.scrollToBottom(this.messagesContainer.element);
+        if (window.innerWidth > 768) ui.scrollToBottom(this.messagesContainer.element);
         
         this.element.dispatchEvent(new CustomEvent('message-dispatch', {
             detail: {

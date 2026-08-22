@@ -10,8 +10,11 @@ export class ImagePreview extends BaseComponent {
         this.element.classList.add('collapsed');
         this.element.id = "image-preview";
         this.element.style.transition = `${transition}ms cubic-bezier(0.165, 0.84, 0.44, 1)`
-        this.element.onclick = (event) => {
-            if (event.currentTarget == this.element) this.element.classList.add('collapsed');
+        this.element.onclick = async (event) => {
+            if (event.currentTarget == this.element) {
+		await this.hide();
+		this.destroy();
+	    }
         }
         this.element.innerHTML = `
             <div class="image-holder">

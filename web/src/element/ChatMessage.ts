@@ -29,10 +29,12 @@ export class ChatMessage extends BaseComponent {
         const timeStr = formatTime(msg.timestamp || new Date());
         
         this.tick = document.createElement('span');
+	this.tick.classList.add('message-tick');
         this.updateMessageTick(isOutgoing, msg.status);
         
         this.bubble = document.createElement('div');
         this.bubble.className = 'message-bubble';
+	if (msg.body == "" || msg.text == "") this.bubble.classList.add("no-text");
         
         let prevUid: string | undefined;
         
@@ -154,6 +156,17 @@ export class ChatMessage extends BaseComponent {
                         if (container) ui.ensureScroll(container.element, () => {
                             this.bubble.before(audio);
                         })
+                    } else if (media.blob.type.startsWith('video')) {
+                        this.element.classList.add('preview');
+                        this.element.classList.add('video');
+                        a.textContent = "";
+                        const video = document.createElement('video');
+                        video.classList.add('message-video-attachement');
+                        video.controls = true;
+                        video.src = objectUrl;
+                        if (container) ui.ensureScroll(container.element, () => {
+                            this.bubble.before(video);
+                        })
                     } else {
                         (e.target as HTMLAnchorElement).textContent = media.filename || `Download ${mediaMsg.media.filename}`;
                     }
@@ -168,7 +181,8 @@ export class ChatMessage extends BaseComponent {
             
             if (!isLocal && (
                 msg._data?.mimetype?.startsWith('image/') ||
-                msg._data?.mimetype?.startsWith('audio/')
+                msg._data?.mimetype?.startsWith('audio/') ||
+		msg._data?.mimetype?.startsWith('video/')
             ) ) {
                 a.click();
             }

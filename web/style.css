@@ -799,7 +799,17 @@ fieldset label:has(input[type="radio"]:checked) {
     position: relative;
     word-break: break-word;
     box-shadow: var(--shadow-sm);
-    transition: .4s;
+    transition: .4s
+}
+
+.message-bubble.no-text {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.message-bubble.no-text .message-meta {
+    margin-inline-start: auto;
 }
 
 .message-group.incoming .message-bubble {
@@ -829,6 +839,7 @@ fieldset label:has(input[type="radio"]:checked) {
     flex-direction: column;
     gap: .4em;
     min-width: 0;
+    flex: 1;
 }
 
 .message-content-and-time {
@@ -849,6 +860,10 @@ fieldset label:has(input[type="radio"]:checked) {
     justify-content: flex-end;
     gap: 4px;
     font-size: 0.7rem;
+}
+
+.incoming .message-tick {
+    display: none;
 }
 
 .message-image-attachement {
@@ -1233,7 +1248,7 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 #image-preview .image-holder {
-    margin: 0 auto;
+    margin: 0 max(auto, 2rem);
     border: thin solid var(--border-color);
     max-height: 50%;
     box-sizing: var(--shadow-lg);
@@ -1289,6 +1304,7 @@ fieldset label:has(input[type="radio"]:checked) {
         z-index: 1;
         scroll-snap-align: start;
         scroll-snap-stop: always;
+	overflow-y: hidden;
     }
     
     #message-input {
