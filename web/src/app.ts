@@ -308,13 +308,16 @@ async function handleIncomingMessage(msg: Message) {
 }
 
 async function selectChat(chat: Chat, _isPopState = false, smoothScroll = true) {
+    chatPage.element.scrollIntoView({
+        behavior: "smooth"
+    });
     if (isLoadingChat) return;
-    if (chatPage.messagesContainer?.chatID === chat.id) return; // Already active
+    if (chatPage.messagesContainer?.chatID === chat.id) return;
 
     isLoadingChat = true;
+    mainView?.scrollTo(chatPage.element);
     chatPage.loadChat(chat, (await getAppUser()).id);
 
-    mainView?.scrollTo(chatPage.element);
     
     if (window.innerWidth <= 768) {
         scrollToChat(smoothScroll);

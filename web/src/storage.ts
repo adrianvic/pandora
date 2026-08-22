@@ -133,14 +133,14 @@ export async function getMedia(reqId: string): Promise<DownloadedMedia | undefin
 /**
  * Loads messages from local DB first, then attempts to sync with remote.
  */
-export async function getChatMessages(chatId: string, onUpdate?: (msgs: Message[]) => void): Promise<Message[]> {
+export async function getChatMessages(chatId: string, onUpdate?: (msgs: Message[]) => void, limit = 40): Promise<Message[]> {
   const localMsgs = await loadLatestMessages(chatId);
   if (onUpdate && localMsgs.length > 0) onUpdate(localMsgs);
 
   try {
     const newMessages = await waha.getChatMessages(chatId);
     await upsertMessages(newMessages);
-    const updated = await loadLatestMessages(chatId);
+    const updated = await loadLatestMessages(chatId, limit);
     if (onUpdate) onUpdate(updated);
     return updated;
   } catch (error) {

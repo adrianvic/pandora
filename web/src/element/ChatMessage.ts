@@ -221,7 +221,8 @@ export class ChatMessage extends BaseComponent {
         
         this.element.appendChild(this.bubble);
 
-        this.bubble.addEventListener('dblclick', () => {
+        this.bubble.addEventListener('dblclick', (e) => {
+            if (e.target != this.bubble) return;
             if (container?.chatPage) {
                 container.chatPage.setReply(msg.id.toString(), parsed);
                 container.chatPage.messageTextArea?.focus();

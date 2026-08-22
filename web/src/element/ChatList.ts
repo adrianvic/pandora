@@ -1,3 +1,4 @@
+import { loadLatestMessages } from "../db";
 import { getChatPicture } from "../storage";
 import { Chat, Message } from "../types";
 import { formatTime } from "../utils";
@@ -25,10 +26,10 @@ export class ChatList extends BaseComponent {
             return;
         }
         
-        chats.forEach(c => this.renderSingleEntry(c, onChatSelect));
+        chats.forEach(async c => await this.renderSingleEntry(c, onChatSelect));
     }
     
-    public renderSingleEntry(chat: Chat, onChatSelect: (chat: Chat) => void) {
+    public async renderSingleEntry(chat: Chat, onChatSelect: (chat: Chat) => void) {
         if (chat.timestamp == null) return;
         const li = document.createElement('li');
         li.className = "chat-item selectable";
@@ -38,6 +39,21 @@ export class ChatList extends BaseComponent {
         const initials = chat.name ? chat.name.substring(0, 1).toUpperCase() : '?';
         const hasUnread = chat.unreadCount && chat.unreadCount > 0;
         const timeStr = formatTime(chat.timestamp || new Date());
+
+        let lastMessage = chat.lastMessage || '...';
+
+        const retrievedLastMesssage = await loadLatestMessages(chat.id, 2);
+
+        if (!retrievedLastMesssage[0]) return;
+
+        // in this case the user probably deleted the chat, but wpp still includes that pesky e2e notification
+        if (retrievedLastMesssage[0]._data?.type === 'e2e_notification' && !retrievedLastMesssage[1]) return;
+
+        if (retrievedLastMesssage[0]._data?.type === 'sticker') lastMessage = "Sticker";
+        if (retrievedLastMesssage[0]._data?.type === 'call_log') lastMessage = "Call log";
+        if (retrievedLastMesssage[0]._data?.type === 'image') lastMessage = "Image";
+        if (retrievedLastMesssage[0]._data?.type === 'video') lastMessage = "Video";
+        if (retrievedLastMesssage[0]._data?.type === 'e2e_notification') lastMessage = "Encryption key has changed.";
         
         li.innerHTML = `
               <div class="avatar">
@@ -54,7 +70,7 @@ export class ChatList extends BaseComponent {
                 </div>
                 <div class="chat-item-preview">
                   <span class="chat-item-msg${chat.lastMessage == null ? ' text-accent' : ''}" data-chatid="${chat.id}">
-                    ${chat.lastMessage || '...'}
+                    ${lastMessage}
                   </span>
                   ${hasUnread ? `${this.generateChatBadge(chat.unreadCount).outerHTML}` : ''}
                 </div>

@@ -81,6 +81,7 @@ export class MessagesContainer extends BaseComponent {
             "gp2"
         ]
         
+        console.log(msg._data?.type)
         if (msg._data?.type && unimplemented.indexOf(msg._data?.type) !== -1) return;
         
         const prev = this.messages[this.messages.length - 1] || null;

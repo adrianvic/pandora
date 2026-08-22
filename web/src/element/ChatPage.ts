@@ -191,6 +191,14 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             this.classList.add('collapsed');
         })
         this.bottomExtraBar.addEventListener('mousedown', preventFocusLoss);
+
+        this.bottomExtraBar.style.height = `${this.bottomBar.offsetHeight}px`;
+        const observer = new ResizeObserver(() => {
+            this.bottomExtraBar.style.height =
+            `${this.bottomBar.offsetHeight}px`;
+        });
+
+        observer.observe(this.bottomBar);
         
         this.attachmentInput = this.bottomExtraBar.querySelector('#attachment-input') as HTMLInputElement;
         this.attachmentButton = this.bottomExtraBar.querySelector('#attachment-btn') as HTMLButtonElement;
