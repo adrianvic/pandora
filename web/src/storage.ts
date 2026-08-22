@@ -71,9 +71,16 @@ export async function getUserAbout(userId: string): Promise<UserAboutResponse | 
   }
 }
 
+const contactCache = new Map<string, Contact>();
+
 export async function getContact(id: string): Promise<Contact | undefined> {
+  const cached = contactCache.get(id);
+  if (cached) return cached;
+
   try {
-    return await waha.getContact(id);
+    const contact = await waha.getContact(id);
+    if (contact) contactCache.set(id, contact);
+    return contact;
   } catch (e) {
     return undefined;
   }

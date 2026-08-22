@@ -1,8 +1,9 @@
 import { Parser } from "../parser";
-import { getMedia, getMessage } from "../storage";
+import { getMedia, getMessage, getContact } from "../storage";
 import { Message } from "../types";
 import { ui } from "../ui";
 import { formatTime, normalizeId } from "../utils";
+import { AudioPlayer } from "./AudioPlayer";
 import { BaseComponent } from "./BaseComponent";
 import { ImagePreview } from "./ImagePreview";
 import { MessagesContainer } from "./MessagesContainer";
@@ -12,13 +13,19 @@ export class ChatMessage extends BaseComponent {
     readonly bubble: HTMLElement;
     readonly name: string;
     public readonly id: string;
+    public readonly participant: string;
+    public readonly isOutgoing: boolean;
+    public readonly isGroup: boolean;
 
     constructor(msg: Message, container: MessagesContainer | null, chatID: string, userID: string, isLocal = false, prevMsg: ChatMessage | null = null) {
         super('div');
 
+        this.isGroup = msg.sender?.endsWith('@g.us') ?? msg.from?.endsWith('@g.us') ?? true;
+        this.participant = msg.participant ?? '';
         this.id = (msg.id as string); // true blind cast I don't know if it works!!
         
         const isOutgoing = msg.fromMe || msg.sender === 'me';
+        this.isOutgoing = isOutgoing;
 
         this.element.id = normalizeId(msg._serialized ? (msg._serialized as any) : msg.id) || "msg-id";
         this.element.dataset.id = msg.id.toString();
@@ -39,7 +46,6 @@ export class ChatMessage extends BaseComponent {
 	    if (msg.body == "" || msg.text == "") this.bubble.classList.add("no-text");
         
         let prevUid: string | undefined;
-        let prevName = prevMsg?.name;
 
         if (msg.participant) {
             prevUid = msg.participant;
@@ -51,7 +57,16 @@ export class ChatMessage extends BaseComponent {
             const senderEl = document.createElement('span');
             senderEl.className = 'message-sender';
             senderEl.textContent = senderName;
-            this.bubble.appendChild(senderEl);
+            if (this.isGroup) this.bubble.appendChild(senderEl);
+
+            if (senderName.includes('@lid') || senderName.includes('@c.us')) {
+                (async () => {
+                    const contact = await getContact(prevUid!);
+                    if (contact && (contact.name || contact.pushname)) {
+                        senderEl.textContent = contact.name || contact.pushname;
+                    }
+                })();
+            }
         }
         
         const contentEl = document.createElement('div');
@@ -182,12 +197,10 @@ export class ChatMessage extends BaseComponent {
                         this.element.classList.add('preview');
                         this.element.classList.add('audio');
                         a.textContent = "";
-                        const audio = document.createElement('audio');
-                        audio.classList.add('message-audio-attachement');
-                        audio.controls = true;
-                        audio.src = objectUrl;
+                        const audio = new AudioPlayer(objectUrl);
+
                         if (container) ui.ensureScroll(container.element, () => {
-                            this.bubble.before(audio);
+                            this.bubble.before(audio.element);
                         })
                     } else if (media.blob.type.startsWith('video')) {
                         this.element.classList.add('preview');
@@ -229,30 +242,24 @@ export class ChatMessage extends BaseComponent {
         contentAndTime.appendChild(meta);
 
         this.bubble.appendChild(contentAndTime);
-        
-        if (isOutgoing) {
-            if (prevMsg && prevMsg.element.classList.contains('outgoing')) {
+
+        const isNeutral = this.element.classList.contains('neutral');
+
+        if (!isNeutral) {
+            const currentFrom = this.element.dataset.from;
+            const prevFrom = prevMsg?.element.dataset.from;
+            const sameSender = prevMsg &&
+                             prevFrom === currentFrom &&
+                             prevMsg.isOutgoing === this.isOutgoing &&
+                             !prevMsg.element.classList.contains('neutral');
+
+            if (sameSender) {
                 this.element.classList.add('same-sender');
             } else {
                 const indicator = document.createElement('div');
                 indicator.className = 'message-indicator';
                 this.element.appendChild(indicator);
             }
-        } else if (msg.participant) {
-            if (!prevMsg ||
-                prevUid !== prevMsg.element.dataset.from &&
-                prevName === msg._data.notifyName) {
-                const indicator = document.createElement('div');
-                indicator.className = 'message-indicator';
-                this.element.appendChild(indicator);
-            } else this.element.classList.add('same-sender');
-        } else {
-            if (!prevMsg || prevUid !== prevMsg.element.dataset.from &&
-                prevName === msg._data.notifyName) {
-                const indicator = document.createElement('div');
-                indicator.className = 'message-indicator';
-                this.element.appendChild(indicator);
-            } else this.element.classList.add('same-sender');
         }
         
         this.element.appendChild(this.bubble);

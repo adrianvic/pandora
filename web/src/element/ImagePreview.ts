@@ -23,8 +23,9 @@ export class ImagePreview extends BaseComponent {
             <div class="image-holder">
                 <img id="image-preview-img" src="${src}" draggable="false">
             </div>
-            <label for="image-preview-img" id="image-preview-subtitle">${subtitle}</label>
         `;
+
+        if (subtitle && subtitle != '') this.element.innerHTML += `<label for="image-preview-img" id="image-preview-subtitle">${subtitle}</label>`;
 
         this.imgElement = this.element.querySelector('#image-preview-img');
 

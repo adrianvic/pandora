@@ -332,7 +332,7 @@ async function selectChat(chat: Chat, _isPopState = false, smoothScroll = true) 
         behavior: "smooth"
     });
     if (isLoadingChat) return;
-    if (chatPage.messagesContainer?.chatID === chat.id) return;
+    // if (chatPage.messagesContainer?.chatID === chat.id) return;
 
     isLoadingChat = true;
     mainView?.scrollTo(chatPage.element);
