@@ -1,4 +1,5 @@
-import { deleteChat, getChatMessages, getGroupUsers, getUsersFromGroup, markRead } from "../storage";
+import { showNotification } from "../notification";
+import { toggleArchiveChat, deleteChat, getChatMessages, getGroupUsers, getUsersFromGroup, markRead } from "../storage";
 import { Chat, Contact } from "../types";
 import { ui } from "../ui";
 import { compensateMessageOrdering } from "../utils";
@@ -23,6 +24,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
     readonly chatTitle: HTMLElement;
     readonly attachmentInput: HTMLInputElement;
     readonly attachmentButton: HTMLButtonElement;
+    readonly archiveButton: HTMLButtonElement;
     readonly bottomBarButton: HTMLButtonElement;
     replyID: string | null = null;
     replyText: string | null = null;
@@ -183,8 +185,8 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             <button id="markread-btn" class="icon-btn send-btn mif-done_all mif-2x" title="Mark read"></button>
             <input id="attachment-input" style="display: none;" type="file">
             <button id="attachment-btn" class="icon-btn send-btn mif-attachment mif-2x" title="Attach file"></button>
-            <button id="mention-btn" class="icon-btn send-btn mif-face mif-2x" title="Mention user"></button>
-            <button id="clear-chat-btn" class="icon-btn send-btn mif-bin mif-2x" title="Delete chat"></button>
+            <button id="archive-btn" class="icon-btn send-btn mif-move_to_inbox mif-2x" title="Archive chat"></button>
+            <button id="clear-chat-btn" class="icon-btn send-btn mif-cross-light mif-2x" title="Delete chat"></button>
             `;
 
         this.bottomExtraBar.addEventListener('click', function (this: HTMLElement) {
@@ -211,6 +213,21 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.attachmentButton.addEventListener('click', () => {
             this.attachmentInput.click();
         });
+
+        this.archiveButton = this.bottomExtraBar.querySelector('#archive-btn') as HTMLButtonElement;
+        this.archiveButton.addEventListener('click', async () => {
+            if (!this.messagesContainer?.chatID) return;
+            const result = await toggleArchiveChat(this.messagesContainer.chatID);
+            showNotification('Success', `Chat '${this.chatTitle.innerText}' was ${result ? '' : 'un'}archived sucessfully.`)
+            
+            this.element.dispatchEvent(new CustomEvent('archive-chat', {
+                detail: {
+                    chatID: this.messagesContainer.chatID,
+                    archive: result
+                }
+            }));
+        })
+
 
         this.bottomExtraBar.querySelector('#markread-btn')?.addEventListener('click', async () => {
             if (this.messagesContainer) {
@@ -426,6 +443,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         
         const tempMsg = {
             id: 'temp-' + Date.now(),
+            chatId: chatID,
             body: text,
             fromMe: true,
             sender: 'me',
@@ -442,7 +460,8 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         
         this.element.dispatchEvent(new CustomEvent('message-dispatch', {
             detail: {
-                to: this.messagesContainer.chatID
+                to: this.messagesContainer.chatID,
+                tempMsg: tempMsg
             }
         }));
         
@@ -473,12 +492,18 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         
         try {
             const tempId = 'temp-' + Date.now();
+            let body = "File";
+            if (file.type.startsWith('image/')) body = "Image";
+            if (file.type.startsWith('video/')) body = "Video";
+            if (file.type.startsWith('audio/')) body = "Audio";
+
             const tempMsg = {
                 _data: {
                     mimetype: file.type
                 },
                 id: tempId,
-                body: "",
+                chatId: this.messagesContainer.chatID,
+                body: body,
                 fromMe: true,
                 sender: 'me',
                 timestamp: new Date().toISOString(),
@@ -492,7 +517,14 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             
             this.messagesContainer.appendMessage(tempMsg, true);
             ui.scrollToBottom(this.messagesContainer.element);
-            
+
+            this.element.dispatchEvent(new CustomEvent('message-dispatch', {
+                detail: {
+                    to: this.messagesContainer.chatID,
+                    tempMsg: tempMsg
+                }
+            }));
+
             const result = await waha.sendFileMessage(this.messagesContainer.chatID, file);
             this.messagesContainer.replaceMessage(tempId, result);
             

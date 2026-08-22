@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 function hydrate() {
-    sidebar = new Sidebar(requireEl<HTMLElement>('.sidebar'));
+    sidebar = new Sidebar(requireEl<HTMLElement>('.sidebar'), selectChat);
     mainView = new ScrollableView(requireEl<HTMLElement>('#main-view'));
     chatPage = new ChatPage(requireEl<HTMLElement>('.chat-area'));
     settingsPage = new SettingsPage(requireEl<HTMLElement>('#settings-page'));
@@ -149,10 +149,16 @@ function setupEventListeners() {
         }
     });
 
+    chatPage.element.addEventListener('archive-chat', (e) => {
+        const detail = (e as CustomEvent).detail;
+        if (detail.chatID && detail.archive !== undefined) sidebar.chatList.archiveChat(detail.chatID, detail.archive);
+    })
+
     chatPage.element.addEventListener('message-dispatch', (e) => {
         const detail = (e as CustomEvent).detail;
         if (!detail.to.endsWith('@lid')) {
             sidebar.chatList.updateChatBadge(detail.to, 0);
+            sidebar.chatList.updateItemFromMessage(detail.tempMsg);
         }
     });
 
@@ -274,6 +280,8 @@ function initWebSocket() {
 }
 
 
+const lastNotificationTime = new Map<string, number>();
+
 async function handleIncomingMessage(msg: Message) {
     if (!msg) return;
     
@@ -287,9 +295,21 @@ async function handleIncomingMessage(msg: Message) {
     }
     
     if (!msg.fromMe) {
-        messageTone.play();
-        if (notificationAuthorization === "granted") {
-            new Notification("New message", { body: msg.body || msg.text });
+        // Only play tone if it's not the active chat
+        if (chatPage.messagesContainer?.chatID !== msgChatId) {
+            messageTone.play();
+        }
+
+        // Browser notification only if app is NOT focused
+        if (!document.hasFocus() && notificationAuthorization === "granted") {
+            const now = Date.now();
+            const lastTime = lastNotificationTime.get(msgChatId) || 0;
+
+            // 5 second cooldown per sender
+            if (now - lastTime > 5000) {
+                new Notification("New message", { body: msg.body || msg.text });
+                lastNotificationTime.set(msgChatId, now);
+            }
         }
     }
     
@@ -300,7 +320,7 @@ async function handleIncomingMessage(msg: Message) {
             const containerEl = chatPage.messagesContainer.element;
             const scrolled = containerEl.scrollTop === (containerEl.scrollHeight - containerEl.clientHeight);
             chatPage.messagesContainer.appendMessage({ ...msg, chatId: msgChatId });
-            if (scrolled && window.innerWidth > 768) {
+            if (!scrolled && window.innerWidth > 768) {
                 ui.scrollToBottom(containerEl);
             }
         }

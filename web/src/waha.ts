@@ -197,5 +197,17 @@ export const waha = {
         return request<StatusResponse>(`/api/${config.session}/chats/${chatId}`, {
             method: "delete"
         });
-    }
+    },
+
+    async archiveChat(chatId: string): Promise<StatusResponse> {
+        return request<StatusResponse>(`/api/${config.session}/chats/${chatId}/archive`, {
+            method: "post"
+        });
+    },
+
+    async unarchiveChat(chatId: string): Promise<StatusResponse> {
+        return request<StatusResponse>(`/api/${config.session}/chats/${chatId}/unarchive`, {
+            method: "post"
+        });
+    },
 };

@@ -21,7 +21,7 @@ export async function showNotification(title: string, subtitle: string, time: nu
         hideNotification(notificationBox);
     })
     
-    await new Promise(requestAnimationFrame);
+    void notificationBox.offsetWidth; // Force reflow to trigger animation
     notificationBox.classList.add("shown");
     
     await new Promise<void>(r => setTimeout(r, time));

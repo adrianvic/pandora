@@ -242,6 +242,10 @@ fieldset label:has(input[type="radio"]:checked) {
     font-size: xx-large;
 }
 
+.dim-label {
+    opacity: .6;
+}
+
 .user-profile {
     display: flex;
     align-items: center;
@@ -722,7 +726,6 @@ fieldset label:has(input[type="radio"]:checked) {
     radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.03) 0%, transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 40%);
     overflow-anchor: auto;
-
 }
 
 .load-more-btn {
@@ -848,14 +851,13 @@ fieldset label:has(input[type="radio"]:checked) {
     flex-direction: column;
     gap: .4em;
     min-width: 0;
-    /* Removed flex: 1 to prevent empty column on wrap */
 }
 
 .message-content-and-time {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
-    justify-content: flex-end;
+    justify-content: space-between;
     gap: 4px 8px;
 }
 
@@ -869,7 +871,7 @@ fieldset label:has(input[type="radio"]:checked) {
     justify-content: flex-end;
     gap: 4px;
     font-size: 0.7rem;
-    margin-left: auto; /* Pushes time to the right when wrapped */
+    /* margin-left: auto; */
 }
 
 .incoming .message-tick, .message-group.neutral .message-tick {
@@ -881,6 +883,7 @@ fieldset label:has(input[type="radio"]:checked) {
     max-height: 50vh;
     min-height: 100px;
     background-color: var(--bg-secondary);
+    object-fit: cover;
 }
 
 .sticker .message-image-attachement {
@@ -892,6 +895,11 @@ fieldset label:has(input[type="radio"]:checked) {
 .sticker .message-bubble {
     background: none!important;
     border: none!important;
+    flex-direction: column;
+}
+
+.sticker .message-indicator {
+    display: none;
 }
 
 .incoming .message-image-attachement {
@@ -1087,10 +1095,10 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 #profile-page-picture {
-    width: 100%;
     max-width: 10%;
     height: auto;
     aspect-ratio: 1/1;
+    flex: 1;
 }
 
 #profile-page-status-input {
@@ -1131,9 +1139,13 @@ fieldset label:has(input[type="radio"]:checked) {
     transform: translateX(2em);
 }
 
-.mentioned-highlight .message-bubble {
-    background-color: var(--text-primary)!important;
+.mentioned-highlight .message-content-and-time, .mentioned-highlight .message-sender {
     color: var(--bg-primary)!important;
+}
+
+.mentioned-highlight .message-bubble {
+    color: var(--bg-primary)!important;
+    background-color: var(--text-primary)!important;
 }
 
 .outgoing.mentioned-highlight {
@@ -1263,21 +1275,34 @@ fieldset label:has(input[type="radio"]:checked) {
     display: flex;
     justify-content: center;
     flex-direction: column;
-    overflow: auto;
+    overflow: hidden; /* Changed from auto to prevent scrollbars during zoom */
     text-align: center;
     gap: 1em;
+    touch-action: none; /* Disable default gestures for zoom/pan */
 }
 
 #image-preview .image-holder {
-    margin: 0 max(auto, 2rem);
+    margin: auto;
     border: thin solid var(--border-color);
     max-height: 50%;
     box-sizing: var(--shadow-lg);
+    background-color: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#image-preview label {
+    padding: 2em 1em;
+    z-index: 2;
     background-color: var(--bg-secondary);
 }
 
 .image-holder img {
     max-height: 100%;
+    max-width: 100%;
+    transition: transform 0.1s ease-out; /* Smooth the zoom/pan a bit */
+    transform-origin: center center;
 }
 
 #image-preview.collapsed {

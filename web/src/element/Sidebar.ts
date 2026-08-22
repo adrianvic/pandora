@@ -7,15 +7,16 @@ export class Sidebar extends BaseComponent {
     private searchInput: HTMLInputElement;
     private chatsLoader: HTMLDivElement;
     public readonly chatList: ChatList;
-    private onChatSelect: ((chat: Chat) => void) | null = null;
+    private onChatSelect: ((chat: Chat) => void);
 
-    constructor(el: HTMLElement) {
+    constructor(el: HTMLElement, onChatSelect: (chat: Chat) => void) {
         super(el);
         this.searchInput = this.query('#chat-search');
         this.query('.app-name');
         this.query('#pandora-username');
         this.chatsLoader = this.query('#chats-loader');
-        this.chatList = new ChatList(this.query('#chat-list'));
+        this.onChatSelect = onChatSelect;
+        this.chatList = new ChatList(this.query('#chat-list'), onChatSelect);
         this.bindEvents();
     }
 

@@ -221,3 +221,24 @@ export async function deleteChat(chatId: string) {
     console.warn("[Storage] deleteChat network failure:", e);
   }
 }
+
+export async function toggleArchiveChat(chatId: string): Promise<boolean> {
+  const chat = await loadChat(chatId);
+  if (!chat) return false;
+
+  chat.archived = !chat.archived;
+  upsertChats([chat]);
+
+  try {
+    if (chat.archived) {
+      await waha.archiveChat(chatId);
+    } else {
+      await waha.unarchiveChat(chatId);
+    }
+
+    return(chat.archived);
+  } catch (e) {
+    console.warn("[Storage] archiveChat network failure:", e);
+    return chat.archived;
+  }
+}

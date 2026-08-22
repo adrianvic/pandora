@@ -10,6 +10,7 @@ import { MessagesContainer } from "./MessagesContainer";
 export class ChatMessage extends BaseComponent {
     readonly tick: HTMLElement;
     readonly bubble: HTMLElement;
+    readonly name: string;
     public readonly id: string;
 
     constructor(msg: Message, container: MessagesContainer | null, chatID: string, userID: string, isLocal = false, prevMsg: ChatMessage | null = null) {
@@ -25,6 +26,8 @@ export class ChatMessage extends BaseComponent {
         this.element.dataset.from = msg.participant || (msg.from as string);
         
         const senderName = isOutgoing ? userID : (msg._data?.notifyName || (msg.from as string));
+        this.name = senderName;
+
         const timeStr = formatTime(msg.timestamp || new Date());
         
         this.tick = document.createElement('span');
@@ -36,7 +39,8 @@ export class ChatMessage extends BaseComponent {
 	    if (msg.body == "" || msg.text == "") this.bubble.classList.add("no-text");
         
         let prevUid: string | undefined;
-        
+        let prevName = prevMsg?.name;
+
         if (msg.participant) {
             prevUid = msg.participant;
         } else {
@@ -235,13 +239,16 @@ export class ChatMessage extends BaseComponent {
                 this.element.appendChild(indicator);
             }
         } else if (msg.participant) {
-            if (!prevMsg || prevUid !== prevMsg.element.dataset.from) {
+            if (!prevMsg ||
+                prevUid !== prevMsg.element.dataset.from &&
+                prevName === msg._data.notifyName) {
                 const indicator = document.createElement('div');
                 indicator.className = 'message-indicator';
                 this.element.appendChild(indicator);
             } else this.element.classList.add('same-sender');
         } else {
-            if (!prevMsg || prevUid !== prevMsg.element.dataset.from) {
+            if (!prevMsg || prevUid !== prevMsg.element.dataset.from &&
+                prevName === msg._data.notifyName) {
                 const indicator = document.createElement('div');
                 indicator.className = 'message-indicator';
                 this.element.appendChild(indicator);
@@ -251,7 +258,7 @@ export class ChatMessage extends BaseComponent {
         this.element.appendChild(this.bubble);
 
         this.bubble.addEventListener('dblclick', (e) => {
-            if (e.target != this.bubble) return;
+            if (e.target != this.bubble && e.target != contentAndTime) return;
             if (container?.chatPage) {
                 container.chatPage.setReply(msg.id.toString(), parsed);
                 container.chatPage.messageTextArea?.focus();
