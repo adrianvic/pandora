@@ -242,7 +242,7 @@ fieldset label:has(input[type="radio"]:checked) {
     font-size: xx-large;
 }
 
-.dim-label {
+.form-group label {
     opacity: .6;
 }
 
@@ -1080,11 +1080,14 @@ fieldset label:has(input[type="radio"]:checked) {
 #profile-page .content {
     padding: var(--page-padding);
     display: flex;
-    gap: 1em;
+    gap: 2em;
 }
 
 #profile-page-user-info {
     flex: 1;
+    display: flex;
+    gap: 1em;
+    flex-direction: column;
 }
 
 .big-title {
@@ -1105,7 +1108,7 @@ fieldset label:has(input[type="radio"]:checked) {
     width: 100%;
     background-color: var(--bg-main);
     font-size: xx-large;
-    border-bottom: medium solid transparent;
+    border-bottom: medium solid var(--bg-secondary);
     padding: 0;
 }
 
@@ -1350,7 +1353,7 @@ fieldset label:has(input[type="radio"]:checked) {
         z-index: 1;
         scroll-snap-align: start;
         scroll-snap-stop: always;
-	overflow-y: hidden;
+	    overflow-y: hidden;
     }
     
     #message-input {
@@ -1385,10 +1388,6 @@ fieldset label:has(input[type="radio"]:checked) {
     .message-group.preview {
         max-width: 60%;
     }
-
-    .message-group.audio {
-
-    }
     
     .message-group.image {
         max-width: 60%;
@@ -1409,10 +1408,6 @@ fieldset label:has(input[type="radio"]:checked) {
     #profile-page-picture {
         max-width: 50%;
         margin: auto;
-    }
-    
-    #profile-page-user-number {
-        text-align: center;
     }
 }
 
@@ -1464,7 +1459,6 @@ h2.modal-title {
 
 .form-group label {
     font-size: 0.82rem;
-    color: var(--text-secondary);
     font-weight: 500;
 }
 
