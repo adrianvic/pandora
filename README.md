@@ -22,6 +22,10 @@ Pandora is an open-source web client for the WAHA API.
 - [X] Custom wallpaper
 - [X] Message reply
 - [X] User mentioning
+- [x] Playing audio messages
+- [x] Images preview (zoom & pan)
+- [x] Desktop interface
+- 
 
 1. Does not show contact name in any engine other than WEBJS
 2. Loads the last 40 messages

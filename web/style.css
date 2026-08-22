@@ -165,6 +165,10 @@ input:focus {
     -ms-overflow-style: none;
 }
 
+.app-container.has-overlay {
+    overflow: hidden !important;
+}
+
 .main-holder {
     display: flex;
     width: 100%;
@@ -896,6 +900,7 @@ fieldset label:has(input[type="radio"]:checked) {
 .sticker .message-bubble {
     background: none!important;
     border: none!important;
+    box-shadow: none!important;
     flex-direction: column;
 }
 
@@ -1104,6 +1109,7 @@ fieldset label:has(input[type="radio"]:checked) {
     aspect-ratio: 1/1;
     object-fit: cover;
     border: thin solid var(--border-color);
+    flex-shrink: 0;
 }
 
 #profile-page-status-input {
@@ -1344,6 +1350,7 @@ fieldset label:has(input[type="radio"]:checked) {
 
 .audio-player input {
     border-radius: 0%;
+    width: 100%;
 }
 
 @media (max-width: 768px) {

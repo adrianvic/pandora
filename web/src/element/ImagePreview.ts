@@ -161,11 +161,13 @@ export class ImagePreview extends BaseComponent {
     }
 
     public show() {
+        document.querySelector('.app-container')?.classList.add('has-overlay');
         void this.element.offsetWidth; // Force reflow
         this.element.classList.remove('collapsed');
     }
     
     public async hide() {
+        document.querySelector('.app-container')?.classList.remove('has-overlay');
         window.removeEventListener('mousemove', this.handleMouseMove);
         window.removeEventListener('mouseup', this.handleMouseUp);
         this.element.classList.add('collapsed');
