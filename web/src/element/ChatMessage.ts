@@ -7,76 +7,112 @@ import { AudioPlayer } from "./AudioPlayer";
 import { BaseComponent } from "./BaseComponent";
 import { ImagePreview } from "./ImagePreview";
 import { MessagesContainer } from "./MessagesContainer";
+import { config } from "../config";
+
+export interface ChatMessageOptions {
+    id: string;
+    body: string;
+    timestamp: number | string | Date;
+    from: string;
+    fromMe: boolean;
+    senderName?: string;
+    status?: string;
+    hasMedia?: boolean;
+    media?: {
+        url: string;
+        filename?: string;
+    };
+    type?: string;
+    replyTo?: {
+        id: string;
+        body: string;
+    };
+    isGroup?: boolean;
+}
 
 export class ChatMessage extends BaseComponent {
     readonly tick: HTMLElement;
     readonly bubble: HTMLElement;
-    readonly name: string;
     public readonly id: string;
-    public readonly participant: string;
     public readonly isOutgoing: boolean;
     public readonly isGroup: boolean;
+    protected container: MessagesContainer | null;
 
-    constructor(msg: Message, container: MessagesContainer | null, chatID: string, userID: string, isLocal = false, prevMsg: ChatMessage | null = null) {
+    constructor(options: ChatMessageOptions, container: MessagesContainer | null = null, prevMsg: ChatMessage | null = null) {
         super('div');
+        this.container = container;
+        this.id = options.id;
+        this.isOutgoing = options.fromMe;
+        this.isGroup = options.isGroup ?? true;
 
-        this.isGroup = msg.sender?.endsWith('@g.us') ?? msg.from?.endsWith('@g.us') ?? true;
-        this.participant = msg.participant ?? '';
-        this.id = (msg.id as string); // true blind cast I don't know if it works!!
-        
-        const isOutgoing = msg.fromMe || msg.sender === 'me';
-        this.isOutgoing = isOutgoing;
+        this.element.id = `msg-${options.id}`;
+        this.element.dataset.id = options.id;
+        this.element.dataset.timestamp = options.timestamp.toString();
+        this.element.dataset.from = options.from;
 
-        this.element.id = normalizeId(msg._serialized ? (msg._serialized as any) : msg.id) || "msg-id";
-        this.element.dataset.id = msg.id.toString();
-        this.element.dataset.timestamp = msg.timestamp?.toString();
-        this.element.dataset.from = msg.participant || (msg.from as string);
-        
-        const senderName = isOutgoing ? userID : (msg._data?.notifyName || msg.participant || (msg.from as string));
-        this.name = senderName;
-
-        const timeStr = formatTime(msg.timestamp || new Date());
+        const timeStr = formatTime(options.timestamp);
         
         this.tick = document.createElement('span');
-	    this.tick.classList.add('message-tick');
-        this.updateMessageTick(isOutgoing, msg.status);
-        
+        this.tick.classList.add('message-tick');
+        this.updateMessageTick(options.status);
+
+        const parsed = this.parseText(options.body, options.type);
+
         this.bubble = document.createElement('div');
         this.bubble.className = 'message-bubble';
-	    if (msg.body == "" || msg.text == "") this.bubble.classList.add("no-text");
-        
-        let prevUid: string | undefined;
+        if (options.body === "") this.bubble.classList.add("no-text");
+        this.element.appendChild(this.bubble);
 
-        if (msg.participant) {
-            prevUid = msg.participant;
-        } else {
-            prevUid = msg.from as string;
-        }
-        
-        if (!isOutgoing && (!prevMsg || prevUid !== prevMsg.element.dataset.from)) {
-            const senderEl = document.createElement('span');
-            senderEl.className = 'message-sender';
-            senderEl.textContent = senderName;
-            if (this.isGroup) this.bubble.appendChild(senderEl);
+        this.renderSenderName(options, prevMsg);
+        this.renderReply(options);
 
-            if (senderName.includes('@lid') || senderName.includes('@c.us')) {
-                (async () => {
-                    const contact = await getContact(prevUid!);
-                    if (contact && (contact.name || contact.pushname)) {
-                        senderEl.textContent = contact.name || contact.pushname;
-                    }
-                })();
-            }
-        }
-        
+        const contentAndTime = document.createElement('div');
+        contentAndTime.classList.add('message-content-and-time');
+
         const contentEl = document.createElement('div');
         contentEl.classList.add('message-content');
-        
-        if (msg.replyTo) {
-            const replyTo = msg.replyTo;
-            const replyIndicatorEl = document.createElement("div");
-            replyIndicatorEl.classList.add('reply-indicator');
-            replyIndicatorEl.textContent = new Parser(replyTo.body || replyTo.text || "")
+
+        const textEl = document.createElement('div');
+        textEl.innerHTML = parsed;
+        contentEl.appendChild(textEl);
+
+        contentAndTime.appendChild(contentEl);
+
+        const meta = document.createElement('div');
+        meta.className = 'message-meta';
+        meta.innerHTML = `<span>${timeStr}</span>`;
+        meta.appendChild(this.tick);
+        contentAndTime.appendChild(meta);
+
+        this.bubble.appendChild(contentAndTime);
+
+        this.renderMedia(options, parsed);
+
+        this.applyStyling(options, prevMsg);
+
+        this.bubble.addEventListener('dblclick', (e) => {
+            if (e.target !== this.bubble && e.target !== contentAndTime) return;
+            if (this.container?.chatPage) {
+                this.container.chatPage.setReply(this.id, parsed);
+                this.container.chatPage.messageForm.textArea?.focus();
+            }
+        });
+    }
+
+    protected parseText(body: string, type?: string): string {
+        const neutral = ["e2e_notification", "call_log", "gp2"];
+        if (type && neutral.includes(type)) {
+            this.element.className = `message-group selectable neutral`;
+            if (type === "e2e_notification") return 'This chat encryption key has changed';
+            if (type === "call_log") return 'A call was made';
+            if (type === "gp2") return 'This group description was changed';
+        }
+
+        this.element.className = `message-group selectable ${this.isOutgoing ? 'outgoing' : 'incoming'}`;
+        if (type === 'sticker') this.element.classList.add('sticker');
+        if (type === 'revoked') return '<i>This message was deleted</i>';
+
+        return new Parser(body)
             .parse('_', '<i>$1</i>')
             .parse('*', '<b>$1</b>')
             .parse('~', '<s>$1</s>')
@@ -84,169 +120,129 @@ export class ChatMessage extends BaseComponent {
             .parse('`', '<code>$1</code>')
             .replace("\n", "<br>")
             .input;
+    }
+
+    protected renderSenderName(options: ChatMessageOptions, prevMsg: ChatMessage | null) {
+        if (!this.isOutgoing && (!prevMsg || options.from !== prevMsg.element.dataset.from)) {
+            const senderEl = document.createElement('span');
+            senderEl.className = 'message-sender';
+            senderEl.textContent = options.senderName || options.from;
+            if (this.isGroup) this.bubble.appendChild(senderEl);
+
+            if ((senderEl.textContent.includes('@lid') || senderEl.textContent.includes('@c.us')) && !options.senderName) {
+                getContact(options.from).then(contact => {
+                    if (contact && (contact.name || contact.pushname)) {
+                        senderEl.textContent = contact.name || contact.pushname;
+                    }
+                });
+            }
+        }
+    }
+
+    protected renderReply(options: ChatMessageOptions) {
+        if (options.replyTo) {
+            const replyIndicatorEl = document.createElement("div");
+            replyIndicatorEl.classList.add('reply-indicator');
+            replyIndicatorEl.innerHTML = new Parser(options.replyTo.body)
+                .parse('_', '<i>$1</i>')
+                .parse('*', '<b>$1</b>')
+                .parse('~', '<s>$1</s>')
+                .parse('```', '<span style="font-family: monospace;">$1</span>')
+                .parse('`', '<code>$1</code>')
+                .replace("\n", "<br>")
+                .input;
             
+            const replyId = options.replyTo.id;
             replyIndicatorEl.addEventListener('click', () => {
-                const _msg = document.querySelector(`[id*="${replyTo.id}"]`) as HTMLElement;
+                const _msg = document.querySelector(`[id*="${replyId}"]`) as HTMLElement;
                 if (_msg) {
                     _msg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     ui.tempClass(_msg, "mentioned-highlight", 1000);
                 }
             });
-            
             this.bubble.appendChild(replyIndicatorEl);
         }
+    }
 
-        const textEl = document.createElement('div');
-        let parsed = new Parser(msg.body || msg.text || "")
-            .parse('_', '<i>$1</i>')
-            .parse('*', '<b>$1</b>')
-            .parse('~', '<s>$1</s>')
-            .parse('```', '<span style="font-family: monospace;">$1</span>')
-            .parse('`', '<code>$1</code>')
-            .replace("\n", "<br>")
-            .input;
+    protected renderMedia(options: ChatMessageOptions, parsedText: string) {
+        if (!options.hasMedia || !options.media?.url) return;
 
-        const neutral: string[] = [
-            "e2e_notification",
-            "call_log",
-            "gp2" // TODO this is also when a user gets removed
-        ]
+        const url = options.media.url;
+        const mime = options.type || ''; // Assuming type might hold mime for generic messages if needed, or we just check extension
 
-        if (msg._data?.type) {
-            this.element.className = `message-group selectable neutral`;
-
-            switch (neutral.indexOf(msg._data?.type)) {
-                case 0:
-                    parsed = 'This chat encryption key has changed';
-                    break;
-                case 1:
-                    parsed = 'A call was made';
-                    break
-                case 2:
-                    parsed = 'This group description was changed';
-                    break
-                    
-                default:
-                    this.element.className = `message-group selectable ${isOutgoing ? 'outgoing' : 'incoming'}`
-                    break;
-            }
+        // Generic detection if not provided by subclass
+        if (url.match(/\.(jpg|jpeg|png|gif|webp)$|^blob:/i) || options.type === 'image') {
+            this.renderImage(url, parsedText);
+        } else if (url.match(/\.(mp4|webm|ogg)$/i) || options.type === 'video') {
+            this.renderVideo(url);
+        } else if (url.match(/\.(mp3|wav|ogg|m4a)$/i) || options.type === 'audio') {
+            this.renderAudio(url);
         } else {
-            return; // message without type??
+            const a = document.createElement('a');
+            a.href = url;
+            a.target = "_blank";
+            a.textContent = options.media.filename || "Download file";
+            a.download = options.media.filename || "file";
+            this.bubble.querySelector('.message-content')?.appendChild(a);
         }
+    }
 
-        if (msg._data?.type === 'sticker') this.element.classList.add('sticker');
-        if (msg._data?.type === 'revoked') parsed = '<i>This message was deleted</i>';
-        
-        textEl.innerHTML = parsed;
-        
-        const contentAndTime = document.createElement('div');
-        contentAndTime.classList.add('message-content-and-time');
-        
-        contentEl.appendChild(textEl);
+    protected renderImage(url: string, caption: string) {
+        this.element.classList.add('preview', 'image');
+        const img = document.createElement('img');
+        img.classList.add('message-image-attachement');
+        img.src = url;
+        img.onload = () => {
+            if (this.container) ui.ensureScroll(this.container.element, () => {});
+        };
+        img.addEventListener('click', () => {
+            const p = new ImagePreview(url, caption);
+            this.container?.chatPage?.element.appendChild(p.element);
+            p.show();
+        });
 
-        contentAndTime.appendChild(contentEl);
-        
-        if (msg.hasMedia) {
-            let a: HTMLAnchorElement;
-            
-            if (isLocal) {
-                a = ui.generateTempMessageLink(msg);
-            } else {
-                a = document.createElement('a');
-                a.innerText = `[Request media]`;
-                a.target = "_blank";
-                
-                const clickListener = async (e: MouseEvent) => {
-                    a.removeEventListener('click', clickListener);
-                    a.innerText = `[Downloading]`;
-                    const mediaMsg = msg.media ? msg : await getMessage(chatID, normalizeId(msg._serialized ? (msg._serialized as any) : msg.id) || "", true);
-                    if (!mediaMsg || !mediaMsg?.media?.url) {
-                        a.addEventListener('click', clickListener);
-                        a.innerText = `[Error, click to try again]`
-                        return;
-                    }
-                    const url = new URL(mediaMsg.media.url);
-                    const reqID = url.pathname.split('/').filter(Boolean).pop();
-                    
-                    if (!reqID) return;
-                    const media = await getMedia(reqID);
-                    if (!media) return;
-                    
-                    const objectUrl = URL.createObjectURL(media.blob);
-                    (e.target as HTMLAnchorElement).href = objectUrl;
-                                        
-                    if (media.blob.type.startsWith('image/')) {
-                        this.element.classList.add('preview');
-                        this.element.classList.add('image');
-                        a.textContent = "";
-                        const img = document.createElement('img');
-                        img.classList.add('message-image-attachement');
-                        img.src = objectUrl;
-                        img.onload = () => {
-                            if (container) ui.ensureScroll(container.element, () => {});
-                        };
-                        img.addEventListener('click', () => {
-                            const p = new ImagePreview(objectUrl, parsed);
-                            container?.chatPage?.element.appendChild(p.element);
-                            p.show();
-                        })
-                        if (container) ui.ensureScroll(container.element, () => {
-                            this.bubble.before(img);
-                        })
-                    } else if (media.blob.type.startsWith('audio')) {
-                        this.element.classList.add('preview');
-                        this.element.classList.add('audio');
-                        a.textContent = "";
-                        const audio = new AudioPlayer(objectUrl);
-
-                        if (container) ui.ensureScroll(container.element, () => {
-                            this.bubble.before(audio.element);
-                        })
-                    } else if (media.blob.type.startsWith('video')) {
-                        this.element.classList.add('preview');
-                        this.element.classList.add('video');
-                        a.textContent = "";
-                        const video = document.createElement('video');
-                        video.classList.add('message-video-attachement');
-                        video.controls = true;
-                        video.src = objectUrl;
-                        if (container) ui.ensureScroll(container.element, () => {
-                            this.bubble.before(video);
-                        })
-                    } else {
-                        (e.target as HTMLAnchorElement).textContent = media.filename || `Download ${mediaMsg.media.filename}`;
-                    }
-                }
-                
-                a.addEventListener('click', clickListener);
-            }
-            
-            if (container) ui.ensureScroll(container.element, () => {
-                contentEl.appendChild(a);
+        if (this.container) {
+            ui.ensureScroll(this.container.element, () => {
+                this.bubble.before(img);
             });
-            
-            if (!isLocal && (
-                msg._data?.mimetype?.startsWith('image/') ||
-                msg._data?.mimetype?.startsWith('audio/') ||
-		msg._data?.mimetype?.startsWith('video/')
-            ) ) {
-                a.click();
-            }
+        } else {
+            this.bubble.before(img);
         }
-        
-        const meta = document.createElement('div');
-        meta.className = 'message-meta';
-        meta.innerHTML = `<span>${timeStr}</span>`;
-        meta.appendChild(this.tick);
-        
-        contentAndTime.appendChild(meta);
+    }
 
-        this.bubble.appendChild(contentAndTime);
+    protected renderVideo(url: string) {
+        this.element.classList.add('preview', 'video');
+        const video = document.createElement('video');
+        video.classList.add('message-video-attachement');
+        video.controls = true;
+        video.src = url;
 
+        if (this.container) {
+            ui.ensureScroll(this.container.element, () => {
+                this.bubble.before(video);
+            });
+        } else {
+            this.bubble.before(video);
+        }
+    }
+
+    protected renderAudio(url: string) {
+        this.element.classList.add('preview', 'audio');
+        const audio = new AudioPlayer(url);
+
+        if (this.container) {
+            ui.ensureScroll(this.container.element, () => {
+                this.bubble.before(audio.element);
+            });
+        } else {
+            this.bubble.before(audio.element);
+        }
+    }
+
+    protected applyStyling(options: ChatMessageOptions, prevMsg: ChatMessage | null) {
         const isNeutral = this.element.classList.contains('neutral');
-
         if (!isNeutral) {
-            const currentFrom = this.element.dataset.from;
+            const currentFrom = options.from;
             const prevFrom = prevMsg?.element.dataset.from;
             const sameSender = prevMsg &&
                              prevFrom === currentFrom &&
@@ -258,26 +254,16 @@ export class ChatMessage extends BaseComponent {
             } else {
                 const indicator = document.createElement('div');
                 indicator.className = 'message-indicator';
-                this.element.appendChild(indicator);
+                this.element.firstChild?.before(indicator);
             }
         }
-        
-        this.element.appendChild(this.bubble);
-
-        this.bubble.addEventListener('dblclick', (e) => {
-            if (e.target != this.bubble && e.target != contentAndTime) return;
-            if (container?.chatPage) {
-                container.chatPage.setReply(msg.id.toString(), parsed);
-                container.chatPage.messageTextArea?.focus();
-            }
-        });
     }
-    
-    updateMessageTick(isOutgoing: boolean, status: string | undefined) {
+
+    updateMessageTick(status: string | undefined) {
         this.tick.style.width = "14px";
         this.tick.style.height = "14px";
 
-        if (isOutgoing) {
+        if (this.isOutgoing) {
             if (status === 'read') {
                 this.tick.classList = "mif-done_all";
                 this.tick.style.color = "var(--online-color)";
@@ -288,6 +274,110 @@ export class ChatMessage extends BaseComponent {
             } else {
                 this.tick.classList = "mif-done";
             }
+        }
+    }
+}
+
+export class WahaChatMessage extends ChatMessage {
+    constructor(msg: Message, container: MessagesContainer | null, chatID: string, userID: string, isLocal = false, prevMsg: ChatMessage | null = null) {
+        const options: ChatMessageOptions = {
+            id: msg.id.toString(),
+            body: msg.body || msg.text || "",
+            timestamp: msg.timestamp,
+            from: (msg.participant || msg.from || "") as string,
+            fromMe: msg.fromMe || msg.sender === 'me',
+            senderName: (msg.fromMe || msg.sender === 'me') ? userID : (msg._data?.notifyName || msg.participant || (msg.from as string)),
+            status: msg.status,
+            hasMedia: msg.hasMedia,
+            type: msg._data?.type,
+            isGroup: msg.sender?.endsWith('@g.us') ?? msg.from?.endsWith('@g.us') ?? true,
+            replyTo: msg.replyTo ? {
+                id: msg.replyTo.id.toString(),
+                body: msg.replyTo.body || msg.replyTo.text || ""
+            } : undefined
+        };
+
+        if (msg.hasMedia && msg.media) {
+            let url = msg.media.url;
+            if (url && url.startsWith('/')) {
+                url = `${config.wahaUrl}${url}`;
+            }
+            options.media = {
+                url: url,
+                filename: msg.media.filename
+            };
+        }
+
+        super(options, container, prevMsg);
+
+        // Handle async WAHA media fetching if not local
+        if (msg.hasMedia && !isLocal && !msg.media?.url) {
+            this.setupWahaMediaDownloader(msg, chatID);
+        }
+    }
+
+    private setupWahaMediaDownloader(msg: Message, chatID: string) {
+        const contentEl = this.bubble.querySelector('.message-content');
+        if (!contentEl) return;
+
+        const a = document.createElement('a');
+        a.innerText = `[Request media]`;
+        a.href = "#";
+        a.style.display = "block";
+        contentEl.appendChild(a);
+
+        const clickListener = async (e: MouseEvent) => {
+            e.preventDefault();
+            a.removeEventListener('click', clickListener);
+            a.innerText = `[Downloading]`;
+
+            try {
+                const mediaMsg = msg.media ? msg : await getMessage(chatID, normalizeId(msg._serialized ? (msg._serialized as any) : msg.id) || "", true);
+                if (!mediaMsg || !mediaMsg?.media?.url) {
+                    a.addEventListener('click', clickListener);
+                    a.innerText = `[Error, click to try again]`;
+                    return;
+                }
+
+                const url = new URL(mediaMsg.media.url);
+                const reqID = url.pathname.split('/').filter(Boolean).pop();
+                if (!reqID) return;
+
+                const media = await getMedia(reqID);
+                if (!media) return;
+
+                const objectUrl = URL.createObjectURL(media.blob);
+                a.remove(); // Remove the link once we have media
+
+                const parsed = this.parseText(msg.body || msg.text || "", msg._data?.type);
+
+                if (media.blob.type.startsWith('image/')) {
+                    this.renderImage(objectUrl, parsed);
+                } else if (media.blob.type.startsWith('audio/')) {
+                    this.renderAudio(objectUrl);
+                } else if (media.blob.type.startsWith('video/')) {
+                    this.renderVideo(objectUrl);
+                } else {
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = objectUrl;
+                    downloadLink.target = "_blank";
+                    downloadLink.textContent = media.filename || "Download file";
+                    downloadLink.download = media.filename || "file";
+                    contentEl.appendChild(downloadLink);
+                }
+            } catch (err) {
+                console.error("Media download failed", err);
+                a.innerText = `[Download failed]`;
+            }
+        };
+
+        a.addEventListener('click', clickListener);
+
+        // Auto-click for certain types if needed (matching original behavior)
+        if (msg._data?.mimetype?.startsWith('image/') ||
+            msg._data?.mimetype?.startsWith('audio/') ||
+            msg._data?.mimetype?.startsWith('video/')) {
+            a.click();
         }
     }
 }

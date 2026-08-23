@@ -165,7 +165,7 @@ export const waha = {
         });
     },
 
-    async sendFileMessage(chatId: string, file: File): Promise<Message> {
+    async sendFileMessage(chatId: string, file: File, caption: string = ''): Promise<Message> {
         const fileBase64 = await getBase64(file);
         const body: RequestInit = {
             method: 'POST',
@@ -176,7 +176,8 @@ export const waha = {
                     filename: file.name,
                     data: fileBase64
                 },
-                session: config.session
+                session: config.session,
+                caption: caption
             })
         };
 

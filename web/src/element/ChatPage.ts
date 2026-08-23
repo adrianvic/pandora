@@ -4,12 +4,13 @@ import { Chat, Contact } from "../types";
 import { ui } from "../ui";
 import { compensateMessageOrdering } from "../utils";
 import { waha } from "../waha";
+import { AttachmentScreen } from "./AttachmentPage";
 import { BaseComponent } from "./BaseComponent";
 import { LoadingDots } from "./LoadingDots";
+import { MessageForm } from "./MessageInput";
 import { MessagesContainer } from "./MessagesContainer";
 
 export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent {
-    public readonly bottomBar: HTMLElement;
     public readonly bottomExtraBar: HTMLElement;
     public readonly replyIndicator: HTMLElement;
     public readonly mentionSuggestion: HTMLElement;
@@ -18,9 +19,6 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
     public messagesContainer: MessagesContainer | null = null;
     public readonly noChatState: HTMLElement;
     public readonly activeChatState: HTMLElement;
-    public readonly messageForm: HTMLFormElement;
-    public readonly messageTextArea: HTMLTextAreaElement;
-    readonly sendButton: HTMLButtonElement;
     readonly chatTitle: HTMLElement;
     readonly attachmentInput: HTMLInputElement;
     readonly attachmentButton: HTMLButtonElement;
@@ -32,6 +30,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
     typing = false;
     typingTimer: number | undefined;
     typingEndedResolve: ((value: unknown) => void) | null = null;
+    readonly messageForm: MessageForm;
     
     constructor(elementOrTag: T | string) {
         super(elementOrTag);
@@ -87,41 +86,14 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             <div id="mention-suggestions"></div>
             `;
         
-        this.bottomBar = document.createElement('footer');
-        this.bottomBar.classList.add('chat-input-panel');
-        this.bottomBar.id = "chat-input-panel";
-        this.bottomBar.innerHTML =
-        `
-            <div class="input-actions-left">
-                <button id="chat-bottom-bar-btn" class="chat-footer-btn icon-btn mif-expand-less mif-3x" title="Expand"></button>
-            </div>
-        `;
+        this.messageForm = new MessageForm((t, e) => {
+            this.sendMessage(t);
+        }, true);
         
-        this.messageForm = document.createElement('form');
-        this.messageForm.classList.add('input-form');
-        this.messageForm.id = 'message-form';
-
-        this.messageTextArea = document.createElement('textarea');
-        this.messageTextArea.id = 'message-input';
-        this.messageTextArea.rows = 1;
-        this.messageTextArea.placeholder = "Type a message...";
-        this.messageTextArea.autocomplete = 'off';
-        
-        this.sendButton = document.createElement('button');
-        this.sendButton.type = 'submit';
-        this.sendButton.className = 'chat-footer-btn send-btn mif-paper-plane mif-3x';
-        this.sendButton.id = 'send-button';
-        
-        this.messageForm.appendChild(this.messageTextArea);
-        this.messageForm.appendChild(this.sendButton);
-        this.bottomBar.appendChild(this.messageForm);
-        
-        ui.autoResizeTextArea(this.messageTextArea);
-        
-        this.messageTextArea.addEventListener('input', (e) => {
+        this.messageForm.textArea.addEventListener('input', (e) => {
             const inputEvent = e as InputEvent;
             this.mentioned.forEach(c => {
-                if (!this.messageTextArea.value.includes(`@${c.number}`)) {
+                if (!this.messageForm.textArea.value.includes(`@${c.number}`)) {
                     this.removeMention(c);
                 }
             })
@@ -134,7 +106,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
 
             if (!this.typing && this.messagesContainer) {
                 this.typing = true;
-                waha.startTyping(this.messagesContainer.chatID);
+                waha.startTyping(this.messagesContainer.chatID as string);
             }
 
             clearTimeout(this.typingTimer);
@@ -144,38 +116,19 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             }, 2000)
         });
         
-        this.messageForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.sendMessage();
-        });
-        
-        this.messageTextArea.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.sendMessage();
-            }
-        });
+        const extraButtons = document.createElement('div');
+        extraButtons.classList = 'input-actions-left';
+        extraButtons.innerHTML = `<button id="chat-bottom-bar-btn" class="chat-footer-btn icon-btn mif-expand-less mif-3x" title="Expand"></button>`
+        this.messageForm.form.before(extraButtons);
 
-        this.bottomBarButton = this.bottomBar.querySelector('#chat-bottom-bar-btn') as HTMLButtonElement;
+        this.bottomBarButton = extraButtons.querySelector('#chat-bottom-bar-btn') as HTMLButtonElement;
 
-        // Prevent focus loss when clicking these buttons (keeps keyboard open on mobile)
-        const preventFocusLoss = (e: MouseEvent | TouchEvent) => {
-            if (document.activeElement === this.messageTextArea) {
-                e.preventDefault();
-                
-                // If it's a touch event, preventing default will also prevent the click.
-                // We manually trigger the click action for these specific buttons if needed,
-                // but usually mousedown preventDefault is enough for Android.
-                // If you use touchstart, you'd need to manually call this.sendMessage() or toggle the bar here.
-            }
-        };
-        this.sendButton.addEventListener('mousedown', preventFocusLoss);
-        this.bottomBarButton.addEventListener('mousedown', preventFocusLoss);
+        this.bottomBarButton.addEventListener('mousedown', this.messageForm.preventFocusLoss);
 
         this.bottomBarButton.addEventListener('click', () => this.bottomExtraBar.classList.toggle('collapsed'));
-        this.bottomBar.addEventListener('click', (e) => {
-            if (e.target == e.currentTarget) this.bottomBar.classList.toggle("collapsed");
-        });
+        // this.bottomBar.addEventListener('click', (e) => {
+        //     if (e.target == e.currentTarget) this.bottomBar.classList.toggle("collapsed");
+        // });
         
         this.bottomExtraBar = document.createElement('footer');
         this.bottomExtraBar.classList = "chat-expanded-panel alternate-panel collapsed";
@@ -192,15 +145,15 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.bottomExtraBar.addEventListener('click', function (this: HTMLElement) {
             this.classList.add('collapsed');
         })
-        this.bottomExtraBar.addEventListener('mousedown', preventFocusLoss);
+        this.bottomExtraBar.addEventListener('mousedown', this.messageForm.preventFocusLoss);
 
-        this.bottomExtraBar.style.height = `${this.bottomBar.offsetHeight}px`;
+        this.bottomExtraBar.style.height = `${this.messageForm.element.offsetHeight}px`;
         const observer = new ResizeObserver(() => {
             this.bottomExtraBar.style.height =
-            `${this.bottomBar.offsetHeight}px`;
+            `${this.messageForm.element.offsetHeight}px`;
         });
 
-        observer.observe(this.bottomBar);
+        observer.observe(this.messageForm.element);
         
         this.attachmentInput = this.bottomExtraBar.querySelector('#attachment-input') as HTMLInputElement;
         this.attachmentButton = this.bottomExtraBar.querySelector('#attachment-btn') as HTMLButtonElement;
@@ -211,7 +164,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         });
 
         this.attachmentButton.addEventListener('click', () => {
-            this.attachmentInput.click();
+            this.showAttachmentScreen()
         });
 
         this.archiveButton = this.bottomExtraBar.querySelector('#archive-btn') as HTMLButtonElement;
@@ -231,7 +184,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
 
         this.bottomExtraBar.querySelector('#markread-btn')?.addEventListener('click', async () => {
             if (this.messagesContainer) {
-                await markRead(this.messagesContainer.chatID);
+                await markRead(this.messagesContainer.chatID as string);
                 this.element.dispatchEvent(new CustomEvent('mark-read', {
                     detail: { chatID: this.messagesContainer.chatID }
                 }));
@@ -242,7 +195,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             if (!this.messagesContainer) return;
             if (confirm('Do you want to delete this chat?')) {
                 const chatID = this.messagesContainer.chatID;
-                deleteChat(chatID);
+                deleteChat(chatID as string);
                 this.closeChat();
                 this.element.dispatchEvent(new CustomEvent('chat-deleted', {
                     detail: { chatID }
@@ -268,11 +221,24 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.activeChatState.appendChild(this.messagesContainerReceptacle);
         this.activeChatState.appendChild(this.mentionSuggestion);
         this.activeChatState.appendChild(this.replyIndicator);
-        this.activeChatState.appendChild(this.bottomBar);
+        this.activeChatState.appendChild(this.messageForm.element);
         this.activeChatState.appendChild(this.bottomExtraBar);
         
         this.element.appendChild(this.noChatState);
         this.element.appendChild(this.activeChatState);
+    }
+
+    showAttachmentScreen() {
+        const attachmentScreen = new AttachmentScreen();
+        attachmentScreen.element.addEventListener('finished-composing', (e) => {
+            const files = (e as CustomEvent).detail.files as Map<File, string>;
+
+            files.forEach((t, f) => {
+                this.sendFileMessage(f, t);
+            })
+        })
+        this.element.appendChild(attachmentScreen.element);
+        attachmentScreen.setVisibility(true);
     }
     
     public loadChat(chat: Chat, userID: string): MessagesContainer {
@@ -384,7 +350,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             
             if (!this.messagesContainer) return;
             
-            const gpUsrs = await getGroupUsers(this.messagesContainer.chatID);
+            const gpUsrs = await getGroupUsers(this.messagesContainer.chatID as string);
             if (!gpUsrs) return;
             
             const usrs = await getUsersFromGroup(gpUsrs);
@@ -403,15 +369,15 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
                 contact.addEventListener("click", () => {
                     this.mention(u);
                     
-                    this.messageTextArea.value =
-                    this.messageTextArea.value.slice(0, -1) + `@${u.number} `;
-                    
-                    this.messageTextArea.dispatchEvent(
+                    this.messageForm.textArea.value =
+                    this.messageForm.textArea.value.slice(0, -1) + `@${u.number} `;
+
+                    this.messageForm.textArea.dispatchEvent(
                         new Event("input", { bubbles: true })
                     );
                     
                     this.mentionSuggestion.classList.add("collapsed");
-                    this.messageTextArea.focus();
+                    this.messageForm.textArea.focus();
                 });
                 
                 this.mentionSuggestion.appendChild(contact);
@@ -425,9 +391,8 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         }
     }
     
-    async sendMessage() {
+    async sendMessage(text: string) {
         if (!this.messagesContainer) return;
-        const text = this.messageTextArea.value.trim();
         if (!text || !this.messagesContainer) return;
 
         this.stopTyping();
@@ -438,8 +403,8 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.clearMentions()
         this.clearReply()
         
-        this.messageTextArea.value = '';
-        this.messageTextArea.dispatchEvent(new Event("input", { bubbles: true }));
+        this.messageForm.textArea.value = '';
+        this.messageForm.textArea.dispatchEvent(new Event("input", { bubbles: true }));
         
         const tempMsg = {
             id: 'temp-' + Date.now(),
@@ -467,14 +432,14 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         
         try {
             try {
-                if (!this.messagesContainer?.chatID.endsWith('@lid')) {
-                    await waha.readChat(this.messagesContainer?.chatID);
+                if (!(this.messagesContainer?.chatID as string).endsWith('@lid')) {
+                    await waha.readChat(this.messagesContainer?.chatID as string);
                 }
             } catch (e: any) {
                 console.warn('readChat failed (non-fatal):', e.message);
             }
             
-            const responseData = await waha.sendTextMessage(chatID, text, this.getMentionedIDs(), _mentionCacheID);            
+            const responseData = await waha.sendTextMessage(chatID as string, text, this.getMentionedIDs(), _mentionCacheID);            
             this.messagesContainer.replaceMessage(tempMsg.id, responseData);
             
         } catch (error) {
@@ -487,15 +452,11 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         }
     }
     
-    async sendFileMessage(file: File) {
+    async sendFileMessage(file: File, text = '') {
         if (!this.messagesContainer) return;
         
         try {
             const tempId = 'temp-' + Date.now();
-            let body = "File";
-            if (file.type.startsWith('image/')) body = "Image";
-            if (file.type.startsWith('video/')) body = "Video";
-            if (file.type.startsWith('audio/')) body = "Audio";
 
             const tempMsg = {
                 _data: {
@@ -503,7 +464,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
                 },
                 id: tempId,
                 chatId: this.messagesContainer.chatID,
-                body: body,
+                body: text,
                 fromMe: true,
                 sender: 'me',
                 timestamp: new Date().toISOString(),
@@ -525,7 +486,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
                 }
             }));
 
-            const result = await waha.sendFileMessage(this.messagesContainer.chatID, file);
+            const result = await waha.sendFileMessage(this.messagesContainer.chatID as string, file, text);
             this.messagesContainer.replaceMessage(tempId, result);
             
         } catch (error: any) {
@@ -547,7 +508,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         clearTimeout(this.typingTimer);
         this.typing = false;
         if (this.messagesContainer) {
-            waha.stopTyping(this.messagesContainer.chatID);
+            waha.stopTyping(this.messagesContainer.chatID as string);
         }
         if (this.typingEndedResolve) {
             this.typingEndedResolve(null);

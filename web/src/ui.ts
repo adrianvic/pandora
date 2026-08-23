@@ -94,27 +94,7 @@ export const ui = {
     //         }
     //     });
     // },
-    
-    generateTempMessageLink(msg: Message) {
-        const a = document.createElement('a');
-        a.target = "_blank";
-        if (msg.media) {
-            a.href = msg.media.url;
-            
-            if (msg._data?.mimetype?.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.classList.add('message-image-attachement');
-                img.src = msg.media.url;
-                a.appendChild(img);
-            } else {
-                a.textContent = msg.media.filename || "Download file";
-                a.download = msg.media.filename || "file";
-            }
-        }
-        
-        return a;
-    },
-    
+
     updateMessage(originalMsgId: string, generatedMsg: HTMLElement) {
         const originalMsg = document.querySelector(`#${originalMsgId}`);
         if (originalMsg) {

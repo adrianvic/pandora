@@ -2,17 +2,17 @@ import { getMoreChatMessages } from "../storage";
 import { Message } from "../types";
 import { compensateMessageOrdering } from "../utils";
 import { BaseComponent } from "./BaseComponent";
-import { ChatMessage } from "./ChatMessage";
+import { ChatMessage, WahaChatMessage } from "./ChatMessage";
 import { ChatPage } from "./ChatPage";
 
 export class MessagesContainer extends BaseComponent {
-    public readonly chatID: string;
+    public readonly chatID: string | null;
     public readonly userID: string;
     public readonly messages: ChatMessage[] = [];
     public readonly chatPage: ChatPage | null;
     public readonly loadMore: HTMLElement;
     
-    constructor(receptacle: HTMLElement, chatID: string, userID: string, page: ChatPage | null = null) {
+    constructor(receptacle: HTMLElement, chatID: string | null, userID: string = '', page: ChatPage | null = null) {
         super('div');
         this.element.classList.add('messages-container');
         this.element.id = 'messages-container';
@@ -32,6 +32,7 @@ export class MessagesContainer extends BaseComponent {
     }
 
     public async loadMoreMessages() {
+        if (!this.chatID) return;
         const oldest = this.messages[0];
         if (!oldest) return;
 
@@ -60,7 +61,7 @@ export class MessagesContainer extends BaseComponent {
                     continue;
                 }
 
-                const cmsg = new ChatMessage(msg, this, this.chatID, this.userID, false, messages[messages.length - 1]);
+                const cmsg = new WahaChatMessage(msg, this, this.chatID, this.userID, false, messages[messages.length - 1]);
                 messages.push(cmsg);
             }
 
@@ -78,6 +79,7 @@ export class MessagesContainer extends BaseComponent {
     }
     
     public appendMessage(msg: Message, isLocal = false) {
+        if (!this.chatID) isLocal = true;
         const unimplemented: string[] = []
         
         if (msg._data?.type && unimplemented.indexOf(msg._data?.type) !== -1) {
@@ -86,7 +88,7 @@ export class MessagesContainer extends BaseComponent {
         }
         
         const prev = this.messages[this.messages.length - 1] || null;
-        const cmsg = new ChatMessage(msg, this, this.chatID, this.userID, isLocal, prev);
+        const cmsg = new WahaChatMessage(msg, this, this.chatID || '', this.userID, isLocal, prev);
         this.messages.push(cmsg);
         this.element.appendChild(cmsg.element);
     }
@@ -109,7 +111,7 @@ export class MessagesContainer extends BaseComponent {
         
         const index = this.messages.indexOf(existing);
         const prev = this.messages[index - 1] || null;
-        const nw = new ChatMessage(to, this, this.chatID, this.userID, isLocal, prev);
+        const nw = new WahaChatMessage(to, this, this.chatID || '', this.userID, isLocal, prev);
 
         existing.element.after(nw.element);
         existing.destroy();
