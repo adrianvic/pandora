@@ -60,6 +60,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (chat) {
                     selectChat(chat, true, false);
                 }
+            } else {
+                sidebar.element.scrollIntoView({
+                    behavior: 'instant'
+                })
             }
             ui.loadingMessage("Checking server status...");
             await checkWahaStatus();
