@@ -1,5 +1,3 @@
-import type { Message } from "./types";
-
 export const elements = {
     chatSearch: document.getElementById('chat-search') as HTMLInputElement,
     backendStatusText: document.getElementById('backend-status-text') as HTMLSpanElement,

@@ -8,7 +8,6 @@ import { BaseComponent } from "./BaseComponent";
 import { ImagePreview } from "./ImagePreview";
 import { MessagesContainer } from "./MessagesContainer";
 import { config } from "../config";
-import { waha } from "../waha";
 
 export interface ChatMessageOptions {
     id: string;
