@@ -1,5 +1,6 @@
 export class BaseComponent<T extends HTMLElement = HTMLElement> {
     public readonly element: T;
+    protected observers: ResizeObserver[] = [];
 
     constructor(elementOrTag: T | string) {
         if (typeof elementOrTag === 'string') {
@@ -29,7 +30,13 @@ export class BaseComponent<T extends HTMLElement = HTMLElement> {
         this.query(selector).addEventListener(event, handler.bind(this));
     }
 
+    public manage(observer: ResizeObserver) {
+        this.observers.push(observer);
+    }
+
     public destroy() {
+        this.observers.forEach(o => o.disconnect());
+        this.element.dispatchEvent(new CustomEvent('dispose'));
         this.element.remove();
     }
 }

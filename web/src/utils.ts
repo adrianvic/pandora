@@ -85,4 +85,91 @@ export function requireEl<T extends Element>(selector: string): T {
 }
 
 export const sleep = (ms: number): Promise<void> =>
-  new Promise(resolve => setTimeout(resolve, ms));
+    new Promise(resolve => setTimeout(resolve, ms));
+
+type LongClickOptions = {
+    duration?: number;
+    eventName?: string;
+    moveTolerance?: number;
+};
+
+export function subscribeToLongClick(
+    element: HTMLElement,
+    {
+        duration = 600,
+        eventName = "long-click",
+        moveTolerance = 10,
+    }: LongClickOptions = {},
+): () => void {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let startX = 0;
+    let startY = 0;
+    
+    const cancel = (): void => {
+        if (timer !== null) {
+            clearTimeout(timer);
+            timer = null;
+        }
+    };
+    
+    const start = (event: PointerEvent): void => {
+        if (timer !== null) return;
+        
+        startX = event.clientX;
+        startY = event.clientY;
+        
+        timer = setTimeout(() => {
+            timer = null;
+            
+            element.dispatchEvent(
+                new CustomEvent<{
+                    originalEvent: PointerEvent;
+                }>(eventName, {
+                    bubbles: true,
+                    detail: {
+                        originalEvent: event,
+                    },
+                }),
+            );
+        }, duration);
+    };
+    
+    const move = (event: PointerEvent): void => {
+        const distance = Math.hypot(
+            event.clientX - startX,
+            event.clientY - startY,
+        );
+        
+        if (distance > moveTolerance) {
+            cancel();
+        }
+    };
+    
+    element.addEventListener("pointerdown", start);
+    element.addEventListener("pointermove", move);
+    element.addEventListener("pointerup", cancel);
+    element.addEventListener("pointercancel", cancel);
+    element.addEventListener("pointerleave", cancel);
+    
+    return (): void => {
+        cancel();
+        
+        element.removeEventListener("pointerdown", start);
+        element.removeEventListener("pointermove", move);
+        element.removeEventListener("pointerup", cancel);
+        element.removeEventListener("pointercancel", cancel);
+        element.removeEventListener("pointerleave", cancel);
+    };
+}
+
+export function matchHeight(from: HTMLElement, to: HTMLElement): ResizeObserver {
+    to.style.height = `${from.offsetHeight}px`;
+
+    const observer = new ResizeObserver(() => {
+        to.style.height =
+        `${from.offsetHeight}px`;
+    });
+
+    observer.observe(from);
+    return observer;
+}

@@ -160,18 +160,30 @@ export class ImagePreview extends BaseComponent {
         }
     }
 
+    private handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            this.hide().then(() => this.destroy());
+        }
+    };
+
     public show() {
         document.querySelector('.app-container')?.classList.add('has-overlay');
+        window.addEventListener('keydown', this.handleKeyDown);
         void this.element.offsetWidth; // Force reflow
         this.element.classList.remove('collapsed');
     }
     
     public async hide() {
-        document.querySelector('.app-container')?.classList.remove('has-overlay');
+        window.removeEventListener('keydown', this.handleKeyDown);
         window.removeEventListener('mousemove', this.handleMouseMove);
         window.removeEventListener('mouseup', this.handleMouseUp);
         this.element.classList.add('collapsed');
         await sleep(this.transition);
         return;
+    }
+
+    override destroy(): void {
+        document.querySelector('.app-container')?.classList.remove('has-overlay');
+        super.destroy();
     }
 }

@@ -1,4 +1,4 @@
-import { deleteChatFromDatabase, loadChat, loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db";
+import { deleteChatFromDatabase, deleteMessageFromDatabase, loadChat, loadChatsSorted, loadLatestMessages, loadMedia, loadOlderMessages, upsertChats, upsertMedia, upsertMessages } from "./db";
 import { waha } from "./waha";
 import type { Chat, Message, AppUser, ContactInfo, UserAboutResponse, ChatPictureResponse, StatusResponse, DownloadedMedia, GroupUser, Contact } from "./types";
 
@@ -266,6 +266,15 @@ export async function deleteChat(chatId: string) {
     await waha.deleteChat(chatId);
   } catch (e) {
     console.warn("[Storage] deleteChat network failure:", e);
+  }
+}
+
+export async function deleteMessage(chatId: string, messageId: string) {
+  await deleteMessageFromDatabase(messageId);
+  try {
+    await waha.deleteMessage(chatId, messageId);
+  } catch (e) {
+    console.warn("[Storage] deleteMessage network failure:", e);
   }
 }
 

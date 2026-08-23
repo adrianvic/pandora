@@ -1,5 +1,5 @@
 import { Parser } from "../parser";
-import { getMedia, getMessage, getContact } from "../storage";
+import { getMedia, getMessage, getContact, deleteMessage } from "../storage";
 import { Message } from "../types";
 import { ui } from "../ui";
 import { formatTime, normalizeId } from "../utils";
@@ -8,6 +8,7 @@ import { BaseComponent } from "./BaseComponent";
 import { ImagePreview } from "./ImagePreview";
 import { MessagesContainer } from "./MessagesContainer";
 import { config } from "../config";
+import { waha } from "../waha";
 
 export interface ChatMessageOptions {
     id: string;
@@ -37,6 +38,8 @@ export class ChatMessage extends BaseComponent {
     public readonly isOutgoing: boolean;
     public readonly isGroup: boolean;
     protected container: MessagesContainer | null;
+    public readonly content: HTMLElement;
+    public readonly from: string;
 
     constructor(options: ChatMessageOptions, container: MessagesContainer | null = null, prevMsg: ChatMessage | null = null) {
         super('div');
@@ -44,6 +47,7 @@ export class ChatMessage extends BaseComponent {
         this.id = options.id;
         this.isOutgoing = options.fromMe;
         this.isGroup = options.isGroup ?? true;
+        this.from = options.from;
 
         this.element.id = `msg-${options.id}`;
         this.element.dataset.id = options.id;
@@ -71,6 +75,7 @@ export class ChatMessage extends BaseComponent {
 
         const contentEl = document.createElement('div');
         contentEl.classList.add('message-content');
+        this.content = contentEl;
 
         const textEl = document.createElement('div');
         textEl.innerHTML = parsed;
@@ -168,7 +173,7 @@ export class ChatMessage extends BaseComponent {
         if (!options.hasMedia || !options.media?.url) return;
 
         const url = options.media.url;
-        const mime = options.type || ''; // Assuming type might hold mime for generic messages if needed, or we just check extension
+        // const mime = options.type || ''; // Assuming type might hold mime for generic messages if needed, or we just check extension
 
         // Generic detection if not provided by subclass
         if (url.match(/\.(jpg|jpeg|png|gif|webp)$|^blob:/i) || options.type === 'image') {
@@ -309,6 +314,10 @@ export class WahaChatMessage extends ChatMessage {
         }
 
         super(options, container, prevMsg);
+
+        this.element.addEventListener('delete', () => {
+            deleteMessage(this.from, this.id);
+        })
 
         // Handle async WAHA media fetching if not local
         if (msg.hasMedia && !isLocal && !msg.media?.url) {

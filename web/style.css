@@ -947,6 +947,7 @@ fieldset label:has(input[type="radio"]:checked) {
     transform: translateY(0);
     transition: transform .3s;
     flex: 1;
+    min-height: 2em;
 }
 
 .alternate-panel.collapsed {
@@ -1011,7 +1012,7 @@ fieldset label:has(input[type="radio"]:checked) {
     background: rgba(255, 255, 255, 0.06);
 }
 
-.send-btn {
+.send-btn, .bottom-bar-button {
     width: 44px;
     height: 44px;
     background: var(--accent-gradient);
@@ -1024,11 +1025,11 @@ fieldset label:has(input[type="radio"]:checked) {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.send-btn:active {
+.send-btn:active, .bottom-bar-button:active {
     transform: scale(0.98) translateY(0);
 }
 
-.send-btn i {
+.send-btn i, .bottom-bar-button i {
     width: 18px;
     height: 18px;
 }
@@ -1146,21 +1147,37 @@ fieldset label:has(input[type="radio"]:checked) {
     font-size: 1rem;
 }
 
-.mentioned-highlight {
+.mentioned-highlight, .selected {
     transform: translateX(2em);
+}
+
+.selected > * {
+    pointer-events: none;
 }
 
 .mentioned-highlight .message-content-and-time, .mentioned-highlight .message-sender {
     color: var(--bg-primary)!important;
 }
 
-.mentioned-highlight .message-bubble {
+.mentioned-highlight .message-bubble, .selected .message-bubble {
     color: var(--bg-primary)!important;
     background-color: var(--text-primary)!important;
 }
 
-.outgoing.mentioned-highlight {
+.outgoing.mentioned-highlight, .outgoing.selected {
     transform: translateX(-2em);
+}
+
+.mentioned-highlight.outgoing .message-indicator.outgoing, .outgoing.selected .message-indicator {
+    border-bottom-color: var(--text-primary);
+}
+
+.mentioned-highlight.incoming .message-indicator.outgoing, .incoming.selected .message-indicator {
+    border-bottom-color: var(--text-primary);
+}
+
+.mentioned-highlight .message-image-attachement, .selected .message-image-attachement {
+    border-top-color: var(--text-primary)!important;
 }
 
 .reply-indicator {

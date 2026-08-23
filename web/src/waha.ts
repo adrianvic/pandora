@@ -28,7 +28,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         showNotification("API Error", `WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`, 4000);
         throw new Error(`WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`);
     }
-    return response.json();
+
+    const text = await response.text();
+    return text ? JSON.parse(text) : {} as T;
 }
 
 async function downloadFile(path: string, options: RequestInit = {}): Promise<{ blob: Blob, filename: string }> {
@@ -196,6 +198,12 @@ export const waha = {
 
     async deleteChat(chatId: string): Promise<StatusResponse> {
         return request<StatusResponse>(`/api/${config.session}/chats/${chatId}`, {
+            method: "delete"
+        });
+    },
+    
+    async deleteMessage(chatId: string, messageId: string): Promise<StatusResponse> {
+        return request<StatusResponse>(`/api/${config.session}/chats/${chatId}/messages/${messageId}`, {
             method: "delete"
         });
     },
