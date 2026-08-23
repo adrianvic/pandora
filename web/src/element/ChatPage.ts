@@ -284,6 +284,15 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.clearMentions();
         this.clearReply();
         
+        const preview = this.element.querySelector('#image-preview');
+        if (preview) {
+            // We find the element, but we need the component to call destroy() properly
+            // Since we don't have a direct reference here easily without tracking,
+            // we can dispatch a custom event or just manually remove and clear class
+            preview.remove();
+            document.querySelector('.app-container')?.classList.remove('has-overlay');
+        }
+
         this.activeChatState.classList.add('hidden');
         this.noChatState.classList.remove('hidden');
 

@@ -208,6 +208,9 @@ function setupEventListeners() {
     
     document.addEventListener('keydown', (e) => {
         if (e.code == "Escape") {
+            const preview = document.querySelector('#image-preview');
+            if (preview) return; // ImagePreview handles its own Escape
+
             e.preventDefault();
             closeActiveChat(false);
         }

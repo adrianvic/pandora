@@ -32,7 +32,6 @@ export class ImagePreview extends BaseComponent {
         this.element.onclick = async (event) => {
             if (event.target === this.element || (event.target as HTMLElement).classList.contains('image-holder')) {
                 await this.hide();
-                this.destroy();
             }
         };
 
@@ -174,16 +173,16 @@ export class ImagePreview extends BaseComponent {
     }
     
     public async hide() {
-        window.removeEventListener('keydown', this.handleKeyDown);
-        window.removeEventListener('mousemove', this.handleMouseMove);
-        window.removeEventListener('mouseup', this.handleMouseUp);
         this.element.classList.add('collapsed');
         await sleep(this.transition);
-        return;
+        this.destroy();
     }
 
     override destroy(): void {
         document.querySelector('.app-container')?.classList.remove('has-overlay');
+        window.removeEventListener('keydown', this.handleKeyDown);
+        window.removeEventListener('mousemove', this.handleMouseMove);
+        window.removeEventListener('mouseup', this.handleMouseUp);
         super.destroy();
     }
 }
