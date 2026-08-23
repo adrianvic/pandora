@@ -19,12 +19,10 @@ export class AttachmentScreen extends BaseComponent {
     
     constructor() {
         super('div');
-        this.element.classList.add('chat-area');
         this.element.classList.add('attachment-screen');
         
-        this.element.style.transition = 'transform 400ms ease';
+        this.element.style.transition = 'transform 400ms cubic-bezier(0.19, 1, 0.22, 1)';
         this.element.style.transform = 'translateY(100%)';
-        this.element.style.transition = '.4s';
         super.setVisibility(false);
         
         this.messageForm = new MessageForm(() => {

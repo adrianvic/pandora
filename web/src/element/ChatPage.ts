@@ -86,7 +86,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             <div id="mention-suggestions"></div>
             `;
         
-        this.messageForm = new MessageForm((t, e) => {
+        this.messageForm = new MessageForm((t) => {
             this.sendMessage(t);
         }, true);
         
