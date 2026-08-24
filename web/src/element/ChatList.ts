@@ -67,6 +67,7 @@ export class ChatList extends BaseComponent {
         if (retrievedLastMesssage[0]._data?.type === 'groups_v4_invite') lastMessage = `<i>Group invite</i>`;
         if (retrievedLastMesssage[0]._data?.type === 'poll_creation') { lastMessage = `<i>Poll</i>`; console.log(retrievedLastMesssage[0]) }
         if (retrievedLastMesssage[0]._data?.type === 'notification_template') lastMessage = `<i>Unsupported message</i>`;
+        if (retrievedLastMesssage[0]._data?.type === 'revoked') lastMessage = `<i>Deleted message</i>`;
         
         if (retrievedLastMesssage[0].body === '' && retrievedLastMesssage[0].body === lastMessage) {
             lastMessage += `${retrievedLastMesssage[0].body === '' ? '' : ": " + retrievedLastMesssage[0].body}`
