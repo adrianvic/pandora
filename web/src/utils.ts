@@ -173,3 +173,7 @@ export function matchHeight(from: HTMLElement, to: HTMLElement): ResizeObserver 
     observer.observe(from);
     return observer;
 }
+
+export function toCrlf(text: string): string {
+  return text.replace(/\r\n|\r|\n/g, "\r\n");
+}

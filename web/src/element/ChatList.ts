@@ -45,21 +45,32 @@ export class ChatList extends BaseComponent {
         const hasUnread = chat.unreadCount && chat.unreadCount > 0;
         const timeStr = formatTime(chat.timestamp || new Date());
         
-        let lastMessage = chat.lastMessage || '...';
         
         const retrievedLastMesssage = await loadLatestMessages(chat.id, 2);
         
         if (!retrievedLastMesssage[0]) return;
         
+        let lastMessage = retrievedLastMesssage[0].body ?? chat.lastMessage;
+
+        // console.log(`${chat.name} ${retrievedLastMesssage[0]._data?.type}`)
+
         // in this case the user probably deleted the chat, but wpp still includes that pesky e2e notification
         if (retrievedLastMesssage[0]._data?.type === 'e2e_notification' && !retrievedLastMesssage[1]) return;
-        
+
         if (retrievedLastMesssage[0]._data?.type === 'sticker') lastMessage = "<i>Sticker</i>";
         if (retrievedLastMesssage[0]._data?.type === 'call_log') lastMessage = "<i>A call was made</i>";
         if (retrievedLastMesssage[0]._data?.type === 'image') lastMessage = "<i>Image</i>";
         if (retrievedLastMesssage[0]._data?.type === 'video') lastMessage = "</i>Video</i>";
         if (retrievedLastMesssage[0]._data?.type === 'e2e_notification') lastMessage = "</i>Encryption key has changed</i>";
         if (retrievedLastMesssage[0]._data?.type === 'gp2') lastMessage = "<i>Group changed</i>";
+        if (retrievedLastMesssage[0]._data?.type === 'document') lastMessage = `<i>Document</i>`;
+        if (retrievedLastMesssage[0]._data?.type === 'groups_v4_invite') lastMessage = `<i>Group invite</i>`;
+        if (retrievedLastMesssage[0]._data?.type === 'poll_creation') { lastMessage = `<i>Poll</i>`; console.log(retrievedLastMesssage[0]) }
+        if (retrievedLastMesssage[0]._data?.type === 'notification_template') lastMessage = `<i>Unsupported message</i>`;
+        
+        if (retrievedLastMesssage[0].body === '' && retrievedLastMesssage[0].body === lastMessage) {
+            lastMessage += `${retrievedLastMesssage[0].body === '' ? '' : ": " + retrievedLastMesssage[0].body}`
+        };
         
         li.innerHTML = `
               <div class="avatar">
@@ -75,7 +86,7 @@ export class ChatList extends BaseComponent {
                   <span class="chat-item-time">${timeStr}</span>
                 </div>
                 <div class="chat-item-preview">
-                  <span class="chat-item-msg" data-chatid="${chat.id}">
+                  <span class="chat-item-msg" data-chatid="${chat.id}" title="${lastMessage}">
                     ${lastMessage}
                   </span>
                   ${hasUnread ? `${this.generateChatBadge(chat.unreadCount).outerHTML}` : ''}

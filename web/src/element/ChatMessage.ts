@@ -8,6 +8,7 @@ import { BaseComponent } from "./BaseComponent";
 import { ImagePreview } from "./ImagePreview";
 import { MessagesContainer } from "./MessagesContainer";
 import { config } from "../config";
+import { parseVCard } from "../data/VCard";
 
 export interface ChatMessageOptions {
     id: string;
@@ -115,6 +116,14 @@ export class ChatMessage extends BaseComponent {
         this.element.className = `message-group selectable ${this.isOutgoing ? 'outgoing' : 'incoming'}`;
         if (type === 'sticker') this.element.classList.add('sticker');
         if (type === 'revoked') return '<i>This message was deleted</i>';
+        if (type === 'vcard') return this.renderVCard(body);
+
+        const unsupported = ["notification_template", "groups_v4_invite", "poll_creation"];
+        if (type && unsupported.includes(type)) {
+            if (type === "notification_template") return "<i>Sorry, Pandora does not support this message for now.</i>";
+            if (type === "groups_v4_invite") return "<i>This group invite is not yet supported by Pandora.</i>";
+            if (type === "poll_creation") return `<i>The poll '${body}' invite is not yet supported by Pandora.</i>`;
+        }
 
         return new Parser(body)
             .parse('_', '<i>$1</i>')
@@ -124,6 +133,18 @@ export class ChatMessage extends BaseComponent {
             .parse('`', '<code>$1</code>')
             .replace("\n", "<br>")
             .input;
+    }
+
+    protected renderVCard(body: string): string {
+        const card = parseVCard(body);
+        let phones = card[0].telephone;
+        let phone = '';
+        if (phones) {
+            phone = phones[0].value;
+        } else {
+            phone = 'No phone number';
+        }
+        return `<span>Contact card:</span><br><b>${card[0].displayName}</b><br><span>${phone}</span>`
     }
 
     protected renderSenderName(options: ChatMessageOptions, prevMsg: ChatMessage | null) {
