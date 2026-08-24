@@ -2,6 +2,9 @@ import { config } from "./config";
 import { ScrollableView } from "./element/ScrollableView";
 import { requireEl } from "./utils";
 import { waha } from "./waha";
+import { registerSW } from 'virtual:pwa-register';
+
+registerSW({ immediate: true });
 
 const page = new ScrollableView(requireEl<HTMLElement>('.app-container'));
 page?.scrollToIndex(0);

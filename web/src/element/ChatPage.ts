@@ -430,7 +430,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         
         
         this.messagesContainer.appendMessage(tempMsg, true);
-        if (window.innerWidth > 768) ui.scrollToBottom(this.messagesContainer.element);
+        ui.scrollToBottom(this.messagesContainer.element);
         
         this.element.dispatchEvent(new CustomEvent('message-dispatch', {
             detail: {

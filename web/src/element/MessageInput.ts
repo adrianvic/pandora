@@ -43,7 +43,7 @@ export class MessageForm extends BaseComponent {
             this.textArea.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    this.form.submit();
+                    this.form.requestSubmit();
                 }
             });
         }
@@ -53,15 +53,9 @@ export class MessageForm extends BaseComponent {
         ui.autoResizeTextArea(this.textArea);
     }
     
-    // Prevent focus loss when clicking these buttons (keeps keyboard open on mobile)
     public preventFocusLoss = (e: MouseEvent | TouchEvent) => {
         if (document.activeElement === this.textArea) {
             e.preventDefault();
-            
-            // If it's a touch event, preventing default will also prevent the click.
-            // We manually trigger the click action for these specific buttons if needed,
-            // but usually mousedown preventDefault is enough for Android.
-            // If you use touchstart, you'd need to manually call this.sendMessage() or toggle the bar here.
         }
     };
 }

@@ -70,6 +70,14 @@ export class MessagesContainer extends BaseComponent {
             // we iterate in reverse to maintain order when using after() on the button
             for (let i = messages.length - 1; i >= 0; i --) {
                 const cmsg = messages[i];
+                
+                cmsg.element.addEventListener('long-click', () => this.handleMessageOptions(cmsg))
+                cmsg.element.addEventListener('contextmenu', (e) => {
+                    if (e.target == cmsg.element) return;
+                    e.preventDefault()
+                    this.handleMessageOptions(cmsg)
+                })
+                
                 this.messages.unshift(cmsg);
                 loadMoreButton.after(cmsg.element);
             }
@@ -109,7 +117,7 @@ export class MessagesContainer extends BaseComponent {
     
     public handleMessageOptions(cmsg: ChatMessage) {
         if (!this.chatPage) return;
-
+        
         if (this.messageOptionsBar) {
             this.messageOptionsBar.addManagedMessage(cmsg);
             return;

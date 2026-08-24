@@ -2,6 +2,9 @@ if (localStorage.getItem('setupComplete') !== "true") window.location.href = "in
 
 import { config } from "./config";
 import { waha } from "./waha";
+import { registerSW } from 'virtual:pwa-register';
+
+registerSW({ immediate: true });
 import { ui, elements } from "./ui";
 import { websocket } from "./websocket";
 import { normalizeId, requireEl } from "./utils";
@@ -30,7 +33,7 @@ export let notificationAuthorization: NotificationPermission = "default";
 
 document.addEventListener('DOMContentLoaded', async () => {
     reloadTheme();
-    ui.load(async () => {      
+    ui.load(async () => {
         ui.loadingMessage("Drawing sidebar...");
         updateSidebarPosition();
         ui.loadingMessage("Asking for notification permission...");
@@ -52,7 +55,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 window.location.hash = `#chat-${chat.id}`;
             }, (msg) => ui.loadingMessage(msg));
 
-            // Initial chat loading from hash
             const hash = window.location.hash;
             if (hash && hash.startsWith('#chat-')) {
                 const chatId = hash.replace('#chat-', '');

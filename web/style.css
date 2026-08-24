@@ -829,6 +829,10 @@ fieldset label:has(input[type="radio"]:checked) {
     margin-inline-start: auto;
 }
 
+.message-meta span {
+    font-weight: bold;
+}
+
 .message-group.incoming .message-bubble {
     background-color: var(--bubble-incoming);
     color: var(--text-primary);
@@ -1178,6 +1182,10 @@ fieldset label:has(input[type="radio"]:checked) {
 
 .mentioned-highlight .message-image-attachement, .selected .message-image-attachement {
     border-top-color: var(--text-primary)!important;
+}
+
+.mentioned-highlight .message-sender, .selected .message-sender {
+    color: var(--bg-main)!important;
 }
 
 .reply-indicator {

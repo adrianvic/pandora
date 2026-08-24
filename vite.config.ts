@@ -23,7 +23,7 @@ export default defineConfig({
         short_name: 'PANDORA',
         description: 'Internet messaging',
         theme_color: '#ffffff',
-        background_color: '#102457',
+        background_color: '#000000',
         display: 'standalone',
         orientation: 'any',
         scope: '/pandora/',

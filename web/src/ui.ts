@@ -32,6 +32,7 @@ export const elements = {
     previewImage: document.querySelector('#image-preview-img') as HTMLImageElement,
     previewSubtitle: document.querySelector('#image-preview-subtitle') as HTMLParagraphElement,
     imagePreview: document.querySelector('#image-preview') as HTMLDivElement,
+    loadOfflineButton: document.querySelector('#load-offline') as HTMLButtonElement,
 };
 
 export const ui = {
