@@ -56,22 +56,7 @@ export class ChatList extends BaseComponent {
 
         // in this case the user probably deleted the chat, but wpp still includes that pesky e2e notification
         if (retrievedLastMesssage[0]._data?.type === 'e2e_notification' && !retrievedLastMesssage[1]) return;
-
-        if (retrievedLastMesssage[0]._data?.type === 'sticker') lastMessage = "<i>Sticker</i>";
-        if (retrievedLastMesssage[0]._data?.type === 'call_log') lastMessage = "<i>A call was made</i>";
-        if (retrievedLastMesssage[0]._data?.type === 'image') lastMessage = "<i>Image</i>";
-        if (retrievedLastMesssage[0]._data?.type === 'video') lastMessage = "</i>Video</i>";
-        if (retrievedLastMesssage[0]._data?.type === 'e2e_notification') lastMessage = "</i>Encryption key has changed</i>";
-        if (retrievedLastMesssage[0]._data?.type === 'gp2') lastMessage = "<i>Group changed</i>";
-        if (retrievedLastMesssage[0]._data?.type === 'document') lastMessage = `<i>Document</i>`;
-        if (retrievedLastMesssage[0]._data?.type === 'groups_v4_invite') lastMessage = `<i>Group invite</i>`;
-        if (retrievedLastMesssage[0]._data?.type === 'poll_creation') { lastMessage = `<i>Poll</i>`; console.log(retrievedLastMesssage[0]) }
-        if (retrievedLastMesssage[0]._data?.type === 'notification_template') lastMessage = `<i>Unsupported message</i>`;
-        if (retrievedLastMesssage[0]._data?.type === 'revoked') lastMessage = `<i>Deleted message</i>`;
         
-        if (retrievedLastMesssage[0].body === '' && retrievedLastMesssage[0].body === lastMessage) {
-            lastMessage += `${retrievedLastMesssage[0].body === '' ? '' : ": " + retrievedLastMesssage[0].body}`
-        };
         
         li.innerHTML = `
               <div class="avatar">
@@ -107,6 +92,28 @@ export class ChatList extends BaseComponent {
             } catch (e) {
             }
         })();
+    }
+
+    private renderPreviewFromMessage(message: Message, def = '') {
+        let lastMessage = def;
+
+        if (message._data?.type === 'sticker') lastMessage = "<i>Sticker</i>";
+        if (message._data?.type === 'call_log') lastMessage = "<i>A call was made</i>";
+        if (message._data?.type === 'image') lastMessage = "<i>Image</i>";
+        if (message._data?.type === 'video') lastMessage = "</i>Video</i>";
+        if (message._data?.type === 'e2e_notification') lastMessage = "</i>Encryption key has changed</i>";
+        if (message._data?.type === 'gp2') lastMessage = "<i>Group changed</i>";
+        if (message._data?.type === 'document') lastMessage = `<i>Document</i>`;
+        if (message._data?.type === 'groups_v4_invite') lastMessage = `<i>Group invite</i>`;
+        if (message._data?.type === 'poll_creation') lastMessage = `<i>Poll</i>`;
+        if (message._data?.type === 'notification_template') lastMessage = `<i>Unsupported message</i>`;
+        if (message._data?.type === 'revoked') lastMessage = `<i>Deleted message</i>`;
+        
+        if (message.body === '' && message.body === lastMessage) {
+            lastMessage += `${message.body === '' ? '' : ": " + message.body}`
+        };
+
+        return lastMessage;
     }
     
     private generateChatBadge(count: number): HTMLSpanElement {

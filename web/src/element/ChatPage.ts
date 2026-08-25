@@ -424,6 +424,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
             timestamp: new Date().toISOString(),
             status: 'sending',
             replyTo: _mentionCacheID ? {
+                id: _mentionCacheID,
                 body: _mentionCacheText || "Mention (no text)"
             } : null
         } as any;
