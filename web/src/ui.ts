@@ -60,9 +60,6 @@ export const ui = {
         }
     },
     
-    /**
-    * Update connection status badge in sidebar footer
-    */
     updateConnectionStatus(isConnected: boolean, text: string) {
         elements.backendStatusText.textContent = text;
         if (isConnected) {

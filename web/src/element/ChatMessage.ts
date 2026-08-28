@@ -2,7 +2,7 @@ import { Parser } from "../parser";
 import { getMedia, getMessage, getContact, deleteMessage } from "../storage";
 import { Message } from "../types";
 import { ui } from "../ui";
-import { formatTime, normalizeId } from "../utils";
+import { formatTime, listenForSwipe, normalizeId } from "../utils";
 import { AudioPlayer } from "./AudioPlayer";
 import { BaseComponent } from "./BaseComponent";
 import { ImagePreview } from "./ImagePreview";
@@ -40,7 +40,7 @@ export class ChatMessage extends BaseComponent {
     protected container: MessagesContainer | null;
     public readonly content: HTMLElement;
     public readonly from: string;
-
+    
     constructor(options: ChatMessageOptions, container: MessagesContainer | null = null, prevMsg: ChatMessage | null = null) {
         super('div');
         this.container = container;
@@ -48,62 +48,70 @@ export class ChatMessage extends BaseComponent {
         this.isOutgoing = options.fromMe;
         this.isGroup = options.isGroup ?? true;
         this.from = options.from;
-
+        
         this.element.id = `msg-${options.id}`;
         this.element.dataset.id = options.id;
         this.element.dataset.timestamp = options.timestamp.toString();
         this.element.dataset.from = options.from;
-
+        
         const timeStr = formatTime(options.timestamp);
         
         this.tick = document.createElement('span');
         this.tick.classList.add('message-tick');
         this.updateMessageTick(options.status);
-
+        
         const parsed = this.parseText(options.body, options.type);
-
+        
         this.bubble = document.createElement('div');
         this.bubble.className = 'message-bubble';
         if (options.body === "") this.bubble.classList.add("no-text");
         this.element.appendChild(this.bubble);
-
+        
         this.renderSenderName(options, prevMsg);
         this.renderReply(options);
-
+        
         const contentAndTime = document.createElement('div');
         contentAndTime.classList.add('message-content-and-time');
-
+        
         const contentEl = document.createElement('div');
         contentEl.classList.add('message-content');
         this.content = contentEl;
-
+        
         const textEl = document.createElement('div');
         textEl.innerHTML = parsed;
         contentEl.appendChild(textEl);
-
+        
         contentAndTime.appendChild(contentEl);
-
+        
         const meta = document.createElement('div');
         meta.className = 'message-meta';
         meta.innerHTML = `<span>${timeStr}</span>`;
         meta.appendChild(this.tick);
         contentAndTime.appendChild(meta);
-
+        
         this.bubble.appendChild(contentAndTime);
-
-        this.renderMedia(options, parsed);
-
+        
+        // this.renderMedia(options, parsed);
+        
         this.applyStyling(options, prevMsg);
-
+        
         this.bubble.addEventListener('dblclick', (e) => {
-            if (e.target !== this.bubble && e.target !== contentAndTime) return;
-            if (this.container?.chatPage) {
-                this.container.chatPage.setReply(this.id, parsed);
-                this.container.chatPage.messageForm.textArea?.focus();
-            }
+            if (e.target == this.bubble && e.target !== meta) return;
+            this.mention(parsed);
         });
-    }
 
+        listenForSwipe(this.element, () => {
+            this.mention(parsed);
+        }, !this.isOutgoing);
+    }
+    
+    protected mention(text: string) {
+        if (this.container?.chatPage) {
+            this.container.chatPage.setReply(this.id, text);
+            this.container.chatPage.messageForm.textArea?.focus();
+        }
+    }
+    
     protected parseText(body: string, type?: string): string {
         const neutral = ["e2e_notification", "call_log", "gp2"];
         if (type && neutral.includes(type)) {
@@ -112,29 +120,29 @@ export class ChatMessage extends BaseComponent {
             if (type === "call_log") return 'A call was made';
             if (type === "gp2") return 'This group description was changed';
         }
-
+        
         this.element.className = `message-group selectable ${this.isOutgoing ? 'outgoing' : 'incoming'}`;
         if (type === 'sticker') this.element.classList.add('sticker');
         if (type === 'revoked') return '<i>This message was deleted</i>';
         if (type === 'vcard') return this.renderVCard(body);
-
+        
         const unsupported = ["notification_template", "groups_v4_invite", "poll_creation"];
         if (type && unsupported.includes(type)) {
             if (type === "notification_template") return "<i>Sorry, Pandora does not support this message for now.</i>";
             if (type === "groups_v4_invite") return "<i>This group invite is not yet supported by Pandora.</i>";
             if (type === "poll_creation") return `<i>The poll '${body}' invite is not yet supported by Pandora.</i>`;
         }
-
+        
         return new Parser(body)
-            .parse('_', '<i>$1</i>')
-            .parse('*', '<b>$1</b>')
-            .parse('~', '<s>$1</s>')
-            .parse('```', '<span style="font-family: monospace;">$1</span>')
-            .parse('`', '<code>$1</code>')
-            .replace("\n", "<br>")
-            .input;
+        .parse('_', '<i>$1</i>')
+        .parse('*', '<b>$1</b>')
+        .parse('~', '<s>$1</s>')
+        .parse('```', '<span style="font-family: monospace;">$1</span>')
+        .parse('`', '<code>$1</code>')
+        .replace("\n", "<br>")
+        .input;
     }
-
+    
     protected renderVCard(body: string): string {
         const card = parseVCard(body);
         let phones = card[0].telephone;
@@ -146,14 +154,14 @@ export class ChatMessage extends BaseComponent {
         }
         return `<span>Contact card:</span><br><b>${card[0].displayName}</b><br><span>${phone}</span>`
     }
-
+    
     protected renderSenderName(options: ChatMessageOptions, prevMsg: ChatMessage | null) {
         if (!this.isOutgoing && (!prevMsg || options.from !== prevMsg.element.dataset.from)) {
             const senderEl = document.createElement('span');
             senderEl.className = 'message-sender';
             senderEl.textContent = options.senderName || options.from;
             if (this.isGroup) this.bubble.appendChild(senderEl);
-
+            
             if ((senderEl.textContent.includes('@lid') || senderEl.textContent.includes('@c.us')) && !options.senderName) {
                 getContact(options.from).then(contact => {
                     if (contact && (contact.name || contact.pushname)) {
@@ -163,19 +171,19 @@ export class ChatMessage extends BaseComponent {
             }
         }
     }
-
+    
     protected renderReply(options: ChatMessageOptions) {
         if (options.replyTo) {
             const replyIndicatorEl = document.createElement("div");
             replyIndicatorEl.classList.add('reply-indicator');
             replyIndicatorEl.innerHTML = new Parser(options.replyTo.body)
-                .parse('_', '<i>$1</i>')
-                .parse('*', '<b>$1</b>')
-                .parse('~', '<s>$1</s>')
-                .parse('```', '<span style="font-family: monospace;">$1</span>')
-                .parse('`', '<code>$1</code>')
-                .replace("\n", "<br>")
-                .input;
+            .parse('_', '<i>$1</i>')
+            .parse('*', '<b>$1</b>')
+            .parse('~', '<s>$1</s>')
+            .parse('```', '<span style="font-family: monospace;">$1</span>')
+            .parse('`', '<code>$1</code>')
+            .replace("\n", "<br>")
+            .input;
             
             const replyId = options.replyTo.id;
             replyIndicatorEl.addEventListener('click', () => {
@@ -188,19 +196,17 @@ export class ChatMessage extends BaseComponent {
             this.bubble.appendChild(replyIndicatorEl);
         }
     }
-
+    
     protected renderMedia(options: ChatMessageOptions, parsedText: string) {
         if (!options.hasMedia || !options.media?.url) return;
-
+        
         const url = options.media.url;
-        // const mime = options.type || ''; // Assuming type might hold mime for generic messages if needed, or we just check extension
-
-        // Generic detection if not provided by subclass
-        if (url.match(/\.(jpg|jpeg|png|gif|webp)$|^blob:/i) || options.type === 'image') {
+        
+        if (options.type === 'image') {
             this.renderImage(url, parsedText);
-        } else if (url.match(/\.(mp4|webm|ogg)$/i) || options.type === 'video') {
+        } else if (options.type === 'video') {
             this.renderVideo(url);
-        } else if (url.match(/\.(mp3|wav|ogg|m4a)$/i) || options.type === 'audio') {
+        } else if (options.type === 'audio') {
             this.renderAudio(url);
         } else {
             const a = document.createElement('a');
@@ -211,7 +217,7 @@ export class ChatMessage extends BaseComponent {
             this.bubble.querySelector('.message-content')?.appendChild(a);
         }
     }
-
+    
     protected renderImage(url: string, caption: string) {
         this.element.classList.add('preview', 'image');
         const img = document.createElement('img');
@@ -225,7 +231,7 @@ export class ChatMessage extends BaseComponent {
             this.container?.chatPage?.element.appendChild(p.element);
             p.show();
         });
-
+        
         if (this.container) {
             ui.ensureScroll(this.container.element, () => {
                 this.bubble.before(img);
@@ -234,14 +240,14 @@ export class ChatMessage extends BaseComponent {
             this.bubble.before(img);
         }
     }
-
+    
     protected renderVideo(url: string) {
         this.element.classList.add('preview', 'video');
         const video = document.createElement('video');
         video.classList.add('message-video-attachement');
         video.controls = true;
         video.src = url;
-
+        
         if (this.container) {
             ui.ensureScroll(this.container.element, () => {
                 this.bubble.before(video);
@@ -250,11 +256,11 @@ export class ChatMessage extends BaseComponent {
             this.bubble.before(video);
         }
     }
-
+    
     protected renderAudio(url: string) {
         this.element.classList.add('preview', 'audio');
         const audio = new AudioPlayer(url);
-
+        
         if (this.container) {
             ui.ensureScroll(this.container.element, () => {
                 this.bubble.before(audio.element);
@@ -263,17 +269,17 @@ export class ChatMessage extends BaseComponent {
             this.bubble.before(audio.element);
         }
     }
-
+    
     protected applyStyling(options: ChatMessageOptions, prevMsg: ChatMessage | null) {
         const isNeutral = this.element.classList.contains('neutral');
         if (!isNeutral) {
             const currentFrom = options.from;
             const prevFrom = prevMsg?.element.dataset.from;
             const sameSender = prevMsg &&
-                             prevFrom === currentFrom &&
-                             prevMsg.isOutgoing === this.isOutgoing &&
-                             !prevMsg.element.classList.contains('neutral');
-
+            prevFrom === currentFrom &&
+            prevMsg.isOutgoing === this.isOutgoing &&
+            !prevMsg.element.classList.contains('neutral');
+            
             if (sameSender) {
                 this.element.classList.add('same-sender');
             } else {
@@ -283,11 +289,11 @@ export class ChatMessage extends BaseComponent {
             }
         }
     }
-
+    
     updateMessageTick(status: string | undefined) {
         this.tick.style.width = "14px";
         this.tick.style.height = "14px";
-
+        
         if (this.isOutgoing) {
             if (status === 'read') {
                 this.tick.classList = "mif-done_all";
@@ -321,45 +327,42 @@ export class WahaChatMessage extends ChatMessage {
                 body: msg.replyTo.body || msg.replyTo.text || ""
             } : undefined
         };
-
+        
         if (msg.hasMedia && msg.media) {
-            let url = msg.media.url;
-            if (url && url.startsWith('/')) {
-                url = `${config.wahaUrl}${url}`;
-            }
+            const url = new URL(msg.media.url);
+            
             options.media = {
-                url: url,
+                url: new URL(url.pathname, config.wahaUrl).toString(),
                 filename: msg.media.filename
             };
         }
-
+        
         super(options, container, prevMsg);
-
+        
         this.element.addEventListener('delete', () => {
             deleteMessage(this.from, this.id);
         })
-
-        // Handle async WAHA media fetching if not local
+        
         if (msg.hasMedia && !isLocal && !msg.media?.url) {
             this.setupWahaMediaDownloader(msg, chatID);
         }
     }
-
+    
     private setupWahaMediaDownloader(msg: Message, chatID: string) {
         const contentEl = this.bubble.querySelector('.message-content');
         if (!contentEl) return;
-
+        
         const a = document.createElement('a');
         a.innerText = `[Request media]`;
         a.href = "#";
         a.style.display = "block";
         contentEl.appendChild(a);
-
+        
         const clickListener = async (e: MouseEvent) => {
             e.preventDefault();
             a.removeEventListener('click', clickListener);
             a.innerText = `[Downloading]`;
-
+            
             try {
                 const mediaMsg = msg.media ? msg : await getMessage(chatID, normalizeId(msg._serialized ? (msg._serialized as any) : msg.id) || "", true);
                 if (!mediaMsg || !mediaMsg?.media?.url) {
@@ -367,19 +370,19 @@ export class WahaChatMessage extends ChatMessage {
                     a.innerText = `[Error, click to try again]`;
                     return;
                 }
-
+                
                 const url = new URL(mediaMsg.media.url);
                 const reqID = url.pathname.split('/').filter(Boolean).pop();
                 if (!reqID) return;
-
+                
                 const media = await getMedia(reqID);
                 if (!media) return;
-
+                
                 const objectUrl = URL.createObjectURL(media.blob);
-                a.remove(); // Remove the link once we have media
-
+                a.remove();
+                
                 const parsed = this.parseText(msg.body || msg.text || "", msg._data?.type);
-
+                
                 if (media.blob.type.startsWith('image/')) {
                     this.renderImage(objectUrl, parsed);
                 } else if (media.blob.type.startsWith('audio/')) {
@@ -399,13 +402,12 @@ export class WahaChatMessage extends ChatMessage {
                 a.innerText = `[Download failed]`;
             }
         };
-
+        
         a.addEventListener('click', clickListener);
-
-        // Auto-click for certain types if needed (matching original behavior)
+        
         if (msg._data?.mimetype?.startsWith('image/') ||
-            msg._data?.mimetype?.startsWith('audio/') ||
-            msg._data?.mimetype?.startsWith('video/')) {
+        msg._data?.mimetype?.startsWith('audio/') ||
+        msg._data?.mimetype?.startsWith('video/')) {
             a.click();
         }
     }

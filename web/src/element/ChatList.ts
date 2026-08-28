@@ -50,14 +50,13 @@ export class ChatList extends BaseComponent {
         
         if (!retrievedLastMesssage[0]) return;
         
-        let lastMessage = retrievedLastMesssage[0].body ?? chat.lastMessage;
-
         // console.log(`${chat.name} ${retrievedLastMesssage[0]._data?.type}`)
-
+        
         // in this case the user probably deleted the chat, but wpp still includes that pesky e2e notification
         if (retrievedLastMesssage[0]._data?.type === 'e2e_notification' && !retrievedLastMesssage[1]) return;
         
-        
+        let lastMessage = this.renderPreviewFromMessage(retrievedLastMesssage[0], chat.lastMessage);
+
         li.innerHTML = `
               <div class="avatar">
                 <img

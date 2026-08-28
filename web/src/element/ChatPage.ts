@@ -286,9 +286,6 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         
         const preview = this.element.querySelector('#image-preview');
         if (preview) {
-            // We find the element, but we need the component to call destroy() properly
-            // Since we don't have a direct reference here easily without tracking,
-            // we can dispatch a custom event or just manually remove and clear class
             preview.remove();
             document.querySelector('.app-container')?.classList.remove('has-overlay');
         }
@@ -305,6 +302,7 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
         this.messagesContainer?.setVisibility(false);
         this.messagesContainer?.destroy();
         this.messagesContainer = null;
+        window.location.hash = '';
     }
     
     setReply(id: string, text: string) {

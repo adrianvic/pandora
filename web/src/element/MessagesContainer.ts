@@ -1,5 +1,6 @@
 import { getMoreChatMessages } from "../storage";
 import { Message } from "../types";
+import { ui } from "../ui";
 import { compensateMessageOrdering, matchHeight, subscribeToLongClick } from "../utils";
 import { MessageOptionsBar } from "./bar/MessageOptionsBar";
 import { BaseComponent } from "./BaseComponent";
@@ -112,7 +113,9 @@ export class MessagesContainer extends BaseComponent {
         })
         
         this.messages.push(cmsg);
-        this.element.appendChild(cmsg.element);
+        ui.ensureScroll(this.element, () => {
+            this.element.appendChild(cmsg.element);
+        });
     }
     
     public handleMessageOptions(cmsg: ChatMessage) {

@@ -164,16 +164,42 @@ export function subscribeToLongClick(
 
 export function matchHeight(from: HTMLElement, to: HTMLElement): ResizeObserver {
     to.style.height = `${from.offsetHeight}px`;
-
+    
     const observer = new ResizeObserver(() => {
         to.style.height =
         `${from.offsetHeight}px`;
     });
-
+    
     observer.observe(from);
     return observer;
 }
 
 export function toCrlf(text: string): string {
-  return text.replace(/\r\n|\r|\n/g, "\r\n");
+    return text.replace(/\r\n|\r|\n/g, "\r\n");
+}
+
+export function listenForSwipe(element: HTMLElement, onSwipe: () => void, right = false) {
+    let touchstartX = 0
+    let touchendX = 0
+    
+    function checkDirection() {
+        if (touchendX < touchstartX && !right) {
+            onSwipe();
+        }
+
+        if (touchendX > touchstartX && right) {
+            onSwipe();
+        }
+    }
+    
+    element.addEventListener('touchstart', e => {
+        e.preventDefault()
+        touchstartX = e.changedTouches[0].screenX
+    })
+    
+    element.addEventListener('touchend', e => {
+        e.preventDefault()
+        touchendX = e.changedTouches[0].screenX
+        checkDirection()
+    })
 }

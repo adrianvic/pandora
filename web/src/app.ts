@@ -340,14 +340,14 @@ async function selectChat(chat: Chat, _isPopState = false, smoothScroll = true) 
     chatPage.element.scrollIntoView({
         behavior: "smooth"
     });
+    
     if (isLoadingChat) return;
-    // if (chatPage.messagesContainer?.chatID === chat.id) return;
+    // if (chatPage.messagesContainer && window.innerWidth > 768) chatPage.closeChat();
 
     isLoadingChat = true;
     mainView?.scrollTo(chatPage.element);
     chatPage.loadChat(chat, (await getAppUser()).id);
 
-    
     if (window.innerWidth <= 768) {
         scrollToChat(smoothScroll);
     }
@@ -357,7 +357,7 @@ async function selectChat(chat: Chat, _isPopState = false, smoothScroll = true) 
 
 async function closeActiveChat(_isPopState = false, forceClose = false) {
     if (window.innerWidth <= 768) {
-        scrollToList(true);
+        // scrollToList(true);
     } else {
         chatPage.closeChat(forceClose);
     }
