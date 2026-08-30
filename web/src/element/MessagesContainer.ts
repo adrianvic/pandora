@@ -4,7 +4,7 @@ import { ui } from "../ui";
 import { compensateMessageOrdering, matchHeight, subscribeToLongClick } from "../utils";
 import { MessageOptionsBar } from "./bar/MessageOptionsBar";
 import { BaseComponent } from "./BaseComponent";
-import { ChatMessage, WahaChatMessage } from "./ChatMessage";
+import { ChatMessage, ChatMessageOptions, WahaChatMessage } from "./ChatMessage";
 import { ChatPage } from "./ChatPage";
 
 export class MessagesContainer extends BaseComponent {
@@ -103,14 +103,17 @@ export class MessagesContainer extends BaseComponent {
         
         subscribeToLongClick(cmsg.element, {
             duration: 500,
-        })
+        });
         
-        cmsg.element.addEventListener('long-click', () => this.handleMessageOptions(cmsg))
+        cmsg.element.addEventListener('long-click', () => {
+            this.handleMessageOptions(cmsg);
+        });
+
         cmsg.element.addEventListener('contextmenu', (e) => {
             if (e.target == cmsg.element) return;
             e.preventDefault()
             this.handleMessageOptions(cmsg)
-        })
+        });
         
         this.messages.push(cmsg);
         ui.ensureScroll(this.element, () => {
@@ -145,13 +148,14 @@ export class MessagesContainer extends BaseComponent {
         return this.messages.find(m => m.id === id);
     }
     
-    public replaceMessage(id: string, to: Message, isLocal = false) {
+    public replaceMessage(id: string, to: Message, isLocal = false, isUpdate = true) {
         const existing = this.messages.find(msg => msg.id === id);
         if (!existing) return;
         
         const index = this.messages.indexOf(existing);
         const prev = this.messages[index - 1] || null;
-        const nw = new WahaChatMessage(to, this, this.chatID || '', this.userID, isLocal, prev);
+        const def: ChatMessageOptions | null = isUpdate ? existing.options : null;
+        const nw = new WahaChatMessage(to, this, this.chatID || '', this.userID, isLocal, prev, def);
         
         existing.element.after(nw.element);
         existing.destroy();

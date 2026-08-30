@@ -40,9 +40,11 @@ export class ChatMessage extends BaseComponent {
     protected container: MessagesContainer | null;
     public readonly content: HTMLElement;
     public readonly from: string;
+    public readonly options: ChatMessageOptions;
     
     constructor(options: ChatMessageOptions, container: MessagesContainer | null = null, prevMsg: ChatMessage | null = null) {
         super('div');
+        this.options = options;
         this.container = container;
         this.id = options.id;
         this.isOutgoing = options.fromMe;
@@ -91,15 +93,15 @@ export class ChatMessage extends BaseComponent {
         
         this.bubble.appendChild(contentAndTime);
         
-        // this.renderMedia(options, parsed);
+        this.renderMedia(options, parsed);
         
         this.applyStyling(options, prevMsg);
         
-        this.bubble.addEventListener('dblclick', (e) => {
-            if (e.target == this.bubble && e.target !== meta) return;
+        this.bubble.addEventListener('dblclick', (e: Event) => {
+            if (e.target && this.content.contains(e.target as HTMLElement)) return;
             this.mention(parsed);
         });
-
+        
         listenForSwipe(this.element, () => {
             this.mention(parsed);
         }, !this.isOutgoing);
@@ -202,7 +204,7 @@ export class ChatMessage extends BaseComponent {
         
         const url = options.media.url;
         
-        if (options.type === 'image') {
+        if (options.type === 'image' || options.type === 'sticker') {
             this.renderImage(url, parsedText);
         } else if (options.type === 'video') {
             this.renderVideo(url);
@@ -310,29 +312,56 @@ export class ChatMessage extends BaseComponent {
 }
 
 export class WahaChatMessage extends ChatMessage {
-    constructor(msg: Message, container: MessagesContainer | null, chatID: string, userID: string, isLocal = false, prevMsg: ChatMessage | null = null) {
-        const options: ChatMessageOptions = {
-            id: msg.id.toString(),
-            body: msg.body || msg.text || "",
-            timestamp: msg.timestamp,
-            from: (msg.participant || msg.from || "") as string,
-            fromMe: msg.fromMe || msg.sender === 'me',
-            senderName: (msg.fromMe || msg.sender === 'me') ? userID : (msg._data?.notifyName || msg.participant || (msg.from as string)),
-            status: msg.status,
-            hasMedia: msg.hasMedia,
-            type: msg._data?.type,
-            isGroup: msg.sender?.endsWith('@g.us') ?? msg.from?.endsWith('@g.us') ?? true,
-            replyTo: msg.replyTo ? {
-                id: msg.replyTo.id.toString(),
-                body: msg.replyTo.body || msg.replyTo.text || ""
-            } : undefined
-        };
+    constructor(msg: Message, container: MessagesContainer | null, chatID: string, userID: string, isLocal = false, prevMsg: ChatMessage | null = null, defaultOptions: ChatMessageOptions | null = null) {
+        let options: ChatMessageOptions;
         
-        if (msg.hasMedia && msg.media) {
+        if (defaultOptions) {
+            options = defaultOptions
+        } else {
+            options = {
+                id: msg.id.toString(),
+                body: msg.body || msg.text || "",
+                timestamp: msg.timestamp,
+                from: (msg.participant || msg.from || "") as string,
+                fromMe: msg.fromMe || msg.sender === 'me',
+                senderName: (msg.fromMe || msg.sender === 'me') ? userID : (msg._data?.notifyName || msg.participant || (msg.from as string)),
+                status: msg.status,
+                hasMedia: msg.hasMedia,
+                type: msg._data?.type,
+                isGroup: msg.sender?.endsWith('@g.us') ?? msg.from?.endsWith('@g.us') ?? true,
+                replyTo: msg.replyTo ? {
+                    id: msg.replyTo.id.toString(),
+                    body: msg.replyTo.body || msg.replyTo.body || ""
+                } : undefined
+            }
+        }
+        
+        options.id = msg.id.toString()
+        options.body = msg.body || msg.text || ""
+        options.timestamp = msg.timestamp
+        options.from = (msg.participant || msg.from || "") as string
+        options.fromMe = msg.fromMe || msg.sender === 'me'
+        options.senderName = (msg.fromMe || msg.sender === 'me') ? userID : (msg._data?.notifyName || msg.participant || (msg.from as string))
+        options.status = msg.status
+        options.hasMedia = msg.hasMedia
+        options.type = msg._data?.type
+        options.isGroup = msg.sender?.endsWith('@g.us') ?? msg.from?.endsWith('@g.us') ?? true
+        
+        if (msg.replyTo) {
+            options.replyTo = {
+                id: msg.replyTo.id.toString(),
+                body: msg.replyTo.body || msg.replyTo.body || ""
+            }
+        }
+        
+        if (msg.hasMedia && msg.media && isLocal) {
             const url = new URL(msg.media.url);
             
             options.media = {
-                url: new URL(url.pathname, config.wahaUrl).toString(),
+                url: new URL(
+                    url.pathname + url.search,
+                    config.wahaUrl
+                ).toString(),
                 filename: msg.media.filename
             };
         }
@@ -343,7 +372,7 @@ export class WahaChatMessage extends ChatMessage {
             deleteMessage(this.from, this.id);
         })
         
-        if (msg.hasMedia && !isLocal && !msg.media?.url) {
+        if (msg.hasMedia && !isLocal) {
             this.setupWahaMediaDownloader(msg, chatID);
         }
     }
@@ -353,35 +382,60 @@ export class WahaChatMessage extends ChatMessage {
         if (!contentEl) return;
         
         const a = document.createElement('a');
-        a.innerText = `[Request media]`;
-        a.href = "#";
-        a.style.display = "block";
+        a.innerText = '[Request media]';
+        a.href = '#';
+        a.style.display = 'block';
+        
         contentEl.appendChild(a);
         
         const clickListener = async (e: MouseEvent) => {
             e.preventDefault();
+            
             a.removeEventListener('click', clickListener);
-            a.innerText = `[Downloading]`;
+            a.innerText = '[Downloading]';
             
             try {
-                const mediaMsg = msg.media ? msg : await getMessage(chatID, normalizeId(msg._serialized ? (msg._serialized as any) : msg.id) || "", true);
-                if (!mediaMsg || !mediaMsg?.media?.url) {
-                    a.addEventListener('click', clickListener);
-                    a.innerText = `[Error, click to try again]`;
-                    return;
+                const mediaMsg = msg.media?.url
+                ? msg
+                : await getMessage(
+                    chatID,
+                    normalizeId(
+                        msg._serialized
+                        ? (msg._serialized as any)
+                        : msg.id
+                    ) || "",
+                    true
+                );
+                
+                if (!mediaMsg?.media?.url) {
+                    throw new Error("Media URL unavailable");
                 }
                 
                 const url = new URL(mediaMsg.media.url);
-                const reqID = url.pathname.split('/').filter(Boolean).pop();
-                if (!reqID) return;
+                
+                const reqID = url.pathname
+                .split('/')
+                .filter(Boolean)
+                .pop();
+                
+                if (!reqID) {
+                    throw new Error("Could not determine media ID");
+                }
                 
                 const media = await getMedia(reqID);
-                if (!media) return;
+                
+                if (!media) {
+                    throw new Error("Media not found");
+                }
                 
                 const objectUrl = URL.createObjectURL(media.blob);
+                
                 a.remove();
                 
-                const parsed = this.parseText(msg.body || msg.text || "", msg._data?.type);
+                const parsed = this.parseText(
+                    msg.body || msg.text || "",
+                    msg._data?.type
+                );
                 
                 if (media.blob.type.startsWith('image/')) {
                     this.renderImage(objectUrl, parsed);
@@ -391,23 +445,42 @@ export class WahaChatMessage extends ChatMessage {
                     this.renderVideo(objectUrl);
                 } else {
                     const downloadLink = document.createElement('a');
+                    
                     downloadLink.href = objectUrl;
                     downloadLink.target = "_blank";
-                    downloadLink.textContent = media.filename || "Download file";
-                    downloadLink.download = media.filename || "file";
+                    downloadLink.textContent =
+                    media.filename || "Download file";
+                    downloadLink.download =
+                    media.filename || "file";
+                    
                     contentEl.appendChild(downloadLink);
                 }
+                
+                this.element.addEventListener(
+                    'delete',
+                    () => URL.revokeObjectURL(objectUrl),
+                    { once: true }
+                );
+                
             } catch (err) {
                 console.error("Media download failed", err);
-                a.innerText = `[Download failed]`;
+                
+                a.innerText = '[Download failed — click to retry]';
+                a.addEventListener('click', clickListener);
             }
         };
         
         a.addEventListener('click', clickListener);
         
-        if (msg._data?.mimetype?.startsWith('image/') ||
-        msg._data?.mimetype?.startsWith('audio/') ||
-        msg._data?.mimetype?.startsWith('video/')) {
+        const mimetype = msg._data?.mimetype || '';
+        
+        if (
+            msg._data?.type === 'image' ||
+            msg._data?.type === 'sticker' ||
+            mimetype.startsWith('image/') ||
+            mimetype.startsWith('audio/') ||
+            mimetype.startsWith('video/')
+        ) {
             a.click();
         }
     }
