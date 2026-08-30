@@ -13,7 +13,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (config.apiKey) {
         headers['X-Api-Key'] = config.apiKey;
     }
-
+    
     const response = await fetch(url, { ...options, headers });
     if (!response.ok) {
         let errorDetail = '';
@@ -24,55 +24,55 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         } catch (_) {
             errorDetail = await response.text().catch(() => '');
         }
-
+        
         showNotification("API Error", `WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`, 4000);
         throw new Error(`WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`);
     }
-
+    
     const text = await response.text();
     return text ? JSON.parse(text) : {} as T;
 }
 
 async function downloadFile(path: string, options: RequestInit = {}): Promise<{ blob: Blob, filename: string }> {
-  const url = `${config.wahaUrl}${path}`;
-
-  const headers: Record<string, string> = {
-    'Content-Type': (options.headers as Record<string, string> | undefined)?.['Content-Type'] ?? 'application/json',
-    'accept': '*/*',
-    ...(options.headers as Record<string, string>)
-  };
-
-  if (config.apiKey) headers['X-Api-Key'] = config.apiKey;
-
-  const response = await fetch(url, { ...options, headers });
-
-  if (!response.ok) {
-    let errorDetail = '';
-    try {
-      errorDetail = JSON.stringify(await response.json());
-    } catch (_) {
-      errorDetail = await response.text().catch(() => '');
+    const url = `${config.wahaUrl}${path}`;
+    
+    const headers: Record<string, string> = {
+        'Content-Type': (options.headers as Record<string, string> | undefined)?.['Content-Type'] ?? 'application/json',
+        'accept': '*/*',
+        ...(options.headers as Record<string, string>)
+    };
+    
+    if (config.apiKey) headers['X-Api-Key'] = config.apiKey;
+    
+    const response = await fetch(url, { ...options, headers });
+    
+    if (!response.ok) {
+        let errorDetail = '';
+        try {
+            errorDetail = JSON.stringify(await response.json());
+        } catch (_) {
+            errorDetail = await response.text().catch(() => '');
+        }
+        throw new Error(`WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`);
     }
-    throw new Error(`WAHA API returned ${response.status}: ${response.statusText} — ${errorDetail}`);
-  }
-
-  const blob = await response.blob();
-
-  let filename = 'download';
-  const cd = response.headers.get('content-disposition');
-  if (cd) {
-    const m = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
-    filename = decodeURIComponent(m?.[1] || m?.[2] || filename);
-  }
-
-  return { blob, filename };
+    
+    const blob = await response.blob();
+    
+    let filename = 'download';
+    const cd = response.headers.get('content-disposition');
+    if (cd) {
+        const m = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
+        filename = decodeURIComponent(m?.[1] || m?.[2] || filename);
+    }
+    
+    return { blob, filename };
 }
 
 export const waha = {
     async getVersion(): Promise<VersionResponse> {
         return await request<VersionResponse>('/api/version');
     },
-
+    
     async getChats(): Promise<any[]> {
         const data = await request<any[]>(`/api/${config.session}/chats`);
         return data.map(chat => {
@@ -90,61 +90,61 @@ export const waha = {
             };
         });
     },
-
+    
     async getContact(id: string) : Promise<Contact | undefined> {
         return request<Contact>(`/api/${config.session}/contacts/${id}`);
     },
-
+    
     async getChatMessages(chatId: string, beforeTimestamp?: any, limit = 40): Promise<Message[]> {
         return request<Message[]>(`/api/${config.session}/chats/${chatId}/messages?downloadMedia=false&limit=${limit}${beforeTimestamp ? `&filter.timestamp.lte=${beforeTimestamp}` : "" }`);
     },
-
+    
     async getSingleChatMessage(chatId: string, messageId: string, downloadMedia: boolean): Promise<Message> {
         return request<Message>(`/api/${config.session}/chats/${chatId}/messages/${messageId}?downloadMedia=${downloadMedia}`);
     },
-
+    
     async getChatPicture(chatId: string): Promise<ChatPictureResponse> {
         return request<ChatPictureResponse>(`/api/${config.session}/chats/${chatId}/picture`);
     },
-
+    
     async getUser(chatId: string): Promise<ContactInfo> {
         return request<ContactInfo>(`/api/${config.session}/contacts/${chatId}`);
     },
-
+    
     async getUserAbout(chatId: string): Promise<UserAboutResponse> {
         return request<UserAboutResponse>(`/api/contacts/about?contactId=${chatId}&session=${config.session}`);
     },
-
+    
     async readChat(chatId: string): Promise<any> {
         return request('/api/sendSeen', {
             method: 'POST',
             body: JSON.stringify({ chatId, session: config.session })
         });
     },
-
+    
     async downloadMedia(file: string): Promise<{ blob: Blob, filename: string }> {
         const { blob, filename } = await downloadFile(`/api/files/${config.session}/${file}`);
         return { blob, filename };
     },
-
+    
     async getMyInfo(): Promise<AppUser> {
         return request<AppUser>(`/api/sessions/${config.session}/me`);
     },
-
+    
     async startTyping(chatId: string): Promise<any> {
         return request('/api/startTyping', {
             method: 'POST',
             body: JSON.stringify({ chatId, session: config.session })
         });
     },
-
+    
     async stopTyping(chatId: string): Promise<any> {
         return request('/api/stopTyping', {
             method: 'POST',
             body: JSON.stringify({ chatId, session: config.session })
         });
     },
-
+    
     async sendTextMessage(chatId: string, text: string, mentions: string[] = [], replyTo: string | null = null): Promise<Message> {
         return request<Message>('/api/sendText', {
             method: 'POST',
@@ -157,7 +157,7 @@ export const waha = {
             })
         });
     },
-
+    
     async setStatus(text: string): Promise<StatusResponse> {
         return request<StatusResponse>(`/api/${config.session}/profile/status`, {
             method: 'PUT',
@@ -166,7 +166,7 @@ export const waha = {
             })
         });
     },
-
+    
     async sendFileMessage(chatId: string, file: File, caption: string = ''): Promise<Message> {
         const fileBase64 = await getBase64(file);
         const body: RequestInit = {
@@ -182,20 +182,20 @@ export const waha = {
                 caption: caption
             })
         };
-
+        
         let endpoint = "/api/sendFile";
-
+        
         if (file.type.startsWith('image/')) endpoint = '/api/sendImage';
         if (file.type.startsWith('video/')) endpoint = '/api/sendVideo';
-
+        
         const result = await request<Message>(endpoint, body);
         return result;
     },
-
+    
     async getGroupUsers(groupId: string): Promise<GroupUser[]> {
         return request<GroupUser[]>(`/api/${config.session}/groups/${groupId}/participants`);
     },
-
+    
     async deleteChat(chatId: string): Promise<StatusResponse> {
         return request<StatusResponse>(`/api/${config.session}/chats/${chatId}`, {
             method: "delete"
@@ -207,13 +207,13 @@ export const waha = {
             method: "delete"
         });
     },
-
+    
     async archiveChat(chatId: string): Promise<StatusResponse> {
         return request<StatusResponse>(`/api/${config.session}/chats/${chatId}/archive`, {
             method: "post"
         });
     },
-
+    
     async unarchiveChat(chatId: string): Promise<StatusResponse> {
         return request<StatusResponse>(`/api/${config.session}/chats/${chatId}/unarchive`, {
             method: "post"

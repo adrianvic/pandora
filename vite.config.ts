@@ -75,7 +75,7 @@ export default defineConfig({
             }
           },
           {
-            urlPattern: /.*\/api\/.*\/(chats|messages|contacts).*/,
+            urlPattern: /.*\/api\/.*\/(chats|messages|contacts|groups|me).*/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'waha-api',
