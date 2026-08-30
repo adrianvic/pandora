@@ -183,13 +183,20 @@ export function listenForSwipe(element: HTMLElement, onSwipe: () => void, right 
     let touchendX = 0
     
     function checkDirection() {
-        if (touchendX < touchstartX && !right) {
-            onSwipe();
+        // should be at least 100px of swipe
+        if (touchendX < touchstartX &&
+            touchendX < (touchstartX - 100) &&
+            !right) {
+            return true;
         }
 
-        if (touchendX > touchstartX && right) {
-            onSwipe();
+        if (touchendX > touchstartX &&
+            touchendX > (touchstartX + 100) &&
+            right) {
+            return true;
         }
+
+        return false;
     }
     
     element.addEventListener('touchstart', e => {
@@ -198,8 +205,11 @@ export function listenForSwipe(element: HTMLElement, onSwipe: () => void, right 
     })
     
     element.addEventListener('touchend', e => {
-        e.preventDefault()
         touchendX = e.changedTouches[0].screenX
-        checkDirection()
+
+        if (checkDirection()) {
+            e.preventDefault()
+            onSwipe();
+        }
     })
 }

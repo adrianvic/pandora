@@ -242,7 +242,9 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
     }
     
     public loadChat(chat: Chat, userID: string): MessagesContainer {
-        if (this.messagesContainer) this.closeChat(false);
+        if (this.messagesContainer) this.element.scrollIntoView({
+            behavior: "smooth"
+        });
 
         const loader = new LoadingDots('div');
         this.messagesContainerReceptacle.innerHTML = '';

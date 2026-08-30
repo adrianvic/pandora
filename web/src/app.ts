@@ -144,6 +144,7 @@ function setupEventListeners() {
     
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash;
+        console.log(hash)
         if (hash && hash.startsWith('#chat-')) {
             const chatId = hash.replace('#chat-', '');
             const chat = getChats().find(c => c.id === chatId);
@@ -342,7 +343,7 @@ async function selectChat(chat: Chat, _isPopState = false, smoothScroll = true) 
     });
     
     if (isLoadingChat) return;
-    // if (chatPage.messagesContainer && window.innerWidth > 768) chatPage.closeChat();
+    if (chatPage.messagesContainer && window.innerWidth > 768) chatPage.closeChat();
 
     isLoadingChat = true;
     mainView?.scrollTo(chatPage.element);
@@ -356,8 +357,12 @@ async function selectChat(chat: Chat, _isPopState = false, smoothScroll = true) 
 }
 
 async function closeActiveChat(_isPopState = false, forceClose = false) {
+    console.log("closeactivechat")
     if (window.innerWidth <= 768) {
-        // scrollToList(true);
+        scrollToList(true);
+        if (forceClose) {
+            chatPage.closeChat();
+        }
     } else {
         chatPage.closeChat(forceClose);
     }
