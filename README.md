@@ -45,11 +45,11 @@ Pandora is an open-source web client for the WAHA API.
 ## Frequently Asked Questions
 
 ### Why?
-Because WhatsApp won't run on my LineageOS. Seems like the APK from WhatsApp's own website doesn't count official.
+Because WhatsApp won't run on my phone with LineageOS. Seems like the APK from WhatsApp's own website doesn't count official.
 Sadly there are places in the world where you need this bullshit application to be a functional human being.
 
 ### Will this get me banned?
-It's against WhatsApp TOS, though it mocks message typing and should not be able to be identified so easily. I haven't got myself nor heard anyone getting in trouble for using WAHA correctly. 
+It's against WhatsApp TOS, though it mocks message typing and should not be identified so easily. I haven't got myself nor heard anyone getting in trouble for using WAHA correctly. 
 
 ### How it works
 Pure magic. (Mocks a WhatsApp Web session)
