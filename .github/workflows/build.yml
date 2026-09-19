@@ -12,6 +12,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    env:
+      PANDORA_PREFIX: /pandora/
     
     strategy:
       matrix:

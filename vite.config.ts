@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   root: 'web',
-  base: '/pandora/',
+  base: process.env.PANDORA_PREFIX ?? '/',
   build: {
     outDir: '../dist',
     emptyOutDir: true,

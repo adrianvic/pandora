@@ -6,12 +6,12 @@ on:
       - master
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   build:
     runs-on: arch-linux
+
+    env:
+      PANDORA_PREFIX: /tenkuma/pandora/
     
     strategy:
       matrix:
