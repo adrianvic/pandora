@@ -12,6 +12,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite-plugin-pwa/client"],
     "outDir": "./dist",
     "rootDir": "./web/src",
     "sourceMap": true

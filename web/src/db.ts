@@ -136,6 +136,8 @@ function mapMessage(m: Message): any {
     hasMedia: m.hasMedia,
     media: m.media,
     chatId: chatId,
+    participant: m.participant,
+    replyTo: m.replyTo,
   }
 }
 
@@ -270,6 +272,23 @@ export async function deleteChatFromDatabase(chatId: string): Promise<void> {
       cursor.continue();
     };
     
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error);
+  });
+}
+
+export async function deleteMessageFromDatabase(
+  messageId: string
+): Promise<void> {
+  const db = await openDb();
+
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("messages", "readwrite");
+    const store = tx.objectStore("messages");
+
+    store.delete(messageId);
+
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error);
