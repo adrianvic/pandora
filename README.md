@@ -1,3 +1,6 @@
+>[!IMPORTANT]
+>This branch will be frozen until `refactor-pwa` is done. I'm refactoring everything I can to make this project more maintainable. 
+
 <img width="1920" height="auto" alt="PANDORA" src="https://github.com/user-attachments/assets/d9d7ba36-4510-47e1-8c49-b1977a26c448" />
 
 Pandora is an open-source web client for the WAHA API.
