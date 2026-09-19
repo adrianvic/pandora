@@ -1,5 +1,4 @@
->[!IMPORTANT]
->This branch will be frozen until `refactor-pwa` is done. I'm refactoring everything I can to make this project more maintainable. 
+[Em português](README-pt-BR.md)
 
 <img width="1920" height="auto" alt="PANDORA" src="https://github.com/user-attachments/assets/d9d7ba36-4510-47e1-8c49-b1977a26c448" />
 
@@ -30,7 +29,7 @@ Pandora is an open-source web client for the WAHA API.
 - [x] Desktop interface
 
 1. Does not show contact name in any engine other than WEBJS
-2. Loads the last 40 messages
+2. Loads the last 40 messages, more through pagination
 3. Will not contain contact name in groups if you're in any engine other than WEBJS
 4. You will receive a duplicate of your attachment in any engine other than WEBJS
 5. Allow autoplay to avoid blocking
@@ -38,9 +37,9 @@ Pandora is an open-source web client for the WAHA API.
 
 ## Setup
 1. Check [WAHA Docs](https://waha.devlike.pro/docs/) to setup WAHA
-2. Serve Pandora in any HTTP server. The GitHub Pages for this repository will only work for WAHA servers over HTTPS (due to mixed content)
-3. It works better with WEBJS engine.
-4. Access Pandora and change the server address, session and API key to match your server
+2. Serve Pandora in any HTTP server. If serving through HTTPS, the WAHA server should also be served as such, or else you'll get mixed-content error
+3. It works better with WEBJS engine
+4. Access Pandora and point it to your WAHA server in the configuraton wizard
 5. You should probably be good to go
 
 ## Frequently Asked Questions
