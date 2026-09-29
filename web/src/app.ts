@@ -1,4 +1,4 @@
-if (localStorage.getItem('setupComplete') !== "true") window.location.href = "index.html";
+if (localStorage.getItem('setupComplete') !== "true") window.location.href = "setup.html";
 
 import { config } from "./config";
 import { waha } from "./waha";
@@ -19,6 +19,7 @@ import { ChatPage } from "./element/ChatPage";
 import { SettingsPage } from "./element/SettingsPage";
 import { ProfilePage } from "./element/ProfilePage";
 
+let body = document.querySelector('body') as HTMLBodyElement;
 let sidebar: Sidebar;
 let mainView: ScrollableView;
 let chatPage: ChatPage;
@@ -39,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ui.loadingMessage("Asking for notification permission...");
         askForNotificationPermission();
         ui.loadingMessage("Loading configuration...");
+        body.style.setProperty('--background-image', `URL("${config.bgImg}")`);
         if (chatPage.activeChatState) {
             chatPage.activeChatState.style.setProperty('--background-image', `URL("${config.bgImg}")`);
             chatPage.activeChatState.style.setProperty('--background-opacity', `${config.bgOpacity}`);
@@ -96,6 +98,7 @@ async function setupElementsData() {
         const usrPic = (await getChatPicture(usr.id))?.url;
         const usrInfo = await getUser(usr.id);
         const usrAbout = (await getUserAbout(usr.id))?.about;
+        body.style.setProperty('--user-profile-picture', `URL("${usrPic}")`);
         elements.contentUserName.forEach(e => {
             e.innerHTML = usr.pushName || usr.name || '';
         })

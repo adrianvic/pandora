@@ -9,6 +9,8 @@ import { ImagePreview } from "./ImagePreview";
 import { MessagesContainer } from "./MessagesContainer";
 import { config } from "../config";
 import { parseVCard } from "../data/VCard";
+import * as linkify from "linkifyjs";
+import linkifyHtml from "linkify-html";
 
 export interface ChatMessageOptions {
     id: string;
@@ -102,9 +104,10 @@ export class ChatMessage extends BaseComponent {
             this.mention(parsed);
         });
         
-        listenForSwipe(this.element, () => {
-            this.mention(parsed);
-        }, !this.isOutgoing);
+        // Very broken since user needs to swipe to change screens
+        // listenForSwipe(this.element, () => {
+        //     this.mention(parsed);
+        // }, !this.isOutgoing);
     }
     
     protected mention(text: string) {
@@ -128,21 +131,24 @@ export class ChatMessage extends BaseComponent {
         if (type === 'revoked') return '<i>This message was deleted</i>';
         if (type === 'vcard') return this.renderVCard(body);
         
-        const unsupported = ["notification_template", "groups_v4_invite", "poll_creation"];
+        const unsupported = ["notification_template", "groups_v4_invite", "poll_creation", "ciphertext"];
         if (type && unsupported.includes(type)) {
             if (type === "notification_template") return "<i>Sorry, Pandora does not support this message for now.</i>";
             if (type === "groups_v4_invite") return "<i>This group invite is not yet supported by Pandora.</i>";
             if (type === "poll_creation") return `<i>The poll '${body}' invite is not yet supported by Pandora.</i>`;
+            if (type === "ciphertext") return `<i>Pandora cannot decrypt this message, maybe your phone can?</i>`;
         }
         
-        return new Parser(body)
+        return linkifyHtml(new Parser(body)
         .parse('_', '<i>$1</i>')
         .parse('*', '<b>$1</b>')
         .parse('~', '<s>$1</s>')
         .parse('```', '<span style="font-family: monospace;">$1</span>')
         .parse('`', '<code>$1</code>')
         .replace("\n", "<br>")
-        .input;
+        .input, {
+            target: "blank"
+        });
     }
     
     protected renderVCard(body: string): string {

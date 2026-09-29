@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
+    <meta name="HandheldFriendly" content="true" />
+    <meta name="theme-color" content="#102457">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Pandora</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="loading.css">
+    <link rel="stylesheet" href="metroicons.css">
+    <link rel="apple-touch-icon" href="./icon-192.png">
+    <link rel="manifest" href="/pandora/manifest.webmanifest">
+</head>
+<body>
+    <div class="app-container _scrollableView">
+        <section class="extra-page" id="welcome-page" style="display: flex;">
+            <div class="modal-header">
+                <h2 class="big-title" style="margin: 0 auto">Pandora</h2>
+            </div>
+            <div class="modal-content">
+                <div style="font-size: 20rem; margin: 0 0 auto auto; transform: translateX(40%); opacity: .4;" class="mif-qa mif"></div>
+                <div class="modal-body">
+                    <p>
+                        Welcome to Pandora, we need to get some things set up before you can start messaging. It shouldn't take long.
+                    </p>
+                    <p>This setup will guide you into linking your WAHA server to Pandora.</p>
+                </div>
+                <footer class="modal-footer">
+                    <button class="btn primary-btn next-page-btn">Continue</button>
+                </footer>
+            </div>
+        </section>
+        <section class="extra-page" id="server-page">
+            <div class="modal-content">
+                <div class="modal-header"></div>
+                <div class="modal-body">
+                    <h3>where's your server?</h3>
+                    <div class="form-group">
+                        <label for="settings-waha-url">WAHA Server URL</label>
+                        <input type="text" id="settings-waha-url" placeholder="http://localhost:3100">
+                    </div>
+                    <h3>credentials</h3>
+                    <div class="form-group">
+                        <label for="settings-session">Session ID</label>
+                        <input type="text" id="settings-session" placeholder="session_01...">
+                    </div>
+                    <div class="form-group">
+                        <label for="settings-api-key">API Key</label>
+                        <input type="password" id="settings-api-key" placeholder="Enter API Key">
+                    </div>
+                    <p class="settings-warning">Note: Requests are sent directly from your browser to the WAHA server. Make sure CORS is enabled on your WAHA instance.</p>
+                    <hr style="margin-top: auto">
+                    <h3>I don't have a server</h3>
+                    <p>You can setup a WAHA server on a system running Docker. <a href="https://waha.devlike.pro/docs/how-to/install/">See documentation.</a></p>
+                </div>
+                <footer class="modal-footer">
+                    <button class="btn primary-btn next-page-btn">Connect</button>
+                </footer>
+            </div>
+        </section>
+        <section class="extra-page" id="connecting-page">
+            <div class="modal-header">
+                <h2 class="big-title" style="margin: 0 auto">Connecting</h2>
+            </div>
+            <div class="modal-content">
+                <div style="font-size: 20rem; margin: 0 0 auto auto; transform: translateX(40%); opacity: .4;" class="mif-broadcast mif"></div>
+                <div class="modal-body">
+                    <p style="text-align: center;">Please wait while we test your connection to this WAHA server</p>
+                    <p class="dim" id="connecting-status" style="text-align: center;">Asking for server version...</p>
+                    <div class='loading-animation-wrapper' id="connecting-animation">
+                        <div class="animation">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
+                </div>
+                <footer class="modal-footer">
+                    <button id="connecting-next-btn" class="btn primary-btn next-page-btn" style="display: none;">Finish</button>
+                </footer>
+            </div>
+        </section>
+    </div>
+    
+    <script type="module" src="./src/setup.ts"></script>
+</body>
+</html>

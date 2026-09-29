@@ -42,7 +42,7 @@ Pandora é um cliente de navegador para a API WAHA.
 4. Acesse Pandora e configure ele para apontar para o seu servidor WAHA no menu de configuração inicial
 5. Tudo pronto!
 
-## Frequently Asked Questions
+## Perguntas Frequentes
 
 ### Por quê?
 Porque o WhatsApp se recusa a rodar no meu celular com LineageOS. Parece que o APK do site oficial do WhatsApp não conta como oficial.

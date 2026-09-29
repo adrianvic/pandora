@@ -29,8 +29,7 @@
 }
 
 :root {
-    --bg-main: black;
-    --bg-primary: var(--bg-main);
+    --bg-primary: black;
     --bg-secondary: #242424;
     --sidebar-bg: black;
     --chat-bg: black;
@@ -66,11 +65,11 @@
 }
 
 body.light {
-    --bg-main: white;
+    --bg-primary: white;
     --bg-primary: white;
     --bg-secondary: #F0F0F0;
     --sidebar-bg: white;
-    --chat-bg: white;
+    --chat-bg: black;
     --border-color: rgba(0, 0, 0, 0.1);
     --border-hover: rgba(255, 255, 255, 0.15);
     --text-primary: black;
@@ -86,8 +85,9 @@ body.light {
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);                                                                                   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);                                                                                  --glass-blur: blur(20px);
     --high-box-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3), 0px -4px 10px rgba(0, 0, 0, 0.3);
-    --chat-header-gradient-1: rgba(255, 255, 255, 0.75);
-    --chat-header-gradient-2: rgba(255, 255, 255, 0.35);
+    --chat-header-gradient-1: rgba(0, 0, 0, 0.75);
+    --chat-header-gradient-2: rgba(0, 0, 0, 0.35);
+    --chat-header-text-color: white;
 }
 
 * {
@@ -112,16 +112,17 @@ html, body {
 }
 
 body {
-    background-color: var(--bg-main);
+    background-color: var(--bg-primary);
     color: var(--text-primary);
 }
 
 a {
     color: var(--text-primary);
+    cursor: pointer;
 }
 
 button {
-    background-color: var(--bg-main);
+    background-color: var(--bg-primary);
     border: none;
     color: var(--text-primary);
     transition: .4s;
@@ -141,7 +142,7 @@ input {
 
 input:focus {
     background-color: var(--text-primary);
-    color: var(--bg-main);
+    color: var(--bg-primary);
     outline: none;
 }
 
@@ -249,6 +250,7 @@ fieldset label:has(input[type="radio"]:checked) {
 
 .form-group label, .dim-label {
     opacity: .6;
+    font-weight: 200;
 }
 
 .user-profile {
@@ -311,7 +313,7 @@ fieldset label:has(input[type="radio"]:checked) {
     width: 38px;
     height: 38px;
     border: none;
-    background: var(--bg-main);
+    background: var(--bg-primary);
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -366,7 +368,7 @@ fieldset label:has(input[type="radio"]:checked) {
     outline: none;
     border-color: var(--accent);
     background: white;
-    color: var(--bg-main);
+    color: var(--bg-primary);
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
@@ -493,7 +495,7 @@ fieldset label:has(input[type="radio"]:checked) {
 
 .chat-item .unread-badge {
     background: var(--accent);
-    color: var(--bg-main);
+    color: var(--bg-primary);
     font-size: 0.7rem;
     min-width: 18px;
     height: 18px;
@@ -604,6 +606,7 @@ fieldset label:has(input[type="radio"]:checked) {
     justify-content: center;
     padding: 40px;
     text-align: center;
+    background-color: var(--bg-primary);
 }
 
 .empty-state-content {
@@ -651,6 +654,7 @@ fieldset label:has(input[type="radio"]:checked) {
     content: "";
     position: absolute;
     inset: 0;
+    background-color: var(--chat-bg);
     background-image: var(--background-image);
     background-size: cover;
     background-position: center;
@@ -669,6 +673,7 @@ fieldset label:has(input[type="radio"]:checked) {
     padding: .6em 1em;
     display: flex;
     position: relative;
+    color: var(--chat-header-text-color);
 }
 
 .chat-header::before {
@@ -794,8 +799,8 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 .message-sender {
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 0.80rem;
+    font-weight: 300;
     color: var(--text-primary);
     width: 100%;
     display: flex;
@@ -934,7 +939,7 @@ fieldset label:has(input[type="radio"]:checked) {
     display: flex;
     align-items: center;
     gap: 16px;
-    background-color: var(--bg-main);
+    background-color: var(--bg-primary);
 }
 
 .alternate-panel {
@@ -997,9 +1002,9 @@ fieldset label:has(input[type="radio"]:checked) {
     flex: 1;
     overflow-y: scroll;
     padding: 12px 18px;
-    background-color: var(--text-primary);
+    background-color: var(--bg-secondary);
     border: medium solid var(--border-color);
-    color: var(--bg-main);
+    color: var(--text-primary);
     font-size: 0.95rem;
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     min-width: 0;
@@ -1085,7 +1090,21 @@ fieldset label:has(input[type="radio"]:checked) {
 
 #profile-page {
     flex-direction: column;
-    background-color: var(--bg-main);
+    background-color: var(--bg-primary);
+}
+
+#profile-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: var(--chat-bg);
+    background-image: var(--user-profile-picture);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: -1;
 }
 
 #profile-page .content {
@@ -1119,7 +1138,7 @@ fieldset label:has(input[type="radio"]:checked) {
 
 #profile-page-status-input {
     width: 100%;
-    background-color: var(--bg-main);
+    background-color: transparent;
     font-size: xx-large;
     border-bottom: medium solid var(--bg-secondary);
     padding: 0;
@@ -1159,7 +1178,7 @@ fieldset label:has(input[type="radio"]:checked) {
     pointer-events: none;
 }
 
-.mentioned-highlight .message-content-and-time, .mentioned-highlight .message-sender {
+.mentioned-highlight .message-content-and-time, .mentioned-highlight .message-sender, .selected a {
     color: var(--bg-primary)!important;
 }
 
@@ -1185,11 +1204,12 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 .mentioned-highlight .message-sender, .selected .message-sender {
-    color: var(--bg-main)!important;
+    color: var(--bg-primary)!important;
 }
 
 .reply-indicator {
     opacity: .7;
+    font-weight: 300;
     max-width: 10em;
     white-space: nowrap;
     overflow: hidden;
@@ -1198,6 +1218,7 @@ fieldset label:has(input[type="radio"]:checked) {
 
 .reply-indicator::before {
     content: "> ";
+    font-weight: bold;
 }
 
 #loading-screen {
@@ -1208,7 +1229,7 @@ fieldset label:has(input[type="radio"]:checked) {
     position: fixed;
     top: 0;
     left: 0;
-    background-color: var(--bg-main);
+    background-color: var(--bg-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1450,7 +1471,7 @@ fieldset label:has(input[type="radio"]:checked) {
         z-index: 1;
         scroll-snap-align: start;
         scroll-snap-stop: always;
-        background-color: var(--bg-main);
+        background-color: var(--bg-primary);
         overflow-y: auto;
     }
     
@@ -1493,7 +1514,7 @@ fieldset label:has(input[type="radio"]:checked) {
 /* Modal Styling */
 .modal-content {
     width: 100%;
-    background: var(--bg-main);
+    background: var(--bg-primary);
     box-shadow: var(--shadow-lg);
     backdrop-filter: var(--glass-blur);
     display: flex;
@@ -1571,7 +1592,7 @@ h2.modal-title {
 
 .primary-btn:hover {
     background: var(--text-primary);
-    color: var(--bg-main);
+    color: var(--bg-primary);
     border-color: var(--text-primary);
 }
 
@@ -1582,7 +1603,7 @@ h2.modal-title {
 
 .secondary-btn:hover {
     background: var(--text-primary);
-    color: var(--bg-main);
+    color: var(--bg-primary);
 }
 
 @keyframes fall {
