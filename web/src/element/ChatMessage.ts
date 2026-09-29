@@ -2,14 +2,13 @@ import { Parser } from "../parser";
 import { getMedia, getMessage, getContact, deleteMessage } from "../storage";
 import { Message } from "../types";
 import { ui } from "../ui";
-import { formatTime, listenForSwipe, normalizeId } from "../utils";
+import { formatTime, normalizeId } from "../utils";
 import { AudioPlayer } from "./AudioPlayer";
 import { BaseComponent } from "./BaseComponent";
 import { ImagePreview } from "./ImagePreview";
 import { MessagesContainer } from "./MessagesContainer";
 import { config } from "../config";
 import { parseVCard } from "../data/VCard";
-import * as linkify from "linkifyjs";
 import linkifyHtml from "linkify-html";
 
 export interface ChatMessageOptions {
