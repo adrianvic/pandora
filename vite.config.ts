@@ -11,7 +11,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'web/index.html'),
-        app: resolve(__dirname, 'web/app.html'),
+        setup: resolve(__dirname, 'web/setup.html'),
       },
     },
   },
@@ -26,8 +26,8 @@ export default defineConfig({
         background_color: '#000000',
         display: 'standalone',
         orientation: 'any',
-        scope: '/pandora/',
-        start_url: '/pandora/',
+        scope: process.env.PANDORA_PREFIX ?? '/',
+        start_url: process.env.PANDORA_PREFIX ?? '/',
         icons: [
           {
             src: 'icon-192.png',
