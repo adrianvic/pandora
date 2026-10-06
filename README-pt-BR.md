@@ -27,6 +27,7 @@ Pandora é um cliente de navegador para a API WAHA.
 - [x] Tocar áudios
 - [x] Prévia das mensagens (aumentar e deslocar)
 - [x] Interface de computador
+- [x] Resolução de VCards
 
 1. Não mostra nome do contato em nenhum outro motor além do WEBJS
 2. Carrega as últimas 40 mensagens, além disso é feita paginação

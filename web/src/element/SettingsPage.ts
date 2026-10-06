@@ -1,4 +1,4 @@
-import { config, saveConfig } from "../config";
+import { saveConfig } from "../config";
 import { BaseComponent } from "./BaseComponent";
 
 export class SettingsPage extends BaseComponent {
