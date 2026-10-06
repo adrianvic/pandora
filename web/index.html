@@ -124,23 +124,40 @@
                             <h3>chats</h3>
                             <div class="form-group">
                                 <label for="settings-background-image">Chat background image</label>
+                                <p class="settings-warning">URL for the chat background image file.</p>
                                 <input type="text" id="settings-background-image" placeholder="Enter image URL">
                             </div>
                             <div class="form-group">
                                 <label for="settings-background-opacity">Chat background opacity</label>
+                                <p class="settings-warning">Adjust this if your messages are harder to read with the current background image.</p>
                                 <input type="number" min="0" max="1" step="0.1" id="settings-background-opacity" placeholder="Enter opacity value">
                             </div>
                             <div class="form-group">
-                                <label for="settings-theme">Chat background opacity</label>
+                                <label for="settings-theme">Chat theme</label>
                                 <fieldset id="settings-theme">
                                     <label>
-                                        <input type="radio" name="plan" value="" checked>
+                                        <input type="radio" name="theme" value="" checked>
                                         Dark
                                     </label>
                                     
                                     <label>
-                                        <input type="radio" name="plan" value="light">
+                                        <input type="radio" name="theme" value="light">
                                         Light
+                                    </label>
+                                </fieldset>
+                            </div>
+                            <div class="form-group">
+                                <label for="settings-markread">Automatically mark as read</label>
+                                <p class="settings-warning">This will automatically mark a chat with unread messages as read upon loading or if the window is focused when a message arrives.</p>
+                                <fieldset id="settings-markread">
+                                    <label>
+                                        <input type="radio" name="markread" value="true" checked>
+                                        On
+                                    </label>
+                                    
+                                    <label>
+                                        <input type="radio" name="markread" value="false">
+                                        Off
                                     </label>
                                 </fieldset>
                             </div>

@@ -4,27 +4,39 @@ export interface Config {
     apiKey: string;
     bgImg: string;
     bgOpacity: string;
-    save(url: string, session: string, apiKey: string, bgImg: string, bgOpacity: string): void;
+    theme: string;
+    markRead: string;
 }
 
-export const config: Config = {
+export let config: Config = {
     wahaUrl: localStorage.getItem('waha_url') || '',
     session: localStorage.getItem('waha_session') || '',
     apiKey: localStorage.getItem('waha_api_key') || '',
     bgImg: localStorage.getItem('background_image') || '',
     bgOpacity: localStorage.getItem('background_opacity') || '0.4',
-
-    save(url: string, session: string, apiKey: string, bgImg: string, bgOpacity: string): void {
-        this.wahaUrl = url.trim().replace(/\/$/, "");
-        this.session = session.trim();
-        this.apiKey = apiKey.trim();
-        this.bgImg = bgImg.trim();
-        this.bgOpacity = bgOpacity.trim();
-
-        localStorage.setItem('waha_url', this.wahaUrl);
-        localStorage.setItem('waha_session', this.session);
-        localStorage.setItem('waha_api_key', this.apiKey);
-        localStorage.setItem('background_image', this.bgImg);
-        localStorage.setItem('background_opacity', this.bgOpacity);
-    }
+    theme: localStorage.getItem('pandora_theme') || '',
+    markRead: localStorage.getItem('pandora_markread') || 'true',
+    
 };
+
+export function saveConfig(updates: Partial<Config>): void {
+    config = {
+        ...config,
+        ...updates,
+        wahaUrl: updates.wahaUrl?.trim().replace(/\/$/, '') ?? config.wahaUrl,
+        session: updates.session?.trim() ?? config.session,
+        apiKey: updates.apiKey?.trim() ?? config.apiKey,
+        bgImg: updates.bgImg?.trim() ?? config.bgImg,
+        bgOpacity: updates.bgOpacity?.trim() ?? config.bgOpacity,
+        theme: updates.theme?.trim() ?? config.theme,
+        markRead: updates.markRead?.trim() ?? config.markRead,
+    };
+
+    localStorage.setItem('waha_url', config.wahaUrl);
+    localStorage.setItem('waha_session', config.session);
+    localStorage.setItem('waha_api_key', config.apiKey);
+    localStorage.setItem('background_image', config.bgImg);
+    localStorage.setItem('background_opacity', config.bgOpacity);
+    localStorage.setItem('pandora_theme', config.theme);
+    localStorage.setItem('pandora_markread', config.markRead);
+}

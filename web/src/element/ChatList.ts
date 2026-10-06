@@ -31,7 +31,9 @@ export class ChatList extends BaseComponent {
             return;
         }
         
-        chats.forEach(async c => await this.renderSingleEntry(c, onChatSelect));
+        chats.forEach(async c => {
+            await this.renderSingleEntry(c, onChatSelect);
+        });
     }
     
     public async renderSingleEntry(chat: Chat, onChatSelect: (chat: Chat) => void) {
@@ -96,18 +98,25 @@ export class ChatList extends BaseComponent {
     private renderPreviewFromMessage(message: Message, def = '') {
         let lastMessage = def;
 
-        if (message._data?.type === 'sticker') lastMessage = "<i>Sticker</i>";
-        if (message._data?.type === 'call_log') lastMessage = "<i>A call was made</i>";
-        if (message._data?.type === 'image') lastMessage = "<i>Image</i>";
-        if (message._data?.type === 'video') lastMessage = "</i>Video</i>";
-        if (message._data?.type === 'e2e_notification') lastMessage = "</i>Encryption key has changed</i>";
-        if (message._data?.type === 'gp2') lastMessage = "<i>Group changed</i>";
-        if (message._data?.type === 'document') lastMessage = `<i>Document</i>`;
-        if (message._data?.type === 'groups_v4_invite') lastMessage = `<i>Group invite</i>`;
-        if (message._data?.type === 'poll_creation') lastMessage = `<i>Poll</i>`;
-        if (message._data?.type === 'notification_template') lastMessage = `<i>Unsupported message</i>`;
-        if (message._data?.type === 'revoked') lastMessage = `<i>Deleted message</i>`;
+        const special = ['sticker', 'call_log', 'image', 'video', 'e2e_notification', 'gp2', 'document', 'groups_v4_invite', 'poll_creation', 'notification_template', 'revoked', 'ptt']
+
+        if (message._data?.type === 'sticker') lastMessage = "Sticker";
+        if (message._data?.type === 'call_log') lastMessage = "A call was made";
+        if (message._data?.type === 'image') lastMessage = "Image";
+        if (message._data?.type === 'video') lastMessage = "Video";
+        if (message._data?.type === 'e2e_notification') lastMessage = "Encryption key has changed";
+        if (message._data?.type === 'gp2') lastMessage = "Group changed";
+        if (message._data?.type === 'document') lastMessage = `Document`;
+        if (message._data?.type === 'groups_v4_invite') lastMessage = `Group invite`;
+        if (message._data?.type === 'poll_creation') lastMessage = `Poll`;
+        if (message._data?.type === 'notification_template') lastMessage = `Unsupported message`;
+        if (message._data?.type === 'revoked') lastMessage = `Deleted message`;
+        if (message._data?.type === 'ptt') lastMessage = `Audio`;
         
+        if (special.indexOf(message._data?.type ?? "") !== -1) {
+            lastMessage = `<span class='internal-message-preview'><i>${lastMessage}</i></span>`;
+        }
+
         if (message.body === '' && message.body === lastMessage) {
             lastMessage += `${message.body === '' ? '' : ": " + message.body}`
         };
@@ -145,11 +154,27 @@ export class ChatList extends BaseComponent {
     }
     
     updateItemFromMessage(msg: Message) {
-        const rawChatId = msg.chatId || (typeof msg.from === 'string' ? msg.from : (msg.from as any)?._serialized) || (msg.chat && msg.chat.id);
+        const isIncoming = !msg.fromMe && msg.sender !== 'me';
+
+        const rawChatId = isIncoming
+        ? (
+            msg.chatId ??
+            (typeof msg.from === 'string'
+                ? msg.from
+                : (msg.from as any)?._serialized) ??
+            msg.chat?.id
+        )
+        : (
+            msg.chatId ??
+            (typeof (msg as any).to === 'string'
+                ? (msg as any).to
+                : (msg as any).to?._serialized) ??
+            msg.chat?.id
+        );
+
         const chatId = normalizeId(rawChatId);
         if (!chatId) return;
 
-        const isIncoming = !msg.fromMe && msg.sender !== 'me';
         this.updateItem(chatId, msg.body ?? msg.text ?? "", msg.timestamp.toString(), isIncoming ? 1 : 0);
     }
     

@@ -1,4 +1,4 @@
-import { config } from "./config";
+import { config, saveConfig } from "./config";
 import { ScrollableView } from "./element/ScrollableView";
 import { requireEl } from "./utils";
 import { waha } from "./waha";
@@ -39,8 +39,7 @@ connectingNextBtn?.addEventListener('click', () => {
 })
 
 async function testConnection() {
-    console.log(settingsWahaURL?.value)
-    config.save(settingsWahaURL?.value, settingsSession?.value, settingsApiKey?.value, "", "");
+    saveConfig({ wahaUrl: settingsWahaURL?.value, session: settingsSession?.value, apiKey: settingsApiKey?.value });
     if (!statusConnection || !connectingNextBtn || !loading) return;
     statusConnection.textContent = "Asking for server version...";
     

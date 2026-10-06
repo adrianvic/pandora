@@ -1,4 +1,4 @@
-import { config } from "../config";
+import { config, saveConfig } from "../config";
 import { BaseComponent } from "./BaseComponent";
 
 export class SettingsPage extends BaseComponent {
@@ -40,13 +40,13 @@ export class SettingsPage extends BaseComponent {
 
     private bindEvents() {
         this.saveBtn.addEventListener('click', () => {
-            config.save(
-                this.inputWahaUrl.value,
-                this.inputSession.value,
-                this.inputApiKey.value,
-                this.inputBackgroundImage.value,
-                this.inputBackgroundOpacity.value
-            );
+            saveConfig({
+                wahaUrl: this.inputWahaUrl.value,
+                session: this.inputSession.value,
+                apiKey: this.inputApiKey.value,
+                bgImg: this.inputBackgroundImage.value,
+                bgOpacity: this.inputBackgroundOpacity.value
+        });
             location.reload();
         });
 

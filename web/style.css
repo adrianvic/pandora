@@ -50,7 +50,7 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
     --glass-blur: blur(20px);
     --high-box-shadow: 2px 7px 5px rgba(0, 0, 0, 0.3), 0px -4px 10px rgba(0, 0, 0, 0.3);
-    --page-padding: 1.6rem;
+    --page-padding: 1.3rem;
     --page-padding-small: 1rem;
     --container-padding: .4rem;
     --chat-header-gradient-1: rgba(0, 0, 0, 0.75);
@@ -338,7 +338,7 @@ fieldset label:has(input[type="radio"]:checked) {
 
 /* Search Bar */
 .search-container {
-    padding: 16px 20px;
+    padding: 16px 16px;
 }
 
 .search-wrapper {
@@ -407,14 +407,13 @@ fieldset label:has(input[type="radio"]:checked) {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 4px;
 }
 
 .chat-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px;
+    gap: 8px;
+    padding: 6px 12px;
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid transparent;
@@ -429,8 +428,8 @@ fieldset label:has(input[type="radio"]:checked) {
     opacity: 1;
 }
 
-.chat-item.archived .chat-item-time::before {
-    content: "📂 ";
+.chat-item.archived .chat-item-time::after {
+    content: " 📂";
     filter: saturate(0);
 }
 
@@ -462,17 +461,21 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 .chat-item-name {
-    font-size: 0.95rem;
-    font-weight: 600;
+    font-size: 1.1rem;
+    font-weight: 400;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+.internal-message-preview {
+    color: var(--bubble-incoming);
+}
+
 .chat-item-time {
     font-size: 0.75rem;
-    color: var(--text-muted);
+    /* color: var(--text-muted); */
     flex-shrink: 0;
 }
 
@@ -484,7 +487,7 @@ fieldset label:has(input[type="radio"]:checked) {
 }
 
 .chat-item-msg {
-    font-size: 0.82rem;
+    font-size: 1rem;
     color: var(--accent);
     white-space: nowrap;
     overflow: hidden;
@@ -1090,7 +1093,7 @@ fieldset label:has(input[type="radio"]:checked) {
 
 #profile-page {
     flex-direction: column;
-    background-color: var(--bg-primary);
+    background-color: transparent;
 }
 
 #profile-page::before {

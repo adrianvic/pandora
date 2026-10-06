@@ -278,6 +278,12 @@ export class ChatPage<T extends HTMLElement = HTMLElement> extends BaseComponent
                 this.messagesContainer?.loadMore.classList.remove('hidden');
             }
         })();
+
+        this.element.dispatchEvent(new CustomEvent("chat-loaded", {
+            detail: {
+                chatID: this.messagesContainer.chatID
+            }
+        }));
         
         return this.messagesContainer;
     }

@@ -29,6 +29,7 @@ export const elements = {
     mentioningSuggestion: document.querySelector('#mentioning-suggestion') as HTMLElement,
     mentionSuggestions: document.querySelector('#mention-suggestions') as HTMLElement,
     settingTheme: document.querySelector('#settings-theme') as HTMLFieldSetElement,
+    settingMarkRead: document.querySelector('#settings-markread') as HTMLFieldSetElement,
     previewImage: document.querySelector('#image-preview-img') as HTMLImageElement,
     previewSubtitle: document.querySelector('#image-preview-subtitle') as HTMLParagraphElement,
     imagePreview: document.querySelector('#image-preview') as HTMLDivElement,

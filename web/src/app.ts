@@ -1,6 +1,6 @@
 if (localStorage.getItem('setupComplete') !== "true") window.location.href = "setup.html";
 
-import { config } from "./config";
+import { config, saveConfig } from "./config";
 import { waha } from "./waha";
 import { registerSW } from 'virtual:pwa-register';
 
@@ -18,6 +18,14 @@ import { ScrollableView } from "./element/ScrollableView";
 import { ChatPage } from "./element/ChatPage";
 import { SettingsPage } from "./element/SettingsPage";
 import { ProfilePage } from "./element/ProfilePage";
+
+{ // gross, put it in the right place - not even working, check it
+    if (localStorage.getItem("pandora_markread") == null) {
+        localStorage.setItem("pandora_markread", "true")
+    }
+    const loadedMarkReadEl = elements.settingTheme.querySelector(`input[value="${localStorage.getItem("pandora_markread")}"]`) as HTMLInputElement;
+    if (loadedMarkReadEl) loadedMarkReadEl.checked = true;
+}
 
 let body = document.querySelector('body') as HTMLBodyElement;
 let sidebar: Sidebar;
@@ -56,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             await sidebar.loadChats(async (chat) => {
                 window.location.hash = `#chat-${chat.id}`;
             }, (msg) => ui.loadingMessage(msg));
-
+            
             const hash = window.location.hash;
             if (hash && hash.startsWith('#chat-')) {
                 const chatId = hash.replace('#chat-', '');
@@ -147,7 +155,6 @@ function setupEventListeners() {
     
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash;
-        console.log(hash)
         if (hash && hash.startsWith('#chat-')) {
             const chatId = hash.replace('#chat-', '');
             const chat = getChats().find(c => c.id === chatId);
@@ -158,12 +165,12 @@ function setupEventListeners() {
             closeActiveChat(true);
         }
     });
-
+    
     chatPage.element.addEventListener('archive-chat', (e) => {
         const detail = (e as CustomEvent).detail;
         if (detail.chatID && detail.archive !== undefined) sidebar.chatList.archiveChat(detail.chatID, detail.archive);
     })
-
+    
     chatPage.element.addEventListener('message-dispatch', (e) => {
         const detail = (e as CustomEvent).detail;
         if (!detail.to.endsWith('@lid')) {
@@ -171,22 +178,22 @@ function setupEventListeners() {
             sidebar.chatList.updateItemFromMessage(detail.tempMsg);
         }
     });
-
+    
     chatPage.element.addEventListener('mark-read', (e) => {
         const detail = (e as CustomEvent).detail;
         sidebar.chatList.updateChatBadge(detail.chatID, 0);
     });
-
+    
     chatPage.element.addEventListener('back-click', () => {
         window.location.hash = '';
     });
-
+    
     chatPage.element.addEventListener('chat-deleted', (e) => {
         const detail = (e as CustomEvent).detail;
         const chatItem = document.querySelector(`.chat-item[data-id='${detail.chatID}']`);
         chatItem?.remove();
     });
-
+    
     settingsPage.element.addEventListener('theme-change', () => {
         reloadTheme();
     });
@@ -220,7 +227,7 @@ function setupEventListeners() {
         if (e.code == "Escape") {
             const preview = document.querySelector('#image-preview');
             if (preview) return; // ImagePreview handles its own Escape
-
+            
             e.preventDefault();
             closeActiveChat(false);
         }
@@ -235,7 +242,7 @@ function setupEventListeners() {
             if (page) mainView?.scrollTo(pageEl);
         })
     })
-
+    
     elements.selectable.forEach(e => {
         let timerId: ReturnType<typeof setTimeout>, longPressed: boolean;
         
@@ -260,11 +267,25 @@ function setupEventListeners() {
         })
     })
     
-    elements.settingTheme.addEventListener('change', () => {
-        const element = elements.settingTheme.querySelector('input[name="plan"]:checked') as HTMLInputElement;
+    elements.settingTheme.addEventListener('change', (e) => {
+        const element = e.target as HTMLInputElement;
         const value = element?.value ?? '';
-        localStorage.setItem("pandora_theme", value);
+        saveConfig({ theme: value });
         reloadTheme();
+    })
+    
+    elements.settingMarkRead.addEventListener('change', (e) => {
+        const element = e.target as HTMLInputElement;
+        const value = element?.value ?? '';
+        saveConfig({ theme: value });
+        localStorage.setItem("pandora_markread", value);
+    })
+
+    chatPage.element.addEventListener('chat-loaded', (e) => {
+        if (config.markRead == "true") {
+            const cev = e as CustomEvent; 
+            waha.readChat(cev.detail.chatID);
+        }
     })
 }
 
@@ -300,90 +321,103 @@ async function handleIncomingMessage(msg: Message) {
     
     sidebar.chatList.updateItemFromMessage(msg);
     
-    const rawChatId = msg.chatId || (typeof msg.from === 'string' ? msg.from : (msg.from as any)?._serialized) || (msg.chat && msg.chat.id);
-    const msgChatId = normalizeId(rawChatId);
-    if (!msgChatId) {
-        console.warn('[WS] Could not resolve chatId from payload:', msg);
-        return;
-    }
+    const isIncoming = !msg.fromMe && msg.sender !== 'me';
     
-    if (!msg.fromMe) {
-        // Only play tone if it's not the active chat
-        if (chatPage.messagesContainer?.chatID !== msgChatId) {
-            messageTone.play();
+    const rawChatId = isIncoming
+    ? (
+        msg.chatId ??
+        (typeof msg.from === 'string'
+            ? msg.from
+            : (msg.from as any)?._serialized) ??
+            msg.chat?.id
+        )
+        : (
+            msg.chatId ??
+            (typeof (msg as any).to === 'string'
+            ? (msg as any).to
+            : (msg as any).to?._serialized) ??
+            msg.chat?.id
+        );
+        
+        const msgChatId = normalizeId(rawChatId);
+        if (!msgChatId) {
+            console.warn('[WS] Could not resolve chatId from payload:', msg);
+            return;
         }
-
-        // Browser notification only if app is NOT focused
-        if (!document.hasFocus() && notificationAuthorization === "granted") {
-            const now = Date.now();
-            const lastTime = lastNotificationTime.get(msgChatId) || 0;
-
-            // 5 second cooldown per sender
-            if (now - lastTime > 5000) {
-                new Notification("New message", { body: msg.body || msg.text });
-                lastNotificationTime.set(msgChatId, now);
+        
+        if (!msg.fromMe) {
+            if (chatPage.messagesContainer?.chatID !== msgChatId) {
+                messageTone.play();
+            }
+            
+            if (!document.hasFocus() && notificationAuthorization === "granted") {
+                const now = Date.now();
+                const lastTime = lastNotificationTime.get(msgChatId) || 0;
+                
+                if (now - lastTime > 5000) {
+                    new Notification(msg.sender ?? "New message", { body: msg.body || msg.text });
+                    lastNotificationTime.set(msgChatId, now);
+                }
+            }
+        }
+        
+        if (chatPage.messagesContainer?.chatID === msgChatId) {
+            const msgId = normalizeId(msg.id as any) || (msg.id as string);
+            const exists = chatPage.messagesContainer.getMessage(msgId);
+            if (!exists) {
+                const containerEl = chatPage.messagesContainer.element;
+                const scrolled = containerEl.scrollTop === (containerEl.scrollHeight - containerEl.clientHeight);
+                chatPage.messagesContainer.appendMessage({ ...msg, chatId: msgChatId });
+                if (!scrolled && window.innerWidth > 768) {
+                    ui.scrollToBottom(containerEl);
+                }
             }
         }
     }
     
-    if (chatPage.messagesContainer?.chatID === msgChatId) {
-        const msgId = normalizeId(msg.id as any) || (msg.id as string);
-        const exists = chatPage.messagesContainer.getMessage(msgId);
-        if (!exists) {
-            const containerEl = chatPage.messagesContainer.element;
-            const scrolled = containerEl.scrollTop === (containerEl.scrollHeight - containerEl.clientHeight);
-            chatPage.messagesContainer.appendMessage({ ...msg, chatId: msgChatId });
-            if (!scrolled && window.innerWidth > 768) {
-                ui.scrollToBottom(containerEl);
+    async function selectChat(chat: Chat, _isPopState = false, smoothScroll = true) {
+        chatPage.element.scrollIntoView({
+            behavior: "smooth"
+        });
+        
+        if (isLoadingChat) return;
+        if (chatPage.messagesContainer && window.innerWidth > 768) chatPage.closeChat();
+        
+        isLoadingChat = true;
+        mainView?.scrollTo(chatPage.element);
+        chatPage.loadChat(chat, (await getAppUser()).id);
+        
+        if (window.innerWidth <= 768) {
+            scrollToChat(smoothScroll);
+        }
+        
+        isLoadingChat = false;
+    }
+    
+    async function closeActiveChat(_isPopState = false, forceClose = false) {
+        if (window.innerWidth <= 768) {
+            scrollToList(true);
+            if (forceClose) {
+                chatPage.closeChat();
             }
+        } else {
+            chatPage.closeChat(forceClose);
         }
     }
-}
-
-async function selectChat(chat: Chat, _isPopState = false, smoothScroll = true) {
-    chatPage.element.scrollIntoView({
-        behavior: "smooth"
-    });
     
-    if (isLoadingChat) return;
-    if (chatPage.messagesContainer && window.innerWidth > 768) chatPage.closeChat();
-
-    isLoadingChat = true;
-    mainView?.scrollTo(chatPage.element);
-    chatPage.loadChat(chat, (await getAppUser()).id);
-
-    if (window.innerWidth <= 768) {
-        scrollToChat(smoothScroll);
-    }
-    
-    isLoadingChat = false;
-}
-
-async function closeActiveChat(_isPopState = false, forceClose = false) {
-    console.log("closeactivechat")
-    if (window.innerWidth <= 768) {
-        scrollToList(true);
-        if (forceClose) {
-            chatPage.closeChat();
+    async function checkWahaStatus() {
+        try {
+            const data = await waha.getVersion();
+            ui.updateConnectionStatus(true, `WAHA Connected: v${data.version || 'OK'}`);
+        } catch (e) {
+            ui.updateConnectionStatus(false, 'WAHA Server Offline');
         }
-    } else {
-        chatPage.closeChat(forceClose);
     }
-}
-
-async function checkWahaStatus() {
-    try {
-        const data = await waha.getVersion();
-        ui.updateConnectionStatus(true, `WAHA Connected: v${data.version || 'OK'}`);
-    } catch (e) {
-        ui.updateConnectionStatus(false, 'WAHA Server Offline');
+    
+    export function reloadTheme() {
+        const body = document.querySelector('body');
+        const loadedTheme = localStorage.getItem('pandora_theme') ?? '';
+        if (body) body.classList = loadedTheme;
+        const loadedThemeEl = elements.settingTheme.querySelector(`input[value="${loadedTheme}"]`) as HTMLInputElement;
+        if (loadedThemeEl) loadedThemeEl.checked = true;
     }
-}
-
-export function reloadTheme() {
-    const body = document.querySelector('body');
-    const loadedTheme = localStorage.getItem('pandora_theme') ?? '';
-    if (body) body.classList = loadedTheme;
-    const loadedThemeEl = elements.settingTheme.querySelector(`input[value="${loadedTheme}"]`) as HTMLInputElement;
-    if (loadedThemeEl) loadedThemeEl.checked = true;
-}
